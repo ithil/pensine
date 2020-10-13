@@ -8,6 +8,9 @@
   },
   "dependencies": {
     "core-js": "^3.6.5",
+    "pensieve": "../pensieve/",
+    "tiptap": "^1.30.0",
+    "tiptap-extensions": "^1.33.1",
     "vue": "^2.6.11",
     "vue-router": "^3.2.0"
   },

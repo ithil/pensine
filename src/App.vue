@@ -1,12 +1,33 @@
 <template>
   <div id="app">
-    <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
-    </div>
-    <router-view/>
+    <splitpanes style="height: 100vh" class="default-theme">
+      <pane min-size="20" size="30">
+        <div id="nav">
+          <ul>
+            <li>
+              <router-link to="/">Home</router-link>
+            </li>
+            <li>
+              <router-link to="/about">About</router-link>
+            </li>
+          </ul>
+        </div>
+      </pane>
+      <pane>
+        <router-view/>
+      </pane>
+    </splitpanes>
   </div>
 </template>
+
+<script>
+import { Splitpanes, Pane } from 'splitpanes'
+import 'splitpanes/dist/splitpanes.css'
+
+export default {
+  components: { Splitpanes, Pane },
+}
+</script>
 
 <style lang="scss">
 #app {

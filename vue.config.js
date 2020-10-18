@@ -3,5 +3,6 @@ module.exports = {
     electronBuilder: {
       nodeIntegration: true
     }
-  }
+  },
+  runtimeCompiler: true
 }

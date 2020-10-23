@@ -4,7 +4,7 @@
       <div
       :class="{folder: isFolder}"
       class="tree-row"
-      @click="triggerClick"
+      @click.stop.prevent="triggerClick"
       @dblclick="toggle">
       <span class="tree-toggle" :class="{'no-children': !isFolder}" @click="toggle">
         <!-- <b-icon :icon="isOpen ? 'chevron-down' : 'chevron-right'"></b-icon> -->
@@ -14,7 +14,7 @@
       <span class="tree-name">{{ item.name }}</span>
       <span class="tree-badge" v-if="item.badge">{{item.badge}}</span>
     </div>
-    <ul v-show="isOpen" v-if="isFolder">
+    <ul v-show="isOpen" v-if="isFolder" class="tree">
       <tree-item
       class="item"
       v-for="(child, index) in item.children"
@@ -74,4 +74,8 @@
 </script>
 
 <style lang="scss">
+.tree {
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
 </style>

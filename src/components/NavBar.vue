@@ -5,6 +5,7 @@
       class='item'
       v-for='(tree, index) in treeData'
       :item='tree'
+      :key='index'
       @make-folder='makeFolder'
       @add-item='addItem'
       ></tree-item>
@@ -29,33 +30,6 @@
     data () {
       return {
         treeData: [
-          { name: 'Home', click: () => { this.$router.push('/') }},
-          { name: 'Inbox', click: () => { this.$router.push('/inbox') }},
-          { name: 'Editor', click: () => { this.$router.push('/editor') }},
-          {
-            name: 'My Tree',
-            badge: '30',
-            children: [
-              { name: 'You' },
-              { name: 'Me' },
-              {
-                name: 'Them',
-                children: [
-                  {
-                    name: 'Everyone',
-                    children: [{ name: 'Bonjour' }, { name: 'Guten Tag' }]
-                  },
-                  { name: 'Cactus' },
-                  { name: 'Alder' },
-                  {
-                    name: 'Forest',
-                    children: [{ name: 'Water' }, { name: 'A snail' }]
-                  }
-                ]
-              }
-            ]
-          },
-          {name: 'Second Tree'}
         ]
       }
     },
@@ -72,26 +46,99 @@
       }
     },
     mounted () {
-      var allNotes = this.$noteCollection.allNotes
-      var myNode = {
-        key: 90,
-        name: 'My Notes',
-        badge: allNotes.length,
-        children: []
-      }
-      allNotes.forEach((n, i) => {
-        myNode.children.push({
-          key: n.id + 91,
-          name: n.label,
-          filename: n.contentPath,
-          click: function () {
-            console.log('Does dis work? ' + n.contentPath)
-            bus.$emit('openNote', n)
-            // It does! :)
-          }
+      var $this = this
+      var createTree = () => {
+        this.treeData = [
+          { name: 'Home', click: () => { this.$router.push('/') }},
+          { name: 'Inbox', click: () => { this.$router.push('/inbox') }},
+          { name: 'Editor', click: () => { this.$router.push('/editor') }},
+        ]
+        var allNotes = this.$global.currentNoteCollection.allNotes
+        var myNode = {
+          key: 90,
+          name: 'My Notes',
+          badge: allNotes.length,
+          children: []
+        }
+        allNotes.forEach((n, i) => {
+          myNode.children.push({
+            key: n.id + 91,
+            name: n.label,
+            filename: n.contentPath,
+            click: function () {
+              console.log('Does dis work? ' + n.contentPath)
+              $this.$router.push('/editor').catch(err => {
+                // Ignore the vuex err regarding  navigating to the page they are already on.
+                if (
+                  err.name !== 'NavigationDuplicated' &&
+                  !err.message.includes('Avoided redundant navigation to current location')
+                ) {
+                  // But print any other errors to the console
+                  console.error(err)
+                }
+              })
+              $this.$nextTick(() => {
+                bus.$emit('openNote', n)
+              })
+            }
+          })
         })
-      })
-      this.treeData.push(myNode)
+        this.treeData.push(myNode)
+        var tagTree = this.$global.currentNoteCollection.getTagTree()
+        var tagMetadata = new this.$global.pensieve.Tags(this.$global.currentNoteCollection)
+        var tagTreeNode = {
+          key: 200,
+          name: 'Tags',
+          children: []
+        }
+        var currentKey = 201
+        var convertTree = function(tree, level, head, node) {
+          for (var t of Object.keys(tree)) {
+            var newHead = head + (head=='' ? '' : '.') + t
+            var currentTagMetadata = tagMetadata.getTag(newHead)
+            // console.log('  '.repeat(level)+colors.grey.bold(`${(currentTagMetadata && currentTagMetadata.icon) ? currentTagMetadata.icon : '#'} `)+colors.green(t))
+            var tagNode = {
+              key: currentKey,
+              name: `${(currentTagMetadata && currentTagMetadata.icon) ? currentTagMetadata.icon : '#'} ${t}`,
+              children: [],
+            }
+            currentKey++
+            convertTree(tree[t].subtags, level+1, newHead, tagNode)
+            // for (var n of tree[t].notes) {
+            tree[t].notes.forEach((n, i) => {
+              // console.log('  '.repeat(level+1)+n.name)
+              tagNode.children.push({
+                key: currentKey,
+                name: n.name,
+                children: [],
+                click: function () {
+                  $this.$router.push('/editor').catch(err => {
+                    // Ignore the vuex err regarding  navigating to the page they are already on.
+                    if (
+                      err.name !== 'NavigationDuplicated' &&
+                      !err.message.includes('Avoided redundant navigation to current location')
+                    ) {
+                      // But print any other errors to the console
+                      console.error(err)
+                    }
+                  })
+                  $this.$nextTick(() => {
+                    bus.$emit('openNote', n)
+                  })
+                }
+              })
+              currentKey++
+            })
+            node.children.push(tagNode)
+          }
+        }
+        convertTree(tagTree, 0, '', tagTreeNode)
+        this.treeData.push(tagTreeNode)
+      }
+      createTree()
+    bus.$on('noteCollectionChanged', () => {
+      createTree()
+    })
     }
   }
 </script>

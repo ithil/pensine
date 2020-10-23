@@ -190,14 +190,23 @@ export default {
     },
     putCaretInPos(pos) {
       this.editor.setSelection(pos, pos+1)
+      if (!this.editor.focused) {
+        this.editor.focus()
+      }
       this.scrollCursorIntoView()
     },
     toInsertMode() {
       var {from, to} = this.editor.selection
+      if (!this.editor.focused) {
+        this.editor.focus()
+      }
       this.editor.setSelection(from, from)
     },
     toInsertModeAppend() {
       var {from, to} = this.editor.selection
+      if (!this.editor.focused) {
+        this.editor.focus()
+      }
       this.editor.setSelection(to, to)
     },
     toNormalMode() {
@@ -1766,9 +1775,18 @@ export default {
           $this.editor.view.updateState($this.editor.createState())
           $this.editor.setContent(result)
           $this.vimMode = "Normal"
+          $this.editable = false
           $this.moveToTop()
+          setTimeout(x => {
+            $this.$refs.editorContainer.focus()
+            $this.editor.focus()
+          }, 100)
         }
       })
+    })
+    bus.$on('focusEditor', () => {
+      $this.$refs.editorContainer.querySelector('.ProseMirror').focus()
+      $this.moveToTop()
     })
   },
   beforeDestroy() {

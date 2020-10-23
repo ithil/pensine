@@ -1,5 +1,5 @@
 <template>
-  <div class="home">
+  <div class="editorView">
     <Vimish></Vimish>
   </div>
 </template>
@@ -15,3 +15,9 @@ export default {
   }
 }
 </script>
+
+<style lang="scss">
+.editorView {
+  margin-top: 20px;
+}
+</style>

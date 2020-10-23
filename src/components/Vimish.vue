@@ -2,30 +2,16 @@
   <div>
     <editor-menu-bar :editor="editor" v-slot="{ commands, isActive }" id="vimishStatusBar">
       <div>
-        <span class="statusBarVimMode" :class="'statusBarVimMode-'+vimMode">{{vimMode}}</span>
-        <button :class="{ 'is-active': isActive.bold() }" @click="commands.bold">
-          Bold
-        </button>
-        <button :class="{ 'is-active': isActive.italic() }" @click="commands.italic">
-          Italic
-        </button>
-        <button :class="{ 'is-active': isActive.todo_list() }" @click="commands.todo_list">
-          Todo List
-        </button>
-        <span>{{fullKeybuffer}}</span>
+        <span class="statusBarVimMode" :class="'statusBarVimMode-'+vimMode.replace(/ /g, '_')">{{vimMode}}</span>
+        <span class="checkbox">
+          <input type="checkbox" id="editable" v-model="editable" />
+          <label for="editable" style="color:white;">editable</label>
+        </span>
+        <span id="keybuffer">{{fullKeybuffer}}</span>
       </div>
     </editor-menu-bar>
-    <div @click="getSelectionPosition()" @keydown="keymonitor" ref="editorContainer" :class="'mode-'+vimMode">
+    <div @click="getSelectionPosition()" @keydown="keymonitor" ref="editorContainer" :class="'mode-'+vimMode" tabindex="5">
       <editor-content :editor="editor" class="editor editor__content"/>
-    </div>
-    <div class="checkbox">
-      <input type="checkbox" id="editable" v-model="editable" />
-      <label for="editable">editable</label>
-    </div>
-    <div>
-      <button @click="logEditorObj()">
-        Log Editor Object
-      </button>
     </div>
   </div>
 </template>
@@ -1870,6 +1856,11 @@ div#vimishStatusBar {
   z-index: 3;
   background-color: #222527;
   width: 100%;
+  padding: 3px;
+}
+
+#keybuffer {
+  color: white;
 }
 
 .statusBarVimMode {
@@ -1891,6 +1882,9 @@ div#vimishStatusBar {
 .statusBarVimMode-Visual {
   background-color: #800058;
   color: white;
+}
+.statusBarVimMode-Operator_Pending {
+  color: #b7a966;
 }
 
 .editor {

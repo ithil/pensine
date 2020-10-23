@@ -373,12 +373,22 @@ export default {
         this.textRegister.set(this.keybufferRegister || '0', slice)
       }
     },
-    moveToTop() {
-      this.putCaretInPos(1)
+    moveToTop(cb) {
+      if (cb) {
+        cb(1)
+      }
+      else {
+        this.putCaretInPos(1)
+      }
     },
-    moveToEnd() {
+    moveToEnd(cb) {
       var {size} = this.editor.view.state.doc.content
-      this.putCaretInPos(size-2)
+      if (cb) {
+        cb(size-2)
+      }
+      else {
+        this.putCaretInPos(size-2)
+      }
     },
     getPosOfCharRightOfCursor(char, cb) {
       var $editor = this.editor
@@ -619,6 +629,7 @@ export default {
       var $editor = this.editor
       var {size} = $editor.view.state.doc.content
       var from = this.getSelectionHead() - 1
+      var myPos = null
       if (includeCursorPosition) {
         from += 1
       }
@@ -635,9 +646,12 @@ export default {
             }
           }
           if (myIndex > -1) {
-            cb(pos+myIndex)
+            myPos = pos + myIndex
           }
       })
+      if (myPos) {
+        cb(myPos)
+      }
     },
     moveCursorRightToPattern(pattern, mn) {
       this.getPosOfPatternRightOfCursor(pattern, mn, (pos) => {

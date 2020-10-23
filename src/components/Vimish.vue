@@ -60,6 +60,7 @@ import TurndownService from 'turndown'
 import { bus } from '../main'
 
 var turndownPluginGfm = require('joplin-turndown-plugin-gfm')
+var mdTodoLists = require('./markdown-it-extensions/todo-lists.js')
 
 export default {
   name: 'Vimish',
@@ -103,75 +104,7 @@ export default {
           new HorizontalRule(),
           new JumpMark(),
         ],
-        content: `
-          <h1>Yay Headlines!</h1>
-          <p>All these <strong>cool tags</strong> are working now.<br>But what about new lines?<br>Are they also ok?</p>
-          <h2>Cooler things</h2>
-          <p>And I think it's also nice to have "quotes like this one" or maybe not. And some more sentences. Some are short. O! And sometimes, they also have: redundant punctuation.</p>
-          <ul>
-            <li>And here also "quotes" and 'other' ´quotes´</li>
-            <li>Sometimes it's interesting to <a href="http://wikipedia.org/">link</a> something.</li>
-            <ul>
-              <li>Nested list</li>
-              <li>What would you want more?</li>
-              <ul>
-                <li>Maybe some<code>HTML</code>?</li>
-              </ul>
-            </ul>
-            <li>Just have to be <em>queer</em>.</li>
-            <li>Do 😃🤣🌸🌴 also work here?</em></li>
-          </ul>
-          <h3>Even more</h3>
-          <blockquote cite="http://www.worldwildlife.org/who/index.html">
-          For 50 years, WWF has been protecting the future of nature. The world's leading conservation organization, WWF works in 100 countries and is supported by 1.2 million members in the United States and close to 5 million globally.
-          </blockquote>
-          <img src="https://i.imgur.com/5SY4And.jpg" />
-          <table>
-          <tr>
-          <th colspan="3" data-colwidth="100,0,0">Wide header</th>
-          </tr>
-          <tr>
-          <td>One</td>
-          <td>Two</td>
-          <td>Three</td>
-          </tr>
-          <tr>
-          <td>Four</td>
-          <td>Five</td>
-          <td>Six</td>
-          </tr>
-          </table>
-          <pre><code>
-  function $initHighlight(block, flags) {
-  try {
-    if (block.className.search(/no-highlight/) != -1)
-      return processBlock(block, true, 0x0F) + ' class=""';
-  } catch (e) {
-    /* handle exception */
-  }
-  for (var i = 0 / 2; i < classes.length; i++) { // "0 / 2" should not be parsed as regexp
-    if (checkCondition(classes[i]) === undefined)
-      return /d+/g;
-  }
-}
-          </code></pre>
-          <h3>Todoooos</h3>
-          <ul data-type="todo_list">
-            <li data-type="todo_item" data-done="true">
-              Buy rice
-            </li>
-            <li data-type="todo_item" data-done="true">
-              Buy vegetables
-            </li>
-            <li data-type="todo_item" data-done="true">
-              Buy noodles
-            </li>
-            <li data-type="todo_item" data-done="false">
-              Call mom
-            </li>
-          </ul>
-          <p>Another paragraph. Yay!</p>
-        `,
+        content: ' ',
       onInit({view, state}) {
         this.inputRules.push(new InputRule(/[^:]\($/, (state, match, start, end) => {
           var tr = state.tr.insertText('()', end, end)
@@ -1779,6 +1712,14 @@ export default {
   mounted() {
     this.editor = new Editor(this.editorOptions)
     this.turndownService.use(turndownPluginGfm.gfm)
+    this.turndownService.addRule('todoListItems', {
+      filter: function (node) {
+        return node.dataset.type === 'todo_item'
+      },
+      replacement: function (content, node) {
+        return '* ' + (node.dataset.done == 'true' ? '[x]' : '[ ]') + ' ' + node.querySelector('p').innerHTML + '\n'
+      }
+    })
   },
   created () {
     var $this = this
@@ -1801,7 +1742,9 @@ export default {
           console.err('Couldnt open')
         } else {
           var md = new MarkdownIt()
+          md.use(mdTodoLists)
           var result = md.render(contents)
+          console.log(result)
           $this.editor.setContent(result)
         }
       })
@@ -1817,7 +1760,9 @@ export default {
           // $this.editor.destroy()
           // $this.editor = new Editor(this.editorOptions)
           var md = new MarkdownIt()
+          md.use(mdTodoLists)
           var result = md.render(contents)
+          console.log(result)
           $this.editor.view.updateState($this.editor.createState())
           $this.editor.setContent(result)
           $this.vimMode = "Normal"

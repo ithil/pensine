@@ -582,6 +582,18 @@ export default {
       }, true)
       return pos
     },
+    aLine() {
+      var pos = {left: undefined, right: undefined}
+      this.findPrevLineBreak((leftPos) => {
+        if (leftPos) {
+          this.findNextLineBreak((rightPos) => {
+            pos.left = Math.max(1, leftPos - 1)
+            pos.right = rightPos
+          }, true)
+        }
+      }, true)
+      return pos
+    },
     getPosOfPatternRightOfCursor(pattern, mn, cb, includeCursorPosition) {
       function indexOfGroup(match, n) {
         var ix = match.index
@@ -1128,6 +1140,11 @@ export default {
             console.log(resolvedPos)
             this.resetKeybuffer()
           }
+          else if(this.keybuffer == ",l")
+          {
+            this.logEditorObj()
+            this.resetKeybuffer()
+          }
           else if(this.keybuffer == "u")
           {
             this.editable = true
@@ -1472,6 +1489,20 @@ export default {
             this.putVisualCaretInPos(this.getSelectionHead()-1)
             this.resetKeybuffer()
           }
+          else if(this.keybuffer == "G")
+          {
+            this.moveToEnd((pos) => {
+              this.putVisualCaretInPos(pos)
+            })
+            this.resetKeybuffer()
+          }
+          else if(this.keybuffer == "gg")
+          {
+            this.moveToTop((pos) => {
+              this.putVisualCaretInPos(pos)
+            })
+            this.resetKeybuffer()
+          }
           else if(this.keybuffer == "o")
           {
             var {from, to} = this.editor.selection
@@ -1492,6 +1523,11 @@ export default {
           else if(this.keybuffer == "il")
           {
             this.setSelectionRange(this.innerLine())
+            this.resetKeybuffer()
+          }
+          else if(this.keybuffer == "al")
+          {
+            this.setSelectionRange(this.aLine())
             this.resetKeybuffer()
           }
           else if(this.keybuffer == ",q")

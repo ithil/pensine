@@ -1,9 +1,11 @@
 'use strict'
 
-import { app, protocol, BrowserWindow } from 'electron'
+import { app, protocol, BrowserWindow, Menu, ipcMain } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
+// import { bus } from './main'
 const isDevelopment = process.env.NODE_ENV !== 'production'
+const isMac = process.platform === 'darwin'
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -22,7 +24,8 @@ function createWindow() {
     webPreferences: {
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
-      nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION
+      nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
+      enableRemoteModule: true,
     }
   })
 
@@ -38,6 +41,144 @@ function createWindow() {
 
   win.on('closed', () => {
     win = null
+  })
+
+  var noteCollections = {}
+  var addNoteCollections = () => {
+    var temp = [
+      { type: 'separator'},
+    ]
+    if (Object.keys(noteCollections).length < 1) {
+      return []
+    }
+    for (let k of Object.keys(noteCollections)) {
+      temp.push({
+        label: noteCollections[k].name,
+        click: async () => {
+          win.webContents.send('changeCurrentNoteCollection', {path: noteCollections[k].path })
+        }
+      })
+    }
+    return temp
+  }
+
+  var createTemplate = () => {
+    return [
+      // { role: 'appMenu' }
+      ...(isMac ? [{
+        label: 'Pensine',
+        submenu: [
+          { role: 'about' },
+          { type: 'separator' },
+          { role: 'services' },
+          { type: 'separator' },
+          { role: 'hide' },
+          { role: 'hideothers' },
+          { role: 'unhide' },
+          { type: 'separator' },
+          { role: 'quit' }
+        ]
+      }] : []),
+      // { role: 'fileMenu' }
+      {
+        label: 'Note',
+        submenu: [
+          isMac ? { role: 'close' } : { role: 'quit' }
+        ]
+      },
+      // { role: 'editMenu' }
+      {
+        label: 'Edit',
+        submenu: [
+          { role: 'undo' },
+          { role: 'redo' },
+          { type: 'separator' },
+          { role: 'cut' },
+          { role: 'copy' },
+          { role: 'paste' },
+          ...(isMac ? [
+            { role: 'pasteAndMatchStyle' },
+            { role: 'delete' },
+            { role: 'selectAll' },
+            { type: 'separator' },
+            {
+              label: 'Speech',
+              submenu: [
+                { role: 'startspeaking' },
+                { role: 'stopspeaking' }
+              ]
+            }
+          ] : [
+            { role: 'delete' },
+            { type: 'separator' },
+            { role: 'selectAll' }
+          ])
+        ]
+      },
+      // { role: 'viewMenu' }
+      {
+        label: 'View',
+        submenu: [
+          { role: 'reload' },
+          { role: 'forcereload' },
+          { role: 'toggledevtools' },
+          { type: 'separator' },
+          { role: 'resetzoom' },
+          { role: 'zoomin' },
+          { role: 'zoomout' },
+          { type: 'separator' },
+          { role: 'togglefullscreen' }
+        ]
+      },
+      {
+        label: 'Collection',
+        submenu: [
+          {
+            label: 'Add collection',
+            click: async () => {
+              // bus.$emit('addExistingCollection')
+              win.webContents.send('addExistingCollection')
+            }
+          },
+          ...addNoteCollections(),
+        ],
+      },
+      // { role: 'windowMenu' }
+      {
+        label: 'Window',
+        submenu: [
+          { role: 'minimize' },
+          { role: 'zoom' },
+          ...(isMac ? [
+            { type: 'separator' },
+            { role: 'front' },
+            { type: 'separator' },
+            { role: 'window' }
+          ] : [
+            { role: 'close' }
+          ])
+        ]
+      },
+      {
+        role: 'help',
+        submenu: [
+          {
+            label: 'Learn More',
+            click: async () => {
+              const { shell } = require('electron')
+              await shell.openExternal('https://electronjs.org')
+            }
+          }
+        ]
+      }
+    ]
+  }
+
+  const menu = Menu.buildFromTemplate(createTemplate())
+  Menu.setApplicationMenu(menu)
+  ipcMain.on('updateColMenuItems', (event, cols) => {
+    noteCollections = cols
+    Menu.setApplicationMenu(Menu.buildFromTemplate(createTemplate()))
   })
 }
 

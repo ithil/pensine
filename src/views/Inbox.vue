@@ -22,7 +22,7 @@ export default {
   },
   data() {
     return {
-      inbox: new this.$global.pensieve.Inbox(this.$global.currentNoteCollection),
+      inbox: new this.$global.pensieve.Inbox(this.$store.state.currentNoteCollection),
       fleetingNotes: null,
       md: new MarkdownIt(),
     }

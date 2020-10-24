@@ -71,8 +71,7 @@ export default {
     })
     ipcRenderer.send('updateColMenuItems', this.$global.config.get('collections', {}))
     ipcRenderer.on('changeCurrentNoteCollection' , (event, data) => {
-      console.log(data.path)
-      this.$global.currentNoteCollection = new this.$global.pensieve.NoteCollection(data.path)
+      this.$store.commit('changeCurrentNoteCollection', new this.$global.pensieve.NoteCollection(data.path))
       this.$global.config.set('currentNoteCollection', data.path)
       bus.$emit('noteCollectionChanged')
     })

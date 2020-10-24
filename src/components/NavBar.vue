@@ -53,7 +53,7 @@
           { name: 'Inbox', click: () => { this.$router.push('/inbox') }},
           { name: 'Editor', click: () => { this.$router.push('/editor') }},
         ]
-        var allNotes = this.$global.currentNoteCollection.allNotes
+        var allNotes = this.$store.state.currentNoteCollection.allNotes
         var myNode = {
           key: 90,
           name: 'My Notes',
@@ -66,7 +66,6 @@
             name: n.label,
             filename: n.contentPath,
             click: function () {
-              console.log('Does dis work? ' + n.contentPath)
               $this.$router.push('/editor').catch(err => {
                 // Ignore the vuex err regarding  navigating to the page they are already on.
                 if (
@@ -84,8 +83,8 @@
           })
         })
         this.treeData.push(myNode)
-        var tagTree = this.$global.currentNoteCollection.getTagTree()
-        var tagMetadata = new this.$global.pensieve.Tags(this.$global.currentNoteCollection)
+        var tagTree = this.$store.state.currentNoteCollection.getTagTree()
+        var tagMetadata = new this.$global.pensieve.Tags(this.$store.state.currentNoteCollection)
         var tagTreeNode = {
           key: 200,
           name: 'Tags',

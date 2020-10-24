@@ -151,7 +151,6 @@ export default {
         },
         registers: {}
       },
-      currentNote: null,
       turndownService: new TurndownService({
         headingStyle: 'atx',
         hr: '---',
@@ -161,7 +160,7 @@ export default {
   },
   methods: {
     saveNote() {
-      var currentNote = this.currentNote
+      var currentNote = this.$store.state.currentNote
       var html = this.editor.getHTML()
       var markdown = this.turndownService.turndown(html)
       console.log(markdown)
@@ -1809,8 +1808,7 @@ export default {
       })
     })
     bus.$on('openNote', (note) => {
-      // console.log('And the filename is... ' + filename)
-      $this.currentNote = note
+      $this.$store.commit('setCurrentNote', note)
       console.log(note)
       fs.readFile(note.contentPath, 'utf8', (err, contents) => {
         if (err) {

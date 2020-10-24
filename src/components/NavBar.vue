@@ -56,7 +56,7 @@
         var allNotes = this.$store.state.currentNoteCollection.allNotes
         var myNode = {
           key: 90,
-          name: 'My Notes',
+          name: 'All Notes',
           badge: allNotes.length,
           children: []
         }
@@ -95,20 +95,19 @@
           for (var t of Object.keys(tree)) {
             var newHead = head + (head=='' ? '' : '.') + t
             var currentTagMetadata = tagMetadata.getTag(newHead)
-            // console.log('  '.repeat(level)+colors.grey.bold(`${(currentTagMetadata && currentTagMetadata.icon) ? currentTagMetadata.icon : '#'} `)+colors.green(t))
             var tagNode = {
               key: currentKey,
-              name: `${(currentTagMetadata && currentTagMetadata.icon) ? currentTagMetadata.icon : '#'} ${t}`,
+              name: t,
+              icon: `${(currentTagMetadata && currentTagMetadata.icon) ? currentTagMetadata.icon : '#'}`,
               children: [],
             }
             currentKey++
             convertTree(tree[t].subtags, level+1, newHead, tagNode)
-            // for (var n of tree[t].notes) {
             tree[t].notes.forEach((n, i) => {
-              // console.log('  '.repeat(level+1)+n.name)
               tagNode.children.push({
                 key: currentKey,
                 name: n.name,
+                icon: '✣',
                 children: [],
                 click: function () {
                   $this.$router.push('/editor').catch(err => {
@@ -208,6 +207,17 @@ ul {
   padding-right: 4px;
   padding-left: 4px;
 }
+
+.navbar-tree /deep/ .tree-icon {
+    min-width: 18px;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+    padding-left: 2px;
+    font-family: Monaco;
+    text-align: center;
+}
+
 .navbar-tree /deep/ .row_data {
   display: flex;
   justify-content: left;

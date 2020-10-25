@@ -143,10 +143,7 @@
 
 <style scoped lang='scss'>
 * {
-  // color: white;
   color: #ababab;
-  // font-family: 'Lucida Grande', 'Segoe UI', 'Open Sans', sans-serif;
-  // font-family: 'Helvetica Neue';
   font-family: 'Avenir Next';
   font-size: 14px;
 }
@@ -230,7 +227,6 @@ ul {
 
 }
 .navbar-tree /deep/ .row_data :nth-child(1) {
-  // flex-grow: .1;
   flex-shrink: 0;
   padding-right: 5px;
 }

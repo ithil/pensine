@@ -1,7 +1,6 @@
 <template>
   <div id="app">
     <splitpanes style="height: 100vh">
-    <!-- <splitpanes style="height: 100vh" class="default-theme"> -->
       <pane min-size="20" size="30" id="navbar">
         <nav-bar></nav-bar>
       </pane>

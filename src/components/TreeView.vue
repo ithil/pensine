@@ -7,7 +7,6 @@
       @click.stop.prevent="triggerClick"
       @dblclick="toggle">
       <span class="tree-toggle" :class="{'no-children': !isFolder}" @click="toggle">
-        <!-- <b-icon :icon="isOpen ? 'chevron-down' : 'chevron-right'"></b-icon> -->
         <span v-if="isOpen">▾</span>
         <span v-else>▸</span>
       </span>
@@ -24,16 +23,12 @@
       @make-folder="$emit('make-folder', $event)"
       @add-item="$emit('add-item', $event)"
       ></tree-item>
-      <!-- <li class="add" @click="$emit('add-item', item)">+</li> -->
     </ul>
   </li>
   </div>
 </template>
 
 <script>
-  // import Vue from 'vue'
-  // import pensieve from 'pensieve'
-  // var pensieve = require('/Users/janus/Coding/projects/pensieve/src/pensieve-lib.js')
 
   export default {
     name: 'tree-item',
@@ -44,7 +39,6 @@
     data: function () {
       return {
         isOpen: false,
-        // myNoteCollection: pensieve.NoteCollection('/Users/janus/Notes')
       }
     },
     computed: {
@@ -65,7 +59,6 @@
         }
       },
       triggerClick: function () {
-        // this.toggle()
         if (this.item.click) {
           this.item.click()
         }

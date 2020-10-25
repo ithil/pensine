@@ -3,6 +3,15 @@
     <div id="noteMetadata" v-if="currentNote">
       <span class="noteId">{{ currentNote.id }}</span>
       <span class="noteLabel">{{ currentNote.label }}</span>
+      <span class="noteTags">
+        <span
+        class="noteTag"
+        v-for="(tag, index) in currentNote.metadata.tags"
+        :key="index"
+        >
+        {{ tag }}
+      </span>
+      </span>
     </div>
     <div class="editorView">
       <Vimish></Vimish>
@@ -35,6 +44,11 @@ export default {
   padding: 10px;
   font-family: 'Lucida Grande';
   background-color: #dddddd;
+  white-space: nowrap;
+  overflow: auto;
+}
+#noteMetadata::-webkit-scrollbar {
+  display: none;
 }
 .noteId {
   padding: 3px;
@@ -47,5 +61,12 @@ export default {
 .noteLabel {
   font-weight: bold;
   margin-left: 5px;
+}
+.noteTag {
+  margin: 5px 4px 5px 10px;
+  background-color: #ececec;
+  padding: 4px;
+  border-radius: 5px;
+  border: solid 1px #d0d0d0;
 }
 </style>

@@ -8,6 +8,15 @@
         <router-view/>
       </pane>
     </splitpanes>
+
+    <div id="modals">
+      <select-list :items="cmdsToListItems(commands)" ref="commandPalette">
+      </select-list>
+
+      <select-list :items="allNotes" ref="openNote">
+      </select-list>
+    </div>
+
   </div>
 </template>
 
@@ -15,6 +24,8 @@
 import { Splitpanes, Pane } from 'splitpanes'
 import 'splitpanes/dist/splitpanes.css'
 import NavBar from './components/NavBar.vue'
+import Modal from './components/Modal.vue'
+import SelectList from '@/components/SelectList.vue'
 import { ipcRenderer } from 'electron'
 import { bus } from './main'
 
@@ -25,14 +36,51 @@ export default {
     Splitpanes,
     Pane,
     NavBar,
+    Modal,
+    SelectList,
   },
   data() {
     return {
     }
   },
+  computed: {
+    commands() {
+      return this.$store.state.commands
+    },
+    allNotes() {
+      var allNotes = []
+      for (let n of this.$store.state.currentNoteCollection.allNotes) {
+        allNotes.push({
+          label: n.label,
+          action: () => {
+            this.$router.push('/editor').catch(err => {
+              // Ignore the vuex err regarding  navigating to the page they are already on.
+              if (
+                err.name !== 'NavigationDuplicated' &&
+                !err.message.includes('Avoided redundant navigation to current location')
+              ) {
+                // But print any other errors to the console
+                console.error(err)
+              }
+            })
+            this.$nextTick(() => {
+              bus.$emit('openNote', n)
+            })
+          },
+        })
+      }
+      return allNotes
+    },
+  },
   mounted() {
+    this.$store.commit('registerCommand', {
+      name: 'main:quit',
+      label: 'Quit',
+      action: () => {
+        ipcRenderer.send('quit')
+      },
+    })
     ipcRenderer.on('addExistingCollection' , (event, data) => {
-      console.log('Add collection!')
       prompt({
         title: 'Add existing Note Collection',
         label: 'Enter path to collection:',
@@ -74,8 +122,23 @@ export default {
       this.$global.config.set('currentNoteCollection', data.path)
       bus.$emit('noteCollectionChanged')
     })
+    ipcRenderer.on('openCommandPalette' , (event, data) => {
+      this.$refs.commandPalette.open()
+    })
+    ipcRenderer.on('openNoteModal' , (event, data) => {
+      this.$refs.openNote.open()
+    })
   },
   methods: {
+    cmdsToListItems(cmds) {
+      return cmds.map(c => {
+        return {
+          label: c.label,
+          hover: c.name,
+          action: c.action,
+        }
+      })
+    },
   },
 }
 </script>

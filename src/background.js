@@ -83,7 +83,14 @@ function createWindow() {
       {
         label: 'Note',
         submenu: [
-          isMac ? { role: 'close' } : { role: 'quit' }
+          {
+            label: 'Open Note',
+            accelerator: 'CommandOrControl+O',
+            click: async () => {
+              win.webContents.send('openNoteModal')
+            }
+          },
+          isMac ? { role: 'close' } : { role: 'quit' },
         ]
       },
       // { role: 'editMenu' }
@@ -119,6 +126,14 @@ function createWindow() {
       {
         label: 'View',
         submenu: [
+          {
+            label: 'Open Command Palette',
+            accelerator: 'CommandOrControl+P',
+            click: async () => {
+              win.webContents.send('openCommandPalette')
+            }
+          },
+          { type: 'separator' },
           { role: 'reload' },
           { role: 'forcereload' },
           { role: 'toggledevtools' },
@@ -134,9 +149,8 @@ function createWindow() {
         label: 'Collection',
         submenu: [
           {
-            label: 'Add collection',
+            label: 'Add Collection',
             click: async () => {
-              // bus.$emit('addExistingCollection')
               win.webContents.send('addExistingCollection')
             }
           },
@@ -179,6 +193,9 @@ function createWindow() {
   ipcMain.on('updateColMenuItems', (event, cols) => {
     noteCollections = cols
     Menu.setApplicationMenu(Menu.buildFromTemplate(createTemplate()))
+  })
+  ipcMain.on('quit', (event, arg) => {
+    app.quit()
   })
 }
 

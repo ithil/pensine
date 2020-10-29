@@ -19,6 +19,7 @@ const store = new Vuex.Store({
   state: {
     currentNoteCollection: new pensieve.NoteCollection(config.get('currentNoteCollection')),
     currentNote: null,
+    commands: [],
   },
   mutations: {
     changeCurrentNoteCollection(state, nc) {
@@ -26,6 +27,11 @@ const store = new Vuex.Store({
     },
     setCurrentNote(state, note) {
       state.currentNote = note
+    },
+    registerCommand(state, cmd) {
+      if (state.commands.findIndex(c => c.name == cmd.name) == -1) {
+        state.commands.push(cmd)
+      }
     }
   }
 })

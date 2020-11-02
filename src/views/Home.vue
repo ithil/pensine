@@ -1,18 +1,32 @@
 <template>
   <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <h1>{{ currentNoteCollection.collectionJson.name }}</h1>
+    <ul>
+      <li>
+        Number of notes: {{ currentNoteCollection.allNotes.length }}
+      </li>
+    </ul>
   </div>
 </template>
 
 <script>
 // @ is an alias to /src
-import HelloWorld from '@/components/HelloWorld.vue'
 
 export default {
   name: 'Home',
   components: {
-    HelloWorld
-  }
+  },
+  computed: {
+    currentNoteCollection() {
+      return this.$store.state.currentNoteCollection
+    }
+  },
 }
 </script>
+
+<style lang="scss">
+.home {
+  padding: 10px;
+  font-family: 'PT Mono';
+}
+</style>

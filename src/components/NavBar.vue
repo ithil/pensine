@@ -64,6 +64,7 @@
           myNode.children.push({
             key: n.id + 91,
             name: n.label,
+            icon: '✣',
             filename: n.contentPath,
             click: function () {
               $this.$router.push('/editor').catch(err => {

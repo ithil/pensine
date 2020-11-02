@@ -15,6 +15,15 @@
 
       <select-list :items="allNotes" ref="openNote">
       </select-list>
+
+      <text-prompt
+      message="Add existing Note Collection:"
+      ref="addExistingCollection"
+      placeholder="Path to Note Collection..."
+      text=""
+      :action="addExistingCollection"
+      >
+      </text-prompt>
     </div>
 
   </div>
@@ -26,10 +35,9 @@ import 'splitpanes/dist/splitpanes.css'
 import NavBar from './components/NavBar.vue'
 import Modal from './components/Modal.vue'
 import SelectList from '@/components/SelectList.vue'
+import TextPrompt from '@/components/TextPrompt.vue'
 import { ipcRenderer } from 'electron'
 import { bus } from './main'
-
-const prompt = window.require('electron-prompt')
 
 export default {
   components: {
@@ -38,6 +46,7 @@ export default {
     NavBar,
     Modal,
     SelectList,
+    TextPrompt,
   },
   data() {
     return {
@@ -81,40 +90,7 @@ export default {
       },
     })
     ipcRenderer.on('addExistingCollection' , (event, data) => {
-      prompt({
-        title: 'Add existing Note Collection',
-        label: 'Enter path to collection:',
-        value: '',
-        type: 'input'
-      })
-      .then((r) => {
-        if(r === null) {
-          console.log('user cancelled')
-        }
-        else {
-          console.log('Path: ', r)
-          var config = this.$global.config
-          try {
-            var collection = new this.$global.pensieve.NoteCollection(r)
-            var cols = config.get('collections', {})
-            if(cols.hasOwnProperty(collection.path)) {
-              console.error(`${collection.path} had already been added`)
-            }
-            else {
-              cols[collection.path] = {
-                name: collection.collectionJson.name,
-                path: collection.path,
-              }
-              config.set('collections', cols)
-            }
-            ipcRenderer.send('updateColMenuItems', config.get('collections', {}))
-          }
-          catch (e) {
-            console.error(e)
-          }
-        }
-      })
-      .catch(console.error)
+      this.$refs.addExistingCollection.open()
     })
     ipcRenderer.send('updateColMenuItems', this.$global.config.get('collections', {}))
     ipcRenderer.on('changeCurrentNoteCollection' , (event, data) => {
@@ -138,6 +114,29 @@ export default {
           action: c.action,
         }
       })
+    },
+    addExistingCollection(p) {
+      console.log('Path: ', p)
+      var config = this.$global.config
+      try {
+        var collection = new this.$global.pensieve.NoteCollection(p)
+        var cols = config.get('collections', {})
+        if(cols.hasOwnProperty(collection.path)) {
+          console.error(`${collection.path} had already been added`)
+        }
+        else {
+          cols[collection.path] = {
+            name: collection.collectionJson.name,
+            path: collection.path,
+          }
+          config.set('collections', cols)
+        }
+        ipcRenderer.send('updateColMenuItems', config.get('collections', {}))
+      }
+      catch (e) {
+        console.error(e)
+      }
+
     },
   },
 }

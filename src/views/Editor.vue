@@ -14,7 +14,7 @@
       </span>
     </div>
     <div class="editorView">
-      <Vimish></Vimish>
+      <Vimish :note="note"></Vimish>
     </div>
   </div>
 </template>
@@ -28,9 +28,42 @@ export default {
   components: {
     Vimish
   },
+  data () {
+    return {
+    }
+  },
   computed: {
     currentNote() {
       return this.$store.state.currentNote
+    },
+    routeTab() {
+      if (this.$store.state.currentNote) {
+        return this.$store.state.currentNote.label || 'Editor'
+      }
+    },
+    note() {
+      var id = this.$route.params.id
+      if (id) {
+        return this.$store.state.currentNoteCollection.getNoteById(id)
+      }
+    },
+  },
+  watch: {
+    $route(to, from) {
+      var id = to.params.id
+      if (id) {
+        var note = this.$store.state.currentNoteCollection.getNoteById(id)
+        this.$store.commit('setCurrentNote', note)
+        // this.note = note
+      }
+    }
+  },
+  mounted() {
+    var id = this.$route.params.id
+    if (id) {
+      var note = this.$store.state.currentNoteCollection.getNoteById(id)
+      this.$store.commit('setCurrentNote', note)
+      // this.note = note
     }
   },
 }

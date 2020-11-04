@@ -91,7 +91,15 @@ function createWindow() {
               win.webContents.send('openNoteModal')
             }
           },
-          isMac ? { role: 'close' } : { role: 'quit' },
+          { type: 'separator' },
+          // isMac ? { role: 'close' } : { role: 'quit' },
+          {
+            label: 'Close Tab',
+            accelerator: 'CommandOrControl+W',
+            click: async () => {
+              win.webContents.send('closeTab')
+            }
+          },
         ]
       },
       // { role: 'editMenu' }

@@ -70,7 +70,7 @@ export default {
         allNotes.push({
           label: n.label,
           action: () => {
-            this.$router.push('/editor').catch(err => {
+            this.$router.push(`/editor/${n.id}`).catch(err => {
               // Ignore the vuex err regarding  navigating to the page they are already on.
               if (
                 err.name !== 'NavigationDuplicated' &&
@@ -80,9 +80,9 @@ export default {
                 console.error(err)
               }
             })
-            this.$nextTick(() => {
-              bus.$emit('openNote', n)
-            })
+            // this.$nextTick(() => {
+            //   bus.$emit('openNote', n)
+            // })
           },
         })
       }
@@ -111,6 +111,9 @@ export default {
     })
     ipcRenderer.on('openNoteModal' , (event, data) => {
       this.$refs.openNote.open()
+    })
+    ipcRenderer.on('closeTab' , (event, data) => {
+      this.$tabs.close()
     })
     ipcRenderer.on('toggleNavBar' , (event, data) => {
       this.toggleNavBar()
@@ -202,6 +205,8 @@ body {
     color: white;
   }
 }
+
+@import "./styles/router-tab.scss";
 
 .splitpanes__pane {
   overflow: scroll;

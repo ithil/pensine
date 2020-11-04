@@ -9689,6 +9689,14 @@ vue-loader@^15.9.2:
     vue-hot-reload-api "^2.3.0"
     vue-style-loader "^4.1.0"
 
+vue-router-tab@^1.2.1:
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/vue-router-tab/-/vue-router-tab-1.2.1.tgz#98f0cfe7a9278f52d9da76afcba472e50fc4e344"
+  integrity sha512-7DmnvyW75/Jisc11A3okc6qT6X128VEOLwjijm+EjbGziaIgChIwg1+9O2KALujrqqy8ww0Smdp7NHE8E55G5g==
+  dependencies:
+    vue "^2.6.11"
+    vue-router "^3.2.0"
+
 vue-router@^3.2.0:
   version "3.4.6"
   resolved "https://registry.yarnpkg.com/vue-router/-/vue-router-3.4.6.tgz#f7bda2c9a43d39837621c9a02ba7789f5daa24b2"

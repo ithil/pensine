@@ -68,6 +68,9 @@ export default {
     EditorMenuBar,
     EditorContent,
   },
+  props: [
+    'note'
+  ],
   data() {
     var $this = this
     return {
@@ -1778,60 +1781,30 @@ export default {
         return '* ' + (node.dataset.done == 'true' ? '[x]' : '[ ]') + ' ' + node.querySelector('p').innerHTML + '\n'
       }
     })
+    var $this = this
+    fs.readFile(this.note.contentPath, 'utf8', (err, contents) => {
+      if (err) {
+        console.err('Couldnt open')
+      } else {
+        var md = new MarkdownIt()
+        md.use(mdTodoLists)
+        var result = md.render(contents)
+        console.log(result)
+        $this.editor.view.updateState($this.editor.createState())
+        $this.editor.setContent(result)
+        $this.inputMD = result
+        $this.vimMode = "Normal"
+        $this.editable = false
+        $this.moveToTop()
+        setTimeout(x => {
+          $this.$refs.editorContainer.focus()
+          $this.editor.focus()
+        }, 100)
+      }
+    })
   },
   created () {
     var $this = this
-    bus.$on('openFile', (filename) => {
-      // console.log('And the filename is... ' + filename)
-      fs.readFile(filename, 'utf8', (err, contents) => {
-        if (err) {
-          console.err('Couldnt open')
-        } else {
-          const $ch = cheerio.load(contents)
-          // console.log($ch('body').html())
-          $this.editor.setContent($ch('body').html())
-        }
-      })
-    })
-    bus.$on('openMarkdownFile', (filename) => {
-      // console.log('And the filename is... ' + filename)
-      fs.readFile(filename, 'utf8', (err, contents) => {
-        if (err) {
-          console.err('Couldnt open')
-        } else {
-          var md = new MarkdownIt()
-          md.use(mdTodoLists)
-          var result = md.render(contents)
-          console.log(result)
-          $this.editor.setContent(result)
-        }
-      })
-    })
-    bus.$on('openNote', (note) => {
-      $this.$store.commit('setCurrentNote', note)
-      console.log(note)
-      fs.readFile(note.contentPath, 'utf8', (err, contents) => {
-        if (err) {
-          console.err('Couldnt open')
-        } else {
-          // $this.editor.destroy()
-          // $this.editor = new Editor(this.editorOptions)
-          var md = new MarkdownIt()
-          md.use(mdTodoLists)
-          var result = md.render(contents)
-          console.log(result)
-          $this.editor.view.updateState($this.editor.createState())
-          $this.editor.setContent(result)
-          $this.vimMode = "Normal"
-          $this.editable = false
-          $this.moveToTop()
-          setTimeout(x => {
-            $this.$refs.editorContainer.focus()
-            $this.editor.focus()
-          }, 100)
-        }
-      })
-    })
     bus.$on('focusEditor', () => {
       $this.$refs.editorContainer.querySelector('.ProseMirror').focus()
       $this.moveToTop()

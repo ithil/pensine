@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <div id="titlebar">
+    <div id="titlebar" @dblclick="minimizeWindow">
       <div class="title">
         {{title}}
       </div>
@@ -159,6 +159,10 @@ export default {
       else {
         this.paneSize = 0
       }
+    },
+    minimizeWindow() {
+      console.log('Minimize!')
+      ipcRenderer.send('minimizeWindow')
     },
   },
 }

@@ -210,6 +210,9 @@ function createWindow() {
     noteCollections = cols
     Menu.setApplicationMenu(Menu.buildFromTemplate(createTemplate()))
   })
+  ipcMain.on('minimizeWindow', (event, arg) => {
+    win.minimize()
+  })
   ipcMain.on('quit', (event, arg) => {
     app.quit()
   })

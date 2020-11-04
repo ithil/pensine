@@ -134,6 +134,13 @@ function createWindow() {
               win.webContents.send('openCommandPalette')
             }
           },
+          {
+            label: 'Toggle Nav Bar',
+            accelerator: 'CommandOrControl+J',
+            click: async () => {
+              win.webContents.send('toggleNavBar')
+            }
+          },
           { type: 'separator' },
           { role: 'reload' },
           { role: 'forcereload' },

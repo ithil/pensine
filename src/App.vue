@@ -1,16 +1,17 @@
 <template>
   <div id="app">
-    <splitpanes style="height: 100vh">
-      <pane min-size="20" size="30" id="navbar">
     <div id="titlebar">
       <div class="title">
         {{title}}
       </div>
     </div>
+    <splitpanes style="height: calc(100vh - 22px)" @resize="paneSize = $event[0].size">
+      <pane :size="paneSize" id="navbar">
         <nav-bar></nav-bar>
       </pane>
-      <pane>
-        <router-view/>
+      <pane :size="100-paneSize">
+        <!-- <router-view :key="$route.fullPath"/> -->
+        <router-tab lang="en"/>
       </pane>
     </splitpanes>
 
@@ -55,6 +56,7 @@ export default {
   },
   data() {
     return {
+      paneSize: 20,
       title: 'Pensine',
     }
   },
@@ -110,6 +112,9 @@ export default {
     ipcRenderer.on('openNoteModal' , (event, data) => {
       this.$refs.openNote.open()
     })
+    ipcRenderer.on('toggleNavBar' , (event, data) => {
+      this.toggleNavBar()
+    })
   },
   methods: {
     cmdsToListItems(cmds) {
@@ -143,6 +148,14 @@ export default {
         console.error(e)
       }
 
+    },
+    toggleNavBar() {
+      if (this.paneSize < 1) {
+        this.paneSize = 20
+      }
+      else {
+        this.paneSize = 0
+      }
     },
   },
 }

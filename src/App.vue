@@ -2,6 +2,11 @@
   <div id="app">
     <splitpanes style="height: 100vh">
       <pane min-size="20" size="30" id="navbar">
+    <div id="titlebar">
+      <div class="title">
+        {{title}}
+      </div>
+    </div>
         <nav-bar></nav-bar>
       </pane>
       <pane>
@@ -50,6 +55,7 @@ export default {
   },
   data() {
     return {
+      title: 'Pensine',
     }
   },
   computed: {
@@ -147,6 +153,27 @@ export default {
 body {
   overflow: hidden;
   margin: 0;
+}
+
+#titlebar {
+  -webkit-user-select: none;
+  -webkit-app-region: drag;
+  background-color: #1d1f21;
+  color: #aaa;
+  height: 22px;
+  padding-left: 68px;
+  padding-right: 68px;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-sizing: content-box;
+  font-size: 13px;
+  font-family: 'Lucida Grande';
+  background-color: #292c2f;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.5);
+  transition: margin-top 160ms;
 }
 
 #navbar {

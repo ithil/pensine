@@ -9,7 +9,7 @@
       <pane :size="paneSize" id="navbar">
         <nav-bar></nav-bar>
       </pane>
-      <pane :size="100-paneSize">
+      <pane :size="100-paneSize" style="overflow:hidden;">
         <!-- <router-view :key="$route.fullPath"/> -->
         <router-tab lang="en"/>
       </pane>

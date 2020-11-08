@@ -5,9 +5,11 @@ import App from './App.vue'
 import router from './router'
 import Store from 'electron-store'
 import RouterTab from 'vue-router-tab'
+import PortalVue from 'portal-vue'
 
 Vue.use(Vuex)
 Vue.use(RouterTab)
+Vue.use(PortalVue)
 
 const config = new Store()
 

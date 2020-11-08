@@ -12,6 +12,10 @@
       <pane :size="100-paneSize" style="overflow:hidden;">
         <!-- <router-view :key="$route.fullPath"/> -->
         <router-tab lang="en"/>
+        <div id="statusBar">
+          <portal-target name="statusBarLeft" class="statusBarLeft" multiple />
+          <portal-target name="statusBarRight" class="statusBarRight" multiple />
+        </div>
       </pane>
     </splitpanes>
 
@@ -169,6 +173,7 @@ export default {
 </script>
 
 <style lang="scss">
+$status-bar-height: 24px;
 
 body {
   overflow: hidden;
@@ -196,6 +201,31 @@ body {
   transition: margin-top 160ms;
 }
 
+#statusBar {
+  display: flex;
+  bottom: 0px;
+  z-index: 3;
+  font-family: 'Lucida Grande';
+  font-size: 12px;
+  background-color: #222527;
+  color: white;
+  width: 100%;
+  // padding-left: 11px;
+  height: $status-bar-height;
+}
+
+.statusBarLeft {
+  flex-grow: 1;
+}
+
+.statusBarLeft > * {
+  margin-right: 5px;
+}
+
+.statusBarRight > * {
+  margin-left: 5px;
+}
+
 #navbar {
   background-color: #222527;
 }
@@ -211,6 +241,10 @@ body {
 }
 
 @import "./styles/router-tab.scss";
+
+.router-tab {
+  height: calc(100% - #{$status-bar-height});
+}
 
 .splitpanes__pane {
   overflow: scroll;

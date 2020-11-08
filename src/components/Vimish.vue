@@ -3,15 +3,15 @@
     <editor-menu-bar :editor="editor" v-slot="{ commands, isActive }" id="vimishStatusBar">
       <div>
         <span class="statusBarVimMode" :class="'statusBarVimMode-'+vimMode.replace(/ /g, '_')">{{vimMode}}</span>
+    <div>
+      <portal to="statusBarRight" :order="1" v-if="portalActive">
+        <span class="keybuffer">{{fullKeybuffer}}</span>
         <span class="checkbox">
           <input type="checkbox" id="editable" v-model="editable" />
           <label for="editable" style="color:white;">editable</label>
         </span>
-        <span id="keybuffer">{{fullKeybuffer}}</span>
-      </div>
-    </editor-menu-bar>
-    <div @click="getSelectionPosition()" @keydown="keymonitor" ref="editorContainer" :class="'mode-'+vimMode" tabindex="5">
-      <editor-content :editor="editor" class="editor editor__content"/>
+        <span class="statusBarVimMode" :class="'statusBarVimMode-'+vimMode.replace(/ /g, '_')">{{vimMode}}</span>
+      </portal>
     </div>
   </div>
 </template>
@@ -69,11 +69,20 @@ export default {
     EditorContent,
   },
   props: [
-    'note'
+    'note',
   ],
+  activated() {
+    this.portalActive = true
+  },
+  deactivated() {
+    this.portalActive = false
+  },
+  computed: {
+  },
   data() {
     var $this = this
     return {
+      portalActive: true,
       editorOptions: {
         editable: false,
         extensions: [
@@ -1849,8 +1858,6 @@ div#vimishStatusBar {
 
 .statusBarVimMode {
   padding: 3px;
-  font-family: 'Lucida Grande';
-  border-radius: 5px;
 }
 
 .statusBarVimMode-Normal {

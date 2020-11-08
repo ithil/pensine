@@ -1,15 +1,15 @@
 <template>
   <div>
     <div id="noteMetadata" v-if="currentNote">
-      <span class="noteId">{{ currentNote.id }}</span>
-      <span class="noteLabel">{{ currentNote.label }}</span>
+      <!-- <span class="noteId">{{ currentNote.id }}</span>
+      <span class="noteLabel">{{ currentNote.label }}</span> -->
       <span class="noteTags">
         <span
         class="noteTag"
         v-for="(tag, index) in currentNote.metadata.tags"
         :key="index"
         >
-        {{ tag }}
+        {{tag}}
       </span>
       </span>
     </div>
@@ -31,6 +31,12 @@ export default {
   data () {
     return {
     }
+  },
+  activated() {
+    this.$store.commit('setTitle', `[${this.note.id}] ${this.note.label}`)
+  },
+  deactivated() {
+    this.$store.commit('resetTitle')
   },
   computed: {
     currentNote() {
@@ -59,6 +65,7 @@ export default {
     }
   },
   mounted() {
+    this.$store.commit('setTitle', `[${this.note.id}] ${this.note.label}`)
     var id = this.$route.params.id
     if (id) {
       var note = this.$store.state.currentNoteCollection.getNoteById(id)

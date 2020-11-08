@@ -24,6 +24,7 @@ const store = new Vuex.Store({
     currentNoteCollection: new pensieve.NoteCollection(config.get('currentNoteCollection')),
     currentNote: null,
     commands: [],
+    title: 'Pensine',
   },
   mutations: {
     changeCurrentNoteCollection(state, nc) {
@@ -36,7 +37,16 @@ const store = new Vuex.Store({
       if (state.commands.findIndex(c => c.name == cmd.name) == -1) {
         state.commands.push(cmd)
       }
-    }
+    },
+    setTitle(state, title) {
+      state.title = title
+      document.title = title
+    },
+    resetTitle(state) {
+      state.title = 'Pensine'
+      document.title = 'Pensine'
+    },
+
   }
 })
 

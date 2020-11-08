@@ -61,10 +61,14 @@ export default {
   data() {
     return {
       paneSize: 20,
-      title: 'Pensine',
     }
   },
+  watch: {
+  },
   computed: {
+    title() {
+      return this.$store.state.title
+    },
     commands() {
       return this.$store.state.commands
     },
@@ -94,11 +98,19 @@ export default {
     },
   },
   mounted() {
+    document.title = this.title
     this.$store.commit('registerCommand', {
       name: 'main:quit',
       label: 'Quit',
       action: () => {
         ipcRenderer.send('quit')
+      },
+    })
+    this.$store.commit('registerCommand', {
+      name: 'editor:focus',
+      label: 'Focus Editor',
+      action: () => {
+        bus.$emit('focusEditor')
       },
     })
     ipcRenderer.on('addExistingCollection' , (event, data) => {

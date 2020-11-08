@@ -30,16 +30,6 @@ const routes = [
     },
   },
   {
-    path: '/editor',
-    name: 'Editor',
-    component: Editor,
-    meta: {
-      title: 'Editor', // tab title
-      tips: 'This is a tab', // tab tooltip, optional. defaults to `meta.title`
-      closable: true // is tab closable, defaults to `true`
-    },
-  },
-  {
     path: '/inbox',
     name: 'Inbox',
     // route level code-splitting

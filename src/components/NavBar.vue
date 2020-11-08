@@ -51,7 +51,6 @@
         this.treeData = [
           { name: 'Home', click: () => { this.$router.push('/') }},
           { name: 'Inbox', click: () => { this.$router.push('/inbox') }},
-          { name: 'Editor', click: () => { this.$router.push('/editor') }},
         ]
         var allNotes = this.$store.state.currentNoteCollection.allNotes
         var myNode = {

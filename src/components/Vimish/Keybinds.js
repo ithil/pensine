@@ -291,42 +291,36 @@ export default ($this, $window) => {
           }
           else if($this.keybuffer == "w")
           {
-            motions.getPosOfPatternRightOfCursor(/(?<![\w'])(\w+)/g, 1, (pos) => {
-              if (pos) {
-                helpers.putCaretInPos(pos)
-              }
+            motions.nextWord((pos) => {
+              helpers.putCaretInPos(pos)
             })
             helpers.resetKeybuffer()
           }
           else if($this.keybuffer == "b")
           {
-            motions.moveCursorLeftToPattern(/(?<![\w'])(\w+)/g, 1)
+            motions.prevWord((pos) => {
+              helpers.putCaretInPos(pos)
+            })
             helpers.resetKeybuffer()
           }
           else if($this.keybuffer == "e")
           {
-            motions.getPosOfPatternRightOfCursor(/(\w)(?![\w'])/g, 1, (pos) => {
-              if (pos) {
-                helpers.putCaretInPos(pos)
-              }
+            motions.nextWordEnding((pos) => {
+              helpers.putCaretInPos(pos)
             })
             helpers.resetKeybuffer()
           }
           else if($this.keybuffer == "s")
           {
-            motions.getPosOfPatternRightOfCursor(/(?<=(^|[.?!]\s+))([A-ZÄÖÜÅÉÈÇŒØÆ])([A-ZÄÖÜÅÉÈÇŒØÆa-zäöüßåéèçœøæ,;:\d ])*/g, 1, (pos) => {
-              if (pos) {
-                helpers.putCaretInPos(pos)
-              }
+            motions.nextSentence((pos) => {
+              helpers.putCaretInPos(pos)
             })
             helpers.resetKeybuffer()
           }
           else if($this.keybuffer == "S")
           {
-            motions.getPosOfPatternLeftOfCursor(/(?<=(^|[.?!]\s+))([A-ZÄÖÜÅÉÈÇŒØÆ])([A-ZÄÖÜÅÉÈÇŒØÆa-zäöüßåéèçœøæ,;:\d ])*/g, 1, (pos) => {
-              if (pos) {
-                helpers.putCaretInPos(pos)
-              }
+            motions.prevSentence((pos) => {
+              helpers.putCaretInPos(pos)
             })
             helpers.resetKeybuffer()
           }
@@ -468,13 +462,16 @@ export default ($this, $window) => {
           else if($this.keybuffer == "cw")
           {
             var {from, to} = $this.editor.selection
-            motions.getPosOfPatternRightOfCursor(/([^\w'])/g, 1, (rightPos) => {
-              if (rightPos) {
-                actions.changeAction({
-                  left: from,
-                  right: rightPos,
-                })
-              }
+            // motions.getPosOfPatternRightOfCursor(/([^\w'])/g, 1, (rightPos) => {
+            //   if (rightPos) {
+            //     actions.changeAction({
+            //       left: from,
+            //       right: rightPos,
+            //     })
+            //   }
+            // })
+            motions.nextWord((rightPos) => {
+              actions.changeAction(helpers.createSelectionRange(from, rightPos))
             })
             event.preventDefault()
             event.stopPropagation()
@@ -618,6 +615,7 @@ export default ($this, $window) => {
           }
           else if($this.keybuffer == "o")
           {
+            // TODO: Put in helpers module
             var {from, to} = $this.editor.selection
             var anchor = $this.anchor
             if (anchor == from) {
@@ -666,11 +664,9 @@ export default ($this, $window) => {
           else if($this.keybuffer == "w")
           {
             var count = $this.keybufferCount || 1
-            for (var i = 1; i <= count; i++) {
-              motions.getPosOfPatternRightOfCursor(/(?<![\w'])(\w+)/g, 1, (pos) => {
-                if (pos) {
-                  helpers.putVisualCaretInPos(pos)
-                }
+            for (let i = 1; i <= count; i++) {
+              motions.nextWord((pos) => {
+                helpers.putVisualCaretInPos(pos)
               })
             }
             helpers.resetKeybuffer()
@@ -678,22 +674,41 @@ export default ($this, $window) => {
           else if($this.keybuffer == "b")
           {
             var count = $this.keybufferCount || 1
-            for (var i = 1; i <= count; i++) {
-              motions.getPosOfPatternLeftOfCursor(/(?<![\w'])(\w+)/g, 1, (pos) => {
-                if (pos) {
-                  helpers.putVisualCaretInPos(pos)
-                }
+            for (let i = 1; i <= count; i++) {
+              motions.prevWord((pos) => {
+                helpers.putVisualCaretInPos(pos)
               })
             }
             helpers.resetKeybuffer()
           }
           else if($this.keybuffer == "e")
           {
-            motions.getPosOfPatternRightOfCursor(/(\w)(?![\w'])/g, 1, (pos) => {
-              if (pos) {
-                helpers.putVisualCaretInPos(pos+1)
-              }
-            })
+            var count = $this.keybufferCount || 1
+            for (let i = 1; i <= count; i++) {
+              motions.nextWordEnding((pos) => {
+                helpers.putVisualCaretInPos(pos)
+              })
+            }
+            helpers.resetKeybuffer()
+          }
+          else if($this.keybuffer == "s")
+          {
+            var count = $this.keybufferCount || 1
+            for (let i = 1; i <= count; i++) {
+              motions.nextSentence((pos) => {
+                helpers.putVisualCaretInPos(pos)
+              })
+            }
+            helpers.resetKeybuffer()
+          }
+          else if($this.keybuffer == "S")
+          {
+            var count = $this.keybufferCount || 1
+            for (let i = 1; i <= count; i++) {
+              motions.prevSentence((pos) => {
+                helpers.putVisualCaretInPos(pos)
+              })
+            }
             helpers.resetKeybuffer()
           }
           else if($this.keybuffer == "0")

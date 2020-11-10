@@ -97,6 +97,66 @@ export default ($this, $window) => {
         helpers.putCaretInPos(myPos)
       }
     },
+    nextWord(cb) {
+      this.getPosOfPatternRightOfCursor(/(?<![\w'])(\w+)/g, 1, (pos) => {
+        if (pos) {
+          if (cb) {
+            cb(pos)
+          }
+          else {
+            helpers.putCaretInPos(pos)
+          }
+        }
+      })
+    },
+    prevWord(cb) {
+      this.getPosOfPatternLeftOfCursor(/(?<![\w'])(\w+)/g, 1, (pos) => {
+        if (pos) {
+          if (cb) {
+            cb(pos)
+          }
+          else {
+            helpers.putCaretInPos(pos)
+          }
+        }
+      })
+    },
+    nextWordEnding(cb) {
+      this.getPosOfPatternRightOfCursor(/(\w)(?![\w'])/g, 1, (pos) => {
+        if (pos) {
+          if (cb) {
+            cb(pos)
+          }
+          else {
+            helpers.putCaretInPos(pos)
+          }
+        }
+      })
+    },
+    nextSentence(cb) {
+      this.getPosOfPatternRightOfCursor(/(?<=(^|[.?!]\s+))([A-ZÄÖÜÅÉÈÇŒØÆ])([A-ZÄÖÜÅÉÈÇŒØÆa-zäöüßåéèçœøæ,;:\d ])*/g, 1, (pos) => {
+        if (pos) {
+          if (cb) {
+            cb(pos)
+          }
+          else {
+            helpers.putCaretInPos(pos)
+          }
+        }
+      })
+    },
+    prevSentence(cb) {
+      this.getPosOfPatternLeftOfCursor(/(?<=(^|[.?!]\s+))([A-ZÄÖÜÅÉÈÇŒØÆ])([A-ZÄÖÜÅÉÈÇŒØÆa-zäöüßåéèçœøæ,;:\d ])*/g, 1, (pos) => {
+        if (pos) {
+          if (cb) {
+            cb(pos)
+          }
+          else {
+            helpers.putCaretInPos(pos)
+          }
+        }
+      })
+    },
     findNextLineBreak(cb, includeCursorPosition) { // Obsolete ?
       var {size} = $this.editor.view.state.doc.content
       var {from, to} = $this.editor.selection
@@ -258,20 +318,6 @@ export default ($this, $window) => {
       if (myPos) {
         cb(myPos)
       }
-    },
-    moveCursorRightToPattern(pattern, mn) { // Obsolete ?
-      this.getPosOfPatternRightOfCursor(pattern, mn, (pos) => {
-        if (pos) {
-          helpers.putCaretInPos(pos)
-        }
-      })
-    },
-    moveCursorLeftToPattern(pattern, mn) { // Obsolete ?
-      this.getPosOfPatternLeftOfCursor(pattern, mn, (pos) => {
-        if (pos) {
-          helpers.putCaretInPos(pos)
-        }
-      })
     },
   }
 }

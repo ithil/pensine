@@ -43,26 +43,15 @@
         item.children.push({
           name: 'new stuff'
         })
-      }
-    },
-    mounted () {
-      var $this = this
-      var createTree = () => {
-        this.treeData = [
-          { name: 'Home', click: () => { this.$router.push('/') }},
-          { name: 'Inbox', click: () => { this.$router.push('/inbox') }},
-        ]
+      updateAllNotes() {
         var allNotes = this.$store.state.currentNoteCollection.allNotes
-        var myNode = {
-          key: 90,
-          name: 'All Notes',
-          badge: allNotes.length,
-          children: []
-        }
+        var allNotesNode = this.treeData.find(node => node.name == 'All Notes')
+        allNotesNode.badge = allNotes.length
+        allNotesNode.children = []
         allNotes.forEach((n, i) => {
-          myNode.children.push({
+          allNotesNode.children.push({
             key: n.id + 91,
-            name: n.label,
+            name: n.name,
             icon: '✣',
             filename: n.contentPath,
             click: function () {
@@ -79,14 +68,37 @@
             }
           })
         })
-        this.treeData.push(myNode)
+      },
+      updateStacks() {
+        var stacks = this.$store.state.currentNoteCollection.stacks.getListOfStacks()
+        var stacksNode = this.treeData.find(node => node.name == 'Stacks')
+        stacksNode.badge = stacks.length
+        stacksNode.children = []
+        stacks.forEach((s, i) => {
+          stacksNode.children.push({
+            key: i + 777,
+            name: s.relativePath,
+            badge: s.getCountOfNotes(),
+            click: function () {
+              $this.$router.push(`/stacks/${s.relativePath}`).catch(err => {
+                // Ignore the vuex err regarding  navigating to the page they are already on.
+                if (
+                  err.name !== 'NavigationDuplicated' &&
+                  !err.message.includes('Avoided redundant navigation to current location')
+                ) {
+                  // But print any other errors to the console
+                  console.error(err)
+                }
+              })
+            }
+          })
+        })
+      },
+      updateTagTree() {
         var tagTree = this.$store.state.currentNoteCollection.getTagTree()
         var tagMetadata = new this.$global.pensieve.Tags(this.$store.state.currentNoteCollection)
-        var tagTreeNode = {
-          key: 200,
-          name: 'Tags',
-          children: []
-        }
+        var tagTreeNode = this.treeData.find(node => node.name == 'Tags')
+        tagTreeNode.children = []
         var currentKey = 201
         var convertTree = function(tree, level, head, node) {
           for (var t of Object.keys(tree)) {
@@ -125,13 +137,65 @@
           }
         }
         convertTree(tagTree, 0, '', tagTreeNode)
+      },
+  },
+    mounted () {
+      var $this = this
+      var createTree = () => {
+        this.treeData = [
+          { name: 'Home', click: () => { this.$router.push('/') }},
+          { name: 'Inbox', click: () => { this.$router.push('/inbox') }},
+        ]
+        var stacksNode = {
+          key: 777,
+          name: 'Stacks',
+          children: []
+        }
+        this.treeData.push(stacksNode)
+        this.updateStacks()
+        var allNotes = this.$store.state.currentNoteCollection.allNotes
+        var allNotesNode = {
+          key: 90,
+          name: 'All Notes',
+          children: []
+        }
+        this.treeData.push(allNotesNode)
+        this.updateAllNotes()
+        var tagTreeNode = {
+          key: 200,
+          name: 'Tags',
+          children: []
+        }
         this.treeData.push(tagTreeNode)
+        this.updateTagTree()
       }
       createTree()
     bus.$on('noteCollectionChanged', () => {
       createTree()
     })
-    }
+    var collection = this.$store.state.currentNoteCollection
+    collection.events.on('stacksItemAdd', this.updateStacks)
+    collection.events.on('stacksItemChange', this.updateStacks)
+    collection.events.on('stacksItemDelete', this.updateStacks)
+    collection.events.on('noteAdd', this.updateAllNotes)
+    collection.events.on('noteChange', this.updateAllNotes)
+    collection.events.on('noteDelete', this.updateAllNotes)
+    collection.events.on('noteAdd', this.updateTagTree)
+    collection.events.on('noteChange', this.updateTagTree)
+    collection.events.on('noteDelete', this.updateTagTree)
+  },
+    unmounted() {
+      var collection = this.$store.state.currentNoteCollection
+      collection.events.removeListener('stacksItemAdd', this.updateStacks)
+      collection.events.removeListener('stacksItemChange', this.updateStacks)
+      collection.events.removeListener('stacksItemDelete', this.updateStacks)
+      collection.events.removeListener('noteAdd', this.updateAllNotes)
+      collection.events.removeListener('noteChange', this.updateAllNotes)
+      collection.events.removeListener('noteDelete', this.updateAllNotes)
+      collection.events.removeListener('noteAdd', this.updateTagTree)
+      collection.events.removeListener('noteChange', this.updateTagTree)
+      collection.events.removeListener('noteDelete', this.updateTagTree)
+    },
   }
 </script>
 

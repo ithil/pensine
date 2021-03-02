@@ -36,6 +36,7 @@ const store = new Vuex.Store({
       selection: [0, 0],
       selectAll: false,
     },
+    fleetingNoteForInsertion: null,
   },
   mutations: {
     changeCurrentNoteCollection(state, nc) {
@@ -77,6 +78,9 @@ const store = new Vuex.Store({
     },
     closeCustomTextPrompt(state) {
       state.showCustomTextPrompt = false
+    },
+    setFleetingNoteForInsertion(state, fleetingNote) {
+      state.fleetingNoteForInsertion = fleetingNote
     },
   }
 })

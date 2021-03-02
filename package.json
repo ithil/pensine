@@ -17,6 +17,7 @@
     "electron-store": "^6.0.1",
     "joplin-turndown-plugin-gfm": "^1.0.12",
     "markdown-it": "^12.0.0",
+    "moment": "^2.29.1",
     "pensieve": "../pensieve",
     "portal-vue": "^2.1.7",
     "splitpanes": "^2.3.3",
@@ -26,7 +27,8 @@
     "vue": "^2.6.11",
     "vue-router": "^3.2.0",
     "vue-router-tab": "^1.2.1",
-    "vuex": "^3.5.1"
+    "vue-slicksort": "^1.2.0",
+    "vuex": "^3.5.1",
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.0",

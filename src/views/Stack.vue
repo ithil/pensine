@@ -1,24 +1,14 @@
 <template>
-  <div class="inbox">
+  <div class="stack">
     <ul class="fleetingNotes">
       <li v-for="f in fleetingNotes" :key="f.filename">
-        <!-- <h2>{{ f.name }}</h2>
-        <div v-html="md.render(f.content)"></div> -->
         <fleeting-note :fleetingNoteObj="f" @selectNote="selectNote" @unselectNote="unselectNote">
         </fleeting-note>
       </li>
     </ul>
-    <!-- <div id="stacksList" class="inboxElement">
-      <tree-item
-      class='item'
-      v-for='(tree, index) in stacks.getStacks(true)'
-      :item='tree'
-      :key='index'
-      ></tree-item>
-    </div> -->
-    <div class="sendFleetingNote">
-      <textarea rows="7" cols="60" v-model="newFleetingNoteContent" @keyup="sendKeymonitor"></textarea>
-    </div>
+  <div class="sendFleetingNote">
+    <textarea rows="7" cols="60" v-model="newFleetingNoteContent" @keyup="sendKeymonitor"></textarea>
+  </div>
   </div>
 </template>
 
@@ -30,15 +20,13 @@ import fleetingNote from '@/components/FleetingNote.vue'
 import MarkdownIt from 'markdown-it'
 
 export default {
-  name: 'Inbox',
+  name: 'Stack',
   components: {
     treeItem,
     fleetingNote,
   },
   data() {
     return {
-      inbox: new this.$global.pensieve.Inbox(this.$store.state.currentNoteCollection),
-      stacks: this.$store.state.currentNoteCollection.stacks,
       fleetingNotes: null,
       selectedNotes: [],
       newFleetingNoteContent: '',
@@ -55,38 +43,12 @@ export default {
       var index = this.selectedNotes.findIndex(n => n.path == fleetingNoteObj.path)
       this.selectedNotes.splice(index, 1)
     },
-    getStacks() {
-      var collection = this.$store.state.currentNoteCollection
-      var stacksPath = collection.paths.stacks
-      var getList = function(givenPath) {
-        var listing = fs.readdirSync(givenPath, {withFileTypes: true})
-        var list = []
-        for (let i of listing) {
-          if (i.isDirectory()) {
-            let dirList = getList(path.join(givenPath, i.name))
-            if (dirList.length < 1) {
-              list.push({
-                name: i.name,
-              })
-            }
-            else {
-              list.push({
-                name: i.name,
-                children: dirList,
-              })
-            }
-          }
-        }
-        return list
-      }
-      return getList(stacksPath)
-    },
     updateFleetingNotes() {
-      this.fleetingNotes = this.inbox.getList()
+      this.fleetingNotes = this.stack.getContent().filter(i => !i.isStack)
       // console.log(this.fleetingNotes)
     },
     sendNewNote() {
-      this.inbox.sendText(this.newFleetingNoteContent)
+      this.stack.sendText(this.newFleetingNoteContent)
       this.newFleetingNoteContent = ''
     },
     sendKeymonitor(event) {
@@ -97,21 +59,32 @@ export default {
       }
     },
   },
+  computed: {
+    stack() {
+      var name = this.$route.params.name
+      if (name) {
+        return this.$store.state.currentNoteCollection.stacks.getStackByPath(name)
+      }
+    },
+    routeTab() {
+      return this.stack.relativePath || 'Stack'
+    },
+  },
   mounted() {
     var collection = this.$store.state.currentNoteCollection
-    collection.events.on('inboxItemAdd', this.updateFleetingNotes)
-    collection.events.on('inboxItemChange', this.updateFleetingNotes)
-    collection.events.on('inboxItemDelete', this.updateFleetingNotes)
+    collection.events.on('stacksItemAdd', this.updateFleetingNotes)
+    collection.events.on('stacksItemChange', this.updateFleetingNotes)
+    collection.events.on('stacksItemDelete', this.updateFleetingNotes)
     this.updateFleetingNotes()
   },
   unmounted() {
     var collection = this.$store.state.currentNoteCollection
-    collection.events.removeListener('inboxItemAdd', this.updateFleetingNotes)
-    collection.events.removeListener('inboxItemChange', this.updateFleetingNotes)
-    collection.events.removeListener('inboxItemDelete', this.updateFleetingNotes)
+    collection.events.removeListener('stacksItemAdd', this.updateFleetingNotes)
+    collection.events.removeListener('stacksItemChange', this.updateFleetingNotes)
+    collection.events.removeListener('stacksItemDelete', this.updateFleetingNotes)
   },
   activated() {
-    this.$store.commit('setTitle', 'Inbox')
+    this.$store.commit('setTitle', 'Stack')
   },
   deactivated() {
     this.$store.commit('resetTitle')

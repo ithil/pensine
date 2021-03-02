@@ -100,6 +100,13 @@ export default {
   mounted() {
     document.title = this.title
     this.$store.commit('registerCommand', {
+      name: 'collection:commit',
+      label: 'Commit',
+      action: () => {
+        this.$store.state.currentNoteCollection.commit()
+      },
+    })
+    this.$store.commit('registerCommand', {
       name: 'main:quit',
       label: 'Quit',
       action: () => {

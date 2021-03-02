@@ -173,6 +173,9 @@ export default {
     ipcRenderer.on('openNoteModal' , (event, data) => {
       this.$refs.openNote.open()
     })
+    ipcRenderer.on('newNote' , (event, data) => {
+      this.newNote()
+    })
     ipcRenderer.on('closeTab' , (event, data) => {
       this.$tabs.close()
     })
@@ -212,6 +215,45 @@ export default {
         console.error(e)
       }
 
+    },
+    newNote() {
+      var collection = this.$store.state.currentNoteCollection
+      var $this = this
+      this.$store.commit('triggerCustomTextPrompt', {
+        message: `What should be the label of your new note?`,
+        action: (label) => {
+          setTimeout(() => {
+          this.$store.commit('triggerCustomTextPrompt', {
+            message: `What should be the tags of your new note ${label}?`,
+            action: (tags) => {
+              setTimeout(() => {
+              this.$store.commit('triggerCustomTextPrompt', {
+                message: `What should be the category of your new note ${label}?`,
+                action: (category) => {
+                  var note = collection.newNote(label)
+                  note.addTags(tags.split(',').filter(x => x != '').map(x => x.trim()))
+                  note.save()
+                  if (category) {
+                    collection.categorize(note, category)
+                  }
+                  $this.$router.push(`/editor/${note.id}`).catch(err => {
+                    // Ignore the vuex err regarding  navigating to the page they are already on.
+                    if (
+                      err.name !== 'NavigationDuplicated' &&
+                      !err.message.includes('Avoided redundant navigation to current location')
+                    ) {
+                      // But print any other errors to the console
+                      console.error(err)
+                    }
+                  })
+                }
+              })
+            }, 50)
+            }
+          })
+        }, 50)
+        }
+      })
     },
     toggleNavBar() {
       if (this.paneSize < 1) {

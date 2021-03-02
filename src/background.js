@@ -91,6 +91,13 @@ function createWindow() {
               win.webContents.send('openNoteModal')
             }
           },
+          {
+            label: 'New Note',
+            accelerator: 'CommandOrControl+N',
+            click: async () => {
+              win.webContents.send('newNote')
+            }
+          },
           { type: 'separator' },
           // isMac ? { role: 'close' } : { role: 'quit' },
           {

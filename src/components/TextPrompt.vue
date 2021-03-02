@@ -1,6 +1,6 @@
 <template>
   <div>
-    <modal ref="textPrompt">
+    <modal ref="textPrompt" @close="onClose">
       <template v-slot:header>
         {{ message }}
       </template>
@@ -52,8 +52,8 @@ import Modal from '@/components/Modal.vue'
     methods: {
       runAction() {
         if (this.action) {
-          this.action(this.inputText)
           this.close()
+          this.action(this.inputText)
         }
       },
       close() {
@@ -70,6 +70,9 @@ import Modal from '@/components/Modal.vue'
             this.$refs.input.setSelectionRange(0, this.$refs.input.value.length)
           }
         })
+      },
+      onClose() {
+        this.$emit('close')
       },
     },
     mounted() {

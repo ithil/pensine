@@ -26,6 +26,25 @@
       <select-list :items="allNotes" ref="openNote">
       </select-list>
 
+      <select-list
+      :items="$store.state.customSelectListItems"
+      ref="customSelectList"
+      @close="$store.commit('closeCustomSelectList')"
+      >
+      </select-list>
+
+      <text-prompt
+      :message="customTextPromptProps.message"
+      ref="customTextPrompt"
+      :placeholder="customTextPromptProps.placeholder"
+      :text="customTextPromptProps.text"
+      :action="customTextPromptProps.action"
+      :selection="customTextPromptProps.selection"
+      :selectAll="customTextPromptProps.selectAll"
+      @close="$store.commit('closeCustomTextPrompt')"
+      >
+      </text-prompt>
+
       <text-prompt
       message="Add existing Note Collection:"
       ref="addExistingCollection"
@@ -64,6 +83,16 @@ export default {
     }
   },
   watch: {
+    showCustomSelectList: function (val) {
+      if (val) {
+        this.$refs.customSelectList.open()
+      }
+    },
+    showCustomTextPrompt: function (val) {
+      if (val) {
+        this.$refs.customTextPrompt.open()
+      }
+    },
   },
   computed: {
     title() {
@@ -71,6 +100,15 @@ export default {
     },
     commands() {
       return this.$store.state.commands
+    },
+    showCustomSelectList() {
+      return this.$store.state.showCustomSelectList
+    },
+    showCustomTextPrompt() {
+      return this.$store.state.showCustomTextPrompt
+    },
+    customTextPromptProps() {
+      return this.$store.state.customTextPromptProps
     },
     allNotes() {
       var allNotes = []

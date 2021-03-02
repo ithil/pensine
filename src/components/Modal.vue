@@ -34,6 +34,7 @@
         if(cb) {
           cb()
         }
+        this.$emit('close')
       },
       openModal(cb) {
         this.show = true
@@ -44,6 +45,7 @@
             cb()
           }
         })
+        this.$emit('open')
       },
       keymonitor(event) {
         if (event.key === "Escape") {

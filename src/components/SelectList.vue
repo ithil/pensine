@@ -1,6 +1,6 @@
 <template>
   <div>
-    <modal ref="selectList">
+    <modal ref="selectList" @close="onClose">
       <template v-slot:header>
         <input
         type="text"
@@ -165,6 +165,9 @@ import Modal from './Modal.vue'
         this.$refs.selectList.openModal(() => {
           this.$refs.input.focus()
         })
+      },
+      onClose() {
+        this.$emit('close')
       },
     },
     mounted() {

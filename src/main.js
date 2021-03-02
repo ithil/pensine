@@ -25,6 +25,17 @@ const store = new Vuex.Store({
     currentNote: null,
     commands: [],
     title: 'Pensine',
+    customSelectListItems: [{label: 'A'}],
+    showCustomSelectList: false,
+    showCustomTextPrompt: false,
+    customTextPromptProps: {
+      message: '',
+      placeholder: '',
+      text: '',
+      action: function() { },
+      selection: [0, 0],
+      selectAll: false,
+    },
   },
   mutations: {
     changeCurrentNoteCollection(state, nc) {
@@ -46,7 +57,27 @@ const store = new Vuex.Store({
       state.title = 'Pensine'
       document.title = 'Pensine'
     },
-
+    triggerCustomSelectList(state, items) {
+      state.customSelectListItems = items
+      state.showCustomSelectList = true
+    },
+    closeCustomSelectList(state) {
+      state.showCustomSelectList = false
+    },
+    triggerCustomTextPrompt(state, props) {
+      state.customTextPromptProps = {
+        message: props.message || '',
+        placeholder: props.placeholder || '',
+        text: props.text || '',
+        action: props.action || function() { },
+        selection: props.selection || [0, 0],
+        selectAll: props.selectAll || false,
+      }
+      state.showCustomTextPrompt = true
+    },
+    closeCustomTextPrompt(state) {
+      state.showCustomTextPrompt = false
+    },
   }
 })
 

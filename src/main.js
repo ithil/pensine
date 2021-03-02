@@ -21,7 +21,11 @@ Vue.prototype.$global = {
 
 const store = new Vuex.Store({
   state: {
-    currentNoteCollection: new pensieve.NoteCollection(config.get('currentNoteCollection')),
+    currentNoteCollection: (function() {
+      var col = new pensieve.NoteCollection(config.get('currentNoteCollection'))
+      col.watch()
+      return col
+    })(),
     currentNote: null,
     commands: [],
     title: 'Pensine',
@@ -40,7 +44,9 @@ const store = new Vuex.Store({
   },
   mutations: {
     changeCurrentNoteCollection(state, nc) {
+      state.currentNoteCollection.unwatch()
       state.currentNoteCollection = nc
+      state.currentNoteCollection.watch()
     },
     setCurrentNote(state, note) {
       state.currentNote = note

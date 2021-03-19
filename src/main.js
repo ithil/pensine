@@ -30,6 +30,13 @@ const store = new Vuex.Store({
     commands: [],
     title: 'Pensine',
     customSelectListItems: [{label: 'A'}],
+    customSelectListFilter: (context) => {
+      var $items = context.itemsWithIds
+      var itemsFiltered = $items.filter(item => {
+        return item.label.toLowerCase().indexOf(context.searchString.toLowerCase()) > -1
+      })
+      return itemsFiltered
+    },
     showCustomSelectList: false,
     showCustomTextPrompt: false,
     customTextPromptProps: {
@@ -64,8 +71,15 @@ const store = new Vuex.Store({
       state.title = 'Pensine'
       document.title = 'Pensine'
     },
-    triggerCustomSelectList(state, items) {
+    triggerCustomSelectList(state, {items, filter}) {
       state.customSelectListItems = items
+      state.customSelectListFilter = filter || function (context) {
+        var $items = context.itemsWithIds
+        var itemsFiltered = $items.filter(item => {
+          return item.label.toLowerCase().indexOf(context.searchString.toLowerCase()) > -1
+        })
+        return itemsFiltered
+      }
       state.showCustomSelectList = true
     },
     closeCustomSelectList(state) {

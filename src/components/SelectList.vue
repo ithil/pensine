@@ -51,6 +51,7 @@ import Modal from './Modal.vue'
     },
     props: {
       items: Array,
+      filter: Function,
     },
     data: function () {
       return {
@@ -62,11 +63,16 @@ import Modal from './Modal.vue'
     },
     computed: {
       filteredItems () {
-        var items = this.itemsWithIds
-        var itemsFiltered = items.filter(item => {
-          return item.label.toLowerCase().indexOf(this.searchString.toLowerCase()) > -1
-        })
-        return itemsFiltered
+        if (this.filter) {
+          return this.filter(this)
+        }
+        else {
+          var items = this.itemsWithIds
+          var itemsFiltered = items.filter(item => {
+            return item.label.toLowerCase().indexOf(this.searchString.toLowerCase()) > -1
+          })
+          return itemsFiltered
+        }
       }
     },
     watch: {
@@ -111,7 +117,7 @@ import Modal from './Modal.vue'
       },
       runAction() {
         if (this.selected) {
-          var item = this.itemsWithIds.find(i => i.id == this.selected)
+          var item = this.filteredItems.find(i => i.id == this.selected)
           if (item && item.action) {
             item.action()
             this.close()
@@ -173,25 +179,6 @@ import Modal from './Modal.vue'
     },
     mounted() {
       this.addItems(this.items)
-      // this.addItems([
-      //   {label: 'Print'},
-      //   {label: 'Save'},
-      //   {label: 'Save as...'},
-      //   {label: 'Rename'},
-      //   {label: 'New note'},
-      //   {label: 'Add tags'},
-      //   {label: 'Export'},
-      //   {label: 'Find'},
-      //   {label: 'Send to Inbox'},
-      //   {label: 'Move'},
-      //   {label: 'Split'},
-      //   {label: 'Merge'},
-      //   {label: 'Explore'},
-      //   {label: 'Backlinks'},
-      //   {label: 'Search and Replace'},
-      //   {label: 'Diff'},
-      //   {label: 'Show version history'},
-      // ])
     },
   }
 </script>
@@ -219,8 +206,14 @@ ol.list-group li {
   padding: 5px 10px;
   border-bottom: 1px solid #202123;
 }
-ol.list-group li.selected {
+ol.list-group li.select-list-item.selected {
     background-color: #4f99d3;
     color: #fff;
+    .secondary-line {
+      color: #2d2d2d;
+    }
+}
+ol.list-group li.select-list-item .secondary-line {
+    color: #545454;
 }
 </style>

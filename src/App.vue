@@ -28,11 +28,12 @@
       <select-list :items="cmdsToListItems(commands)" ref="commandPalette">
       </select-list>
 
-      <select-list :items="allNotes" ref="openNote">
+      <select-list :items="openItems" :filter="openModalFilter" ref="openNote">
       </select-list>
 
       <select-list
       :items="$store.state.customSelectListItems"
+      :filter="customSelectListFilter"
       ref="customSelectList"
       @close="$store.commit('closeCustomSelectList')"
       >
@@ -116,12 +117,17 @@ export default {
     customTextPromptProps() {
       return this.$store.state.customTextPromptProps
     },
+    customSelectListFilter() {
+      return this.$store.state.customSelectListFilter
+    },
     allNotes() {
       var allNotes = []
       for (let n of this.$store.state.currentNoteCollection.allNotes) {
         allNotes.push({
           label: n.label,
           iconClasses: ['feather-icon', 'icon-file-text'],
+          description: `[${n.id}] Note`,
+          type: 'note',
           action: () => {
             this.$router.push(`/editor/${n.id}`).catch(err => {
               // Ignore the vuex err regarding  navigating to the page they are already on.
@@ -133,13 +139,54 @@ export default {
                 console.error(err)
               }
             })
-            // this.$nextTick(() => {
-            //   bus.$emit('openNote', n)
-            // })
           },
         })
       }
       return allNotes
+    },
+    allStacks() {
+      var stacks = this.$store.state.currentNoteCollection.stacks.getListOfStacks()
+      var stacksList = []
+      for (let s of stacks) {
+        stacksList.push({
+          label: s.relativePath,
+          iconClasses: ['feather-icon', 'icon-layers'],
+          description: 'Stack',
+          type: 'stack',
+          action: () => {
+            this.$router.push(`/stacks/${s.relativePath}`).catch(err => {
+              // Ignore the vuex err regarding  navigating to the page they are already on.
+              if (
+                err.name !== 'NavigationDuplicated' &&
+                !err.message.includes('Avoided redundant navigation to current location')
+              ) {
+                // But print any other errors to the console
+                console.error(err)
+              }
+            })
+          },
+        })
+      }
+      return stacksList
+    },
+    openItems() {
+      return [{
+        label: 'Inbox',
+        iconClasses: ['feather-icon', 'icon-inbox'],
+        type: 'inbox',
+        action: () => {
+          this.$router.push(`/inbox/`).catch(err => {
+            // Ignore the vuex err regarding  navigating to the page they are already on.
+            if (
+              err.name !== 'NavigationDuplicated' &&
+              !err.message.includes('Avoided redundant navigation to current location')
+            ) {
+              // But print any other errors to the console
+              console.error(err)
+            }
+          })
+        },
+      }].concat(this.allNotes.concat(this.allStacks))
     },
   },
   mounted() {

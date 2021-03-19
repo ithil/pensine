@@ -14,6 +14,35 @@
       </portal>
     </div>
   </div>
+  <modal ref="editLink">
+    <template v-slot:header>
+    </template>
+
+    <template v-slot:body>
+      <input
+      type="text"
+      class="modal__input"
+      v-model="linkURL"
+      ref="linkURLinput"
+      placeholder="URL"
+      @keydown.enter="changeLink"
+      >
+      <input
+      type="text"
+      class="modal__input"
+      v-model="linkLabel"
+      ref="linkLabelinput"
+      placeholder="Label"
+      @keydown.enter="changeLink"
+      >
+    </template>
+
+    <template v-slot:footer>
+      <div>
+      </div>
+    </template>
+  </modal>
+</div>
 </template>
 
 <script>
@@ -51,6 +80,8 @@ import cheerio from 'cheerio'
 import MarkdownIt from 'markdown-it'
 import TurndownService from 'turndown'
 import { bus } from '../main'
+import TextPrompt from '@/components/TextPrompt.vue'
+import Modal from '@/components/Modal.vue'
 
 import Helpers from '@/components/Vimish/Helpers.js'
 import Actions from '@/components/Vimish/Actions.js'
@@ -66,6 +97,8 @@ export default {
   components: {
     EditorMenuBar,
     EditorContent,
+    TextPrompt,
+    Modal,
   },
   props: [
     'note',
@@ -129,20 +162,40 @@ export default {
           tr = tr.setSelection(new TextSelection(newPos))
           return tr
         }))
+        this.inputRules.push(new InputRule(/\[\[([\w\u00C0-\u02AF\u0370-\u04FF\u00A0-\uFADF\. ]+)(\|([\w\u00C0-\u02AF\u0370-\u04FF\u00A0-\uFADF\. ]+))?\]\]$/,
+        (state, match, start, end) => {
+          var isSplit = !!match[3]
+          var note = $this.$store.state.currentNoteCollection.resolveToNote(match[1])
+          var label = isSplit ? match[3] : match[1]
+          var linkMarkSchema = state.schema.marks.link
+          var linkMark = linkMarkSchema.create()
+          if (note) {
+            linkMark.attrs.href = `/editor/${note.id}`
+          }
+          else {
+            linkMark.attrs.href = `/new-note/${label}`
+          }
+          var tr = state.tr
+          tr = tr.insertText(label, start, end)
+          tr = tr.addMark(start, start+label.length, linkMark)
+          return tr
+        }))
       },
       },
+      originalDoc: null,
       editor: null,
       editable: false,
-      onUpdate(e) {
-        if (!$this.editor.editable) {
-          $this.helpers.getSelectionPosition()
-        }
-      },
       fullKeybuffer: '',
       keybuffer: '',
       keybufferCount: null,
       keybufferRegister: null,
       vimMode: 'Normal',
+      searchString: null,
+      searchDir: 1,
+      linkLabel: '',
+      linkURL: '',
+      linkFrom: null,
+      linkTo: null,
       anchor: null,
       handleOperatorPending: null,
       textRegister: {
@@ -175,6 +228,69 @@ export default {
       var markdown = this.turndownService.turndown(html)
       console.log(markdown)
       currentNote.setContent(markdown)
+    editLink() {
+      console.log('Edit links!')
+      var {from, to} = this.editor.selection
+      var $pos = this.editor.state.doc.resolve(from)
+      var state = this.editor.state
+      const { parent, parentOffset } = $pos
+      const start = parent.childAfter(parentOffset)
+      if (!start.node) return null
+
+      const link = start.node.marks.find((mark) => mark.type === state.schema.marks.link)
+      if (!link) {
+        var text = this.editor.view.state.doc.textBetween(from, to)
+        this.linkFrom = from
+        this.linkTo = to
+        this.linkLabel = text
+        this.linkURL = ''
+        this.$refs.editLink.openModal(() => {
+          this.$refs.linkURLinput.focus()
+        })
+        return null
+      }
+      console.log(link.attrs.href)
+
+      let startIndex = $pos.index()
+      let startPos = $pos.start() + start.offset
+      let endIndex = startIndex + 1
+      let endPos = startPos + start.node.nodeSize
+      while (startIndex > 0 && link.isInSet(parent.child(startIndex - 1).marks)) {
+        startIndex -= 1
+        startPos -= parent.child(startIndex).nodeSize
+      }
+      while (endIndex < parent.childCount && link.isInSet(parent.child(endIndex).marks)) {
+        endPos += parent.child(endIndex).nodeSize
+        endIndex += 1
+      }
+      this.editor.setSelection(startPos, endPos)
+      console.log(`From: ${startPos}, to: ${endPos}`)
+      var text = this.editor.view.state.doc.textBetween(startPos, endPos)
+      console.log(text)
+      this.linkFrom = startPos
+      this.linkTo = endPos
+      this.linkLabel = text
+      this.linkURL = link.attrs.href
+      this.$refs.editLink.openModal(() => {
+        this.$refs.linkURLinput.focus()
+      })
+    },
+    changeLink() {
+      console.log(`Link: ${this.linkURL}`)
+      console.log(`Label: ${this.linkLabel}`)
+      this.$refs.editLink.closeModal()
+      var linkMarkSchema = this.editor.state.schema.marks.link
+      var linkMark = linkMarkSchema.create()
+      var label = this.linkLabel
+      var start = this.linkFrom
+      var end = this.linkTo
+      linkMark.attrs.href = this.linkURL
+      var tr = this.editor.state.tr
+      tr = tr.insertText(label, start, end)
+      tr = tr.removeMark(start, start+label.length, linkMark.type)
+      tr = tr.addMark(start, start+label.length, linkMark)
+      this.editor.dispatchTransaction(tr)
+    },
     },
   },
   watch: {
@@ -226,8 +342,58 @@ export default {
         //   $this.moveToTop()
         // }, 100)
         bus.$emit('focusEditor')
+    this.turndownService.addRule('wikiLinksExist', {
+      filter: function (node, options) {
+        return (
+          node.nodeName === 'A' &&
+          node.getAttribute('href') &&
+          node.getAttribute('href').startsWith('/editor/')
+        )
+      },
+      replacement: function (content, node, options) {
+        var id = node.getAttribute('href').split('/').pop()
+        return `[[${id}|${content.trim()}]]`
       }
     })
+    this.turndownService.addRule('wikiLinksNonExist', {
+      filter: function (node, options) {
+        return (
+          node.nodeName === 'A' &&
+          node.getAttribute('href') &&
+          node.getAttribute('href').startsWith('/new-note/')
+        )
+      },
+      replacement: function (content, node, options) {
+        var label = node.getAttribute('href').split('/').pop()
+        return `[[${label}]]`
+      }
+    })
+    var $this = this
+    if (this.note) {
+      //MarkdownIt
+      var md = new MarkdownIt({
+        linkify: true,
+      })
+      md.use(mdTodoLists)
+      var wikilinks = require('markdown-it-wikilinks')({
+        baseURL: '/',
+        makeAllLinksAbsolute: true,
+        uriSuffix: '',
+        htmlAttributes: {
+          'class': 'wikilink',
+          'target': '_blank',
+        },
+        postProcessPageName: (pageName) => {
+          var note = $this.$store.state.currentNoteCollection.resolveToNote(pageName)
+          if (note) {
+            return `editor/${note.id}`
+          }
+          else {
+            return `new-note/${pageName}`
+          }
+        },
+      })
+      md.use(wikilinks)
   },
   created () {
     this.helpers = Helpers(this, window)
@@ -378,6 +544,16 @@ div#vimishStatusBar {
     a {
       // color: inherit;
       color: cornflowerblue;
+    }
+
+    a[href^="/new-note/"] {
+      color: #d33;
+    }
+
+    a[href^="http"]:after {
+      content: url(https://en.wikipedia.org/w/skins/Vector/resources/skins.vector.styles/images/external-link-ltr-icon.svg);
+      // background-position: center right;
+      // background-repeat: no-repeat;
     }
 
     blockquote {

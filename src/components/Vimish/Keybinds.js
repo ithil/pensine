@@ -25,6 +25,9 @@ export default ($this, $window) => {
       if (event.metaKey && event.key == 's') {
         $this.saveNote()
       }
+      else if (event.metaKey && event.key == 'k') {
+        $this.editLink()
+      }
       if (!$this.editable) {
         if (event.key.length == 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
           $this.fullKeybuffer += event.key

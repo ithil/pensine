@@ -91,7 +91,22 @@ const store = new Vuex.Store({
   }
 })
 
-export const bus = new Vue()
+
+const bus = new Vue()
+
+$(document).on('click', 'a[href^="http"]', function(event) {
+   event.preventDefault()
+   shell.openExternal(this.href)
+ })
+
+$(document).on('click', 'a[href^="/"]', function(event) {
+   event.preventDefault()
+   var url = new URL(this.href)
+   bus.$emit('openRoute', url.pathname)
+ })
+
+export { bus }
+
 new Vue({
   router,
   store,

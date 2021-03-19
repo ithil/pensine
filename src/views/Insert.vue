@@ -145,21 +145,31 @@ export default {
 }
 </script>
 <style scoped lang='scss'>
+.insert {
+  background: rgba(0, 0, 0, 0.05)
+}
+
 ul.insertionList {
   li.line {
     list-style: none;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    background-color: #d2d2d2;
+    // border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 2px solid #0087e6;
+    // background-color: #d2d2d2;
+    padding: 10px;
+    background-color: #FAFAFA;
     opacity: 0.96;
     color: black;
     border-radius: 2px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    font-family: 'Lucida Grande', 'Segoe UI', 'Open Sans', sans-serif;
+    // font-family: 'Lucida Grande', 'Segoe UI', 'Open Sans', sans-serif;
+    font-family: 'Georgia';
     &.newContent {
-      background-color: #bbccb3;
+      // background-color: #bbccb3;
+      border: 2px solid #65c528;
     }
     ul.actions {
       padding-inline-start: 0;
+      margin: 0;
       li {
         display: inline-block;
         list-style: none;
@@ -168,7 +178,7 @@ ul.insertionList {
         a {
           color: #888;
           text-decoration: none;
-          font-size: 14px;
+          font-size: 12px;
         }
       }
     }

@@ -1,3 +1,4 @@
+import { shell } from'electron'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import pensieve from 'pensieve'
@@ -6,6 +7,7 @@ import router from './router'
 import Store from 'electron-store'
 import RouterTab from 'vue-router-tab'
 import PortalVue from 'portal-vue'
+import $ from 'jquery'
 
 Vue.use(Vuex)
 Vue.use(RouterTab)

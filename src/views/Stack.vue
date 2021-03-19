@@ -67,7 +67,7 @@ export default {
       }
     },
     routeTab() {
-      return this.stack.relativePath || 'Stack'
+      return this.$route.params.name || 'Stack'
     },
   },
   mounted() {

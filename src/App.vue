@@ -316,6 +316,22 @@ export default {
     ipcRenderer.on('toggleNavBar' , (event, data) => {
       this.toggleNavBar()
     })
+    bus.$on('newNote', (content) => {
+      this.newNote(content)
+    })
+    bus.$on('openRoute', (route) => {
+      console.log(route)
+      this.$router.push(route).catch(err => {
+        // Ignore the vuex err regarding  navigating to the page they are already on.
+        if (
+          err.name !== 'NavigationDuplicated' &&
+          !err.message.includes('Avoided redundant navigation to current location')
+        ) {
+          // But print any other errors to the console
+          console.error(err)
+        }
+      })
+    })
     var collection = this.$store.state.currentNoteCollection
     collection.events.on('noteChange', this.updateRepoStatus)
     collection.events.on('noteAdd', this.updateRepoStatus)
@@ -337,6 +353,24 @@ export default {
           action: c.action,
         }
       })
+    },
+    openModalFilter(context) {
+        var $items = context.itemsWithIds
+        var typeFilter = null
+        var searchString = context.searchString.toLowerCase()
+        if (searchString.startsWith('.')) {
+          typeFilter = 'note'
+          searchString = searchString.slice(1)
+        }
+        else if (searchString.startsWith('-')) {
+          typeFilter = 'stack'
+          searchString = searchString.slice(1)
+        }
+        var itemsFiltered = $items.filter(item => {
+          if (typeFilter && item.type != typeFilter) return false
+          return item.label.toLowerCase().indexOf(searchString) > -1
+        })
+        return itemsFiltered
     },
     addExistingCollection(p) {
       console.log('Path: ', p)
@@ -361,11 +395,16 @@ export default {
       }
 
     },
-    newNote() {
+    newNote(content) {
+      content = content || ' '
       var collection = this.$store.state.currentNoteCollection
       var $this = this
+      var prospectiveId = collection.getHighestId() + 1
+      var suggestedLabel = this.$global.pensieve.utils.createLabelFromId(prospectiveId)
       this.$store.commit('triggerCustomTextPrompt', {
         message: `What should be the label of your new note?`,
+        text: suggestedLabel,
+        selectAll: true,
         action: (label) => {
           setTimeout(() => {
           this.$store.commit('triggerCustomTextPrompt', {
@@ -381,6 +420,7 @@ export default {
                   if (category) {
                     collection.categorize(note, category)
                   }
+                  note.setContent(content)
                   $this.$router.push(`/editor/${note.id}`).catch(err => {
                     // Ignore the vuex err regarding  navigating to the page they are already on.
                     if (
@@ -437,11 +477,11 @@ body {
   color: #aaa;
   height: 22px;
   padding-left: 68px;
-  padding-right: 68px;
+  padding-right: 3px;
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   overflow: hidden;
   box-sizing: content-box;
   font-size: 13px;
@@ -470,12 +510,17 @@ body {
   background-color: #222527;
   color: white;
   width: 100%;
-  // padding-left: 11px;
+  padding: 2px;
   height: $status-bar-height;
 }
 
 .statusBarLeft {
   flex-grow: 1;
+  margin-left: 10px;
+}
+
+.statusBarRight {
+  margin-right: 10px;
 }
 
 .statusBarLeft > * {
@@ -504,6 +549,15 @@ body {
 
 .router-tab {
   height: calc(100% - #{$status-bar-height});
+}
+
+.router-tab__item-icon{
+  font-family: 'feather-icons';
+  font-style: normal;
+}
+
+.router-tab__item {
+  color: #949494;
 }
 
 .splitpanes__pane {

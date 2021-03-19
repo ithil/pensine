@@ -19,6 +19,7 @@
       </div>
       <ul class="actions" v-if="item.class=='newContent'">
         <li><a href="#" @click="editSnippet">edit</a></li>
+        <li><a href="#" @click="bulletSnippet">bullet</a></li>
       </ul>
     </SlickItem>
   </SlickList>
@@ -96,6 +97,16 @@ export default {
       this.editing = !this.editing
       event.preventDefault()
       event.stopPropagation()
+    },
+    bulletSnippet(event) {
+      event.preventDefault()
+      event.stopPropagation()
+      var index = this.items.findIndex(i => i.class == 'newContent')
+      if (index > -1) {
+        var insertion = this.items[index].content
+        insertion = insertion.split('\n').map(l => l ? `* ${l}` : '').join('\n')
+        this.items[index].content = insertion
+      }
     },
     saveSnippet(event) {
       this.editing = !this.editing

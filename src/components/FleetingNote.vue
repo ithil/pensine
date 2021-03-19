@@ -1,12 +1,11 @@
 <template id='#item-template'>
-  <div class="fleetingNote" @keydown="keymonitor" :class="{ selected: selected }">
+  <div class="fleetingNote" @keydown="keymonitor" @click="focusNote" :class="{ selected: selected }">
     <div class="header">
       <span class="ago">{{ moment(fleetingNoteObj.date).fromNow() }}</span>
       <span class="timestamp">{{ moment(fleetingNoteObj.date).format('ddd DD.MM.YYYY HH:mm:ss') }}</span>
     </div>
     <div class="content" v-if="!editing">
-      <div v-if="fleetingNoteObj.isText" v-html="md.render(content)">
-        <!-- {{ md.render(fleetingNoteObj.content) }} -->
+      <div v-if="fleetingNoteObj.isText" v-html="renderedContent">
       </div>
       <div v-else-if="fleetingNoteObj.isImage">
         <img
@@ -14,8 +13,20 @@
         :src="`data:${fleetingNoteObj.mime};base64,${fleetingNoteObj.contentBase64}`"
         ></img>
       </div>
-      <div v-else>
-        File of type {{ fleetingNoteObj.mime }}
+      <div v-else-if="fleetingNoteObj.isAudio">
+        <audio
+        controls
+        :src="`data:${fleetingNoteObj.mime};base64,${fleetingNoteObj.contentBase64}`">
+      </audio>
+    </div>
+      <div v-else class="miscFile">
+        <div>
+          <img class="icon" :src="icon"></img>
+        </div>
+        <div>
+          <div class="filename">{{ fleetingNoteObj.filename }}</div>
+          <div class="mime">{{ fleetingNoteObj.mime }}</div>
+        </div>
       </div>
     </div>
     <div class="inboxEditor" v-if="editing">
@@ -38,6 +49,9 @@
 <script>
   import moment from 'moment'
   import MarkdownIt from 'markdown-it'
+  import { bus } from '@/main'
+  import { ipcRenderer } from 'electron'
+
   export default {
     name: 'fleeting-note',
     props: {
@@ -46,15 +60,21 @@
     data: function () {
       return {
         moment: moment,
-        md: new MarkdownIt(),
+        md: new MarkdownIt({linkify: true}),
         editing: false,
         selected: false,
+        focused: false,
         editorContent: this.content,
+        bus: bus,
+        icon: null,
       }
     },
     computed: {
       content() {
         return this.fleetingNoteObj.content
+      },
+      renderedContent() {
+        return this.md.render(this.content)
       },
     },
   watch: {
@@ -79,15 +99,19 @@
             }
           }
         })
-        event.preventDefault()
-        event.stopPropagation()
+        if (event) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
       },
       editNote(event) {
         if (this.fleetingNoteObj.isText) {
           this.editing = !this.editing
         }
-        event.preventDefault()
-        event.stopPropagation()
+        if (event) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
       },
       insertNote(event) {
         if (this.fleetingNoteObj.isText) {
@@ -112,24 +136,50 @@
               }
             }
           })
-          this.$store.commit('triggerCustomSelectList', items)
+          this.$store.commit('triggerCustomSelectList', {items})
         }
-        event.preventDefault()
-        event.stopPropagation()
+        if (event) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+      },
+      intoNewNote(event) {
+        this.bus.$emit('newNote', this.fleetingNoteObj.content)
       },
       addToStack(event) {
+        var $this = this
         var stacks = this.$store.state.currentNoteCollection.stacks.getListOfStacks()
         var items = stacks.map(s => {
           return {
-            label: s.relativePath, action:() => {
+            label: s.relativePath,
+            iconClasses: ['feather-icon', 'icon-layers'],
+            action:() => {
               console.log(s.path)
               this.fleetingNoteObj.sendToStack(s.relativePath)
             }
           }
         })
-        this.$store.commit('triggerCustomSelectList', items)
-        event.preventDefault()
-        event.stopPropagation()
+        var filter = function (context) {
+          var $items = context.itemsWithIds
+          var itemsFiltered = $items.filter(item => {
+            return item.label.toLowerCase().indexOf(context.searchString.toLowerCase()) > -1
+          })
+          itemsFiltered.push({
+            id: context.getHighestId() + 1,
+            iconClasses: ['feather-icon', 'icon-plus'],
+            label: context.searchString.trim(),
+            description: 'Create new stack',
+            action: () => {
+              $this.fleetingNoteObj.sendToStack(context.searchString.trim())
+            },
+          })
+          return itemsFiltered
+        }
+        this.$store.commit('triggerCustomSelectList', {items, filter})
+        if (event) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
       },
       toggleSelectNote(event) {
         this.selected = !this.selected
@@ -139,8 +189,14 @@
         else {
           this.$emit('unselectNote', this.fleetingNoteObj)
         }
-        event.preventDefault()
-        event.stopPropagation()
+        if (event) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+      },
+      focusNote() {
+        this.focused = true
+        this.$emit('focusNote', this.fleetingNoteObj)
       },
       saveNote(event) {
         this.fleetingNoteObj.setContent(this.editorContent)
@@ -155,6 +211,12 @@
     },
     mounted() {
       this.editorContent = this.content
+      var $this = this;
+
+      (async () => {
+        const icon = await ipcRenderer.invoke('getFileIcon', $this.fleetingNoteObj.path)
+        $this.icon = icon
+      })()
     }
   }
 </script>
@@ -164,30 +226,62 @@
   min-width: 100px;
   height: min-content;
   padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background-color: #d2d2d2;
+  // border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid #ffd400;
+  // background-color: #d2d2d2;
+  background-color: #FAFAFA;
   opacity: 0.96;
   color: black;
   border-radius: 2px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  // box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 15px rgba(181, 181, 181, 0.67);
   font-family: 'Lucida Grande', 'Segoe UI', 'Open Sans', sans-serif;
+  &.focused {
+    outline: 2px solid cornflowerblue;
+  }
+  &.selected {
+    background-color: #c9d6e0;
+  }
 }
 
-.fleetingNote.selected {
-  background-color: #c9d6e0;
-}
 
 .fleetingNote .content {
   padding: 2px;
-}
-
-.fleetingNote .content .image {
-  max-height: 250px;
+  font-family: 'Georgia';
+  margin-top: 5px;
+  margin-bottom: 5px;
+  blockquote {
+    border-left: 3px solid #cfdae6;
+    padding-left: 5px;
+  }
+  a {
+    color: royalblue;
+  }
+  div p:last-child {
+    margin-block-end: 0;
+  }
+  .image {
+    max-height: 250px;
+  }
+  .miscFile {
+    display: flex;
+    .icon {
+      padding-right: 5px;
+    }
+    .filename {
+      font-weight: bold;
+    }
+    .mime {
+      font-size: 12px;
+      font-style: italic;
+    }
+  }
 }
 
 .fleetingNote .header {
   font-size: 12px;
-  color: rgb(17, 17, 17)
+  color: rgb(17, 17, 17);
+  font-family: 'PT Mono';
 }
 
 .fleetingNote .header .ago {
@@ -200,6 +294,7 @@
 
 .fleetingNote ul.actions {
   padding-inline-start: 0;
+  margin: 0;
   li {
     display: inline-block;
     list-style: none;
@@ -208,7 +303,7 @@
     a {
       color: #888;
       text-decoration: none;
-      font-size: 14px;
+      font-size: 12px;
     }
   }
 }

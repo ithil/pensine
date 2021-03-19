@@ -223,6 +223,11 @@ function createWindow() {
   ipcMain.on('quit', (event, arg) => {
     app.quit()
   })
+  ipcMain.handle('getFileIcon', async (event, myPath, callback) => {
+    const icon = await app.getFileIcon(myPath)
+    return icon.toDataURL()
+    // win.webContents.send('')
+  })
 }
 
 // Quit when all windows are closed.

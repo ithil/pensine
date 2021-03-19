@@ -43,7 +43,53 @@
         item.children.push({
           name: 'new stuff'
         })
+      },
+      updateCategoryTree() {
+        var $this = this
+        var categoryTree = this.$store.state.currentNoteCollection.getCategoryTree()
+        var categoryTreeNode = this.treeData.find(node => node.name == 'Categories')
+        categoryTreeNode.children = []
+        var currentKey = 999
+        var convertTree = function(tree, node) {
+          for (let e of tree) {
+            if (e.type == 'note') {
+              let n = e.note
+              node.children.push({
+                key: n.id + 999,
+                name: e.name,
+                iconClasses: ['feather-icon', 'icon-file-text'],
+                filename: n.contentPath,
+                click: function () {
+                  $this.$router.push(`/editor/${n.id}`).catch(err => {
+                    // Ignore the vuex err regarding  navigating to the page they are already on.
+                    if (
+                      err.name !== 'NavigationDuplicated' &&
+                      !err.message.includes('Avoided redundant navigation to current location')
+                    ) {
+                      // But print any other errors to the console
+                      console.error(err)
+                    }
+                  })
+                }
+              })
+            }
+            else if (e.type == 'dir') {
+              var categoryNode = {
+                key: currentKey,
+                name: e.name,
+                iconClasses: ['feather-icon', 'icon-folder'],
+                children: [],
+              }
+              convertTree(e.children, categoryNode)
+              node.children.push(categoryNode)
+              currentKey++
+            }
+          }
+        }
+        convertTree(categoryTree, categoryTreeNode)
+      },
       updateAllNotes() {
+        var $this = this
         var allNotes = this.$store.state.currentNoteCollection.allNotes
         var allNotesNode = this.treeData.find(node => node.name == 'All Notes')
         allNotesNode.badge = allNotes.length
@@ -52,7 +98,7 @@
           allNotesNode.children.push({
             key: n.id + 91,
             name: n.name,
-            icon: '✣',
+            // icon: '✣',
             iconClasses: ['feather-icon', 'icon-file-text'],
             filename: n.contentPath,
             click: function () {
@@ -71,9 +117,10 @@
         })
       },
       updateStacks() {
+        var $this = this
         var stacks = this.$store.state.currentNoteCollection.stacks.getListOfStacks()
         var stacksNode = this.treeData.find(node => node.name == 'Stacks')
-        stacksNode.badge = stacks.length
+        // stacksNode.badge = stacks.length
         stacksNode.children = []
         stacks.forEach((s, i) => {
           stacksNode.children.push({
@@ -97,6 +144,7 @@
         })
       },
       updateTagTree() {
+        var $this = this
         var tagTree = this.$store.state.currentNoteCollection.getTagTree()
         var tagMetadata = new this.$global.pensieve.Tags(this.$store.state.currentNoteCollection)
         var tagTreeNode = this.treeData.find(node => node.name == 'Tags')
@@ -170,6 +218,14 @@
         }
         this.treeData.push(stacksNode)
         this.updateStacks()
+        var categoryNode = {
+          key: 999,
+          name: 'Categories',
+          iconClasses: ['feather-icon', 'icon-bookmark'],
+          children: []
+        }
+        this.treeData.push(categoryNode)
+        this.updateCategoryTree()
         var allNotes = this.$store.state.currentNoteCollection.allNotes
         var allNotesNode = {
           key: 90,
@@ -269,6 +325,7 @@ ul {
   }
   .tree-name {
     flex-grow: 1;
+    word-break: break-all;
   }
 }
 .navbar-tree /deep/ .tree-badge {
@@ -280,6 +337,7 @@ ul {
   padding: 2px;
   padding-right: 4px;
   padding-left: 4px;
+  height: fit-content;
 }
 
 .navbar-tree /deep/ .tree-icon {
@@ -288,7 +346,7 @@ ul {
     font-weight: bold;
     color: white;
     padding-left: 2px;
-    font-family: Monaco;
+    // font-family: Monaco;
     text-align: center;
 }
 

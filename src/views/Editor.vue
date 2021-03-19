@@ -1,8 +1,9 @@
 <template>
-  <div>
+  <div class="notePage">
     <div id="noteMetadata" v-if="currentNote">
       <!-- <span class="noteId">{{ currentNote.id }}</span>
       <span class="noteLabel">{{ currentNote.label }}</span> -->
+      <span class="noteCreationDate">{{ moment(currentNote.metadata.creationDate).format('DD.MM.YYYY') }}</span>
       <span class="noteTags">
         <span
         class="noteTag"
@@ -25,6 +26,8 @@
 <script>
 // @ is an alias to /src
 import Vimish from '@/components/Vimish.vue'
+import {remote} from 'electron'
+import moment from 'moment'
 
 export default {
   name: 'Editor',
@@ -34,6 +37,7 @@ export default {
   data () {
     return {
       hasChanged: null,
+      moment: moment,
     }
   },
   activated() {
@@ -124,9 +128,10 @@ export default {
 #noteMetadata {
   padding: 10px;
   font-family: 'Lucida Grande';
-  background-color: #dddddd;
+  background-color: #d8dee6;
   white-space: nowrap;
   overflow: auto;
+  box-shadow: 0px 0px 10px #a8bfc7;
 }
 #noteMetadata::-webkit-scrollbar {
   display: none;
@@ -143,11 +148,25 @@ export default {
   font-weight: bold;
   margin-left: 5px;
 }
+.noteCreationDate {
+  font-family: 'PT Mono';
+  font-size: 11px;
+  font-weight: bold;
+}
 .noteTag {
   margin: 5px 4px 5px 10px;
   background-color: #ececec;
   padding: 4px;
   border-radius: 5px;
   border: solid 1px #d0d0d0;
+  font-family: 'PT Mono';
+  font-size: 12px;
+}
+
+.notePage {
+  background-color: #eae8e8;
+  height: fit-content;
+  min-height: -webkit-fill-available;
+  padding-bottom: 30px;
 }
 </style>

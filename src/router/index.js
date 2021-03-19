@@ -15,7 +15,7 @@ const routes = [
     component: Home,
     meta: {
       title: 'Home', // tab title
-      // icon: 'icon-user', // tab icon, optional
+      icon: 'icon-home',
       // tabClass: 'custom-tab', // custom class, optional
       tips: 'This is a tab', // tab tooltip, optional. defaults to `meta.title`
       closable: true // is tab closable, defaults to `true`
@@ -27,6 +27,7 @@ const routes = [
     component: Editor,
     meta: {
       title: 'Editor', // tab title
+      icon: 'icon-file-text',
       key: 'path',
       tips: 'This is a tab', // tab tooltip, optional. defaults to `meta.title`
       closable: true // is tab closable, defaults to `true`
@@ -37,6 +38,7 @@ const routes = [
     name: 'Inbox',
     meta: {
       title: 'Inbox',
+      icon: 'icon-inbox',
       closable: true,
     },
     // route level code-splitting
@@ -45,11 +47,12 @@ const routes = [
     component: () => import(/* webpackChunkName: "about" */ '../views/Inbox.vue'),
   },
   {
-    path: '/stacks/:name',
+    path: '/stacks/:name(.*)',
     name: 'Stack',
     component: Stack,
     meta: {
       title: 'Stack', // tab title
+      icon: 'icon-layers',
       key: 'path',
       tips: 'This is a tab', // tab tooltip, optional. defaults to `meta.title`
       closable: true // is tab closable, defaults to `true`
@@ -61,6 +64,7 @@ const routes = [
     component: Insert,
     meta: {
       title: 'Insert', // tab title
+      icon: 'icon-download',
       key: 'path',
       tips: 'This is a tab', // tab tooltip, optional. defaults to `meta.title`
       closable: true // is tab closable, defaults to `true`
@@ -72,6 +76,7 @@ const routes = [
     component: NewNote,
     meta: {
       title: 'New Note', // tab title
+      icon: 'icon-file-plus',
       key: 'path',
       tips: 'This is a tab', // tab tooltip, optional. defaults to `meta.title`
       closable: true // is tab closable, defaults to `true`

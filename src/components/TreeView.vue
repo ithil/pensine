@@ -10,7 +10,7 @@
         <span v-if="isOpen">▾</span>
         <span v-else>▸</span>
       </span>
-      <span class="tree-icon" v-if="item.icon">{{item.icon}}</span>
+      <span class="tree-icon" :class="item.iconClasses || []" v-if="item.icon || item.iconClasses">{{item.icon ? item.icon : ''}}</span>
       <span class="tree-name">{{ item.name }}</span>
       <span class="tree-badge" v-if="item.badge">{{item.badge}}</span>
     </div>

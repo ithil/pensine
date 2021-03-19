@@ -53,6 +53,7 @@
             key: n.id + 91,
             name: n.name,
             icon: '✣',
+            iconClasses: ['feather-icon', 'icon-file-text'],
             filename: n.contentPath,
             click: function () {
               $this.$router.push(`/editor/${n.id}`).catch(err => {
@@ -78,6 +79,7 @@
           stacksNode.children.push({
             key: i + 777,
             name: s.relativePath,
+            iconClasses: ['feather-icon', 'icon-layers'],
             badge: s.getCountOfNotes(),
             click: function () {
               $this.$router.push(`/stacks/${s.relativePath}`).catch(err => {
@@ -107,8 +109,14 @@
             var tagNode = {
               key: currentKey,
               name: t,
-              icon: `${(currentTagMetadata && currentTagMetadata.icon) ? currentTagMetadata.icon : '#'}`,
+              // icon: `${(currentTagMetadata && currentTagMetadata.icon) ? currentTagMetadata.icon : '#'}`,
               children: [],
+            }
+            if (currentTagMetadata && currentTagMetadata.icon) {
+              tagNode.icon = currentTagMetadata.icon
+            }
+            else {
+              tagNode.iconClasses = ['feather-icon', 'icon-hash']
             }
             currentKey++
             convertTree(tree[t].subtags, level+1, newHead, tagNode)
@@ -116,7 +124,7 @@
               tagNode.children.push({
                 key: currentKey,
                 name: n.name,
-                icon: '✣',
+                iconClasses: ['feather-icon', 'icon-file-text'],
                 children: [],
                 click: function () {
                   $this.$router.push(`/editor/${n.id}`).catch(err => {
@@ -143,12 +151,21 @@
       var $this = this
       var createTree = () => {
         this.treeData = [
-          { name: 'Home', click: () => { this.$router.push('/') }},
-          { name: 'Inbox', click: () => { this.$router.push('/inbox') }},
+          {
+            name: 'Home',
+            click: () => { this.$router.push('/') },
+            iconClasses: ['feather-icon', 'icon-home'],
+          },
+          {
+            name: 'Inbox',
+            click: () => { this.$router.push('/inbox') },
+            iconClasses: ['feather-icon', 'icon-inbox'],
+          },
         ]
         var stacksNode = {
           key: 777,
           name: 'Stacks',
+          iconClasses: ['feather-icon', 'icon-layers'],
           children: []
         }
         this.treeData.push(stacksNode)
@@ -157,6 +174,7 @@
         var allNotesNode = {
           key: 90,
           name: 'All Notes',
+          iconClasses: ['feather-icon', 'icon-book-open'],
           children: []
         }
         this.treeData.push(allNotesNode)
@@ -164,6 +182,7 @@
         var tagTreeNode = {
           key: 200,
           name: 'Tags',
+          iconClasses: ['feather-icon', 'icon-tag'],
           children: []
         }
         this.treeData.push(tagTreeNode)

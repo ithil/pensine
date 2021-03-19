@@ -23,6 +23,7 @@
           :ref="i.id == selected ? 'selectedItem' : ''"
           >
             <div class="primary-line" :title="i.hover ? i.hover : ''">
+              <span :class="i.iconClasses"></span>
               {{ i.label }}
             </div>
             <div class="secondary-line">

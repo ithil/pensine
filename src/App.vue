@@ -121,6 +121,7 @@ export default {
       for (let n of this.$store.state.currentNoteCollection.allNotes) {
         allNotes.push({
           label: n.label,
+          iconClasses: ['feather-icon', 'icon-file-text'],
           action: () => {
             this.$router.push(`/editor/${n.id}`).catch(err => {
               // Ignore the vuex err regarding  navigating to the page they are already on.
@@ -298,6 +299,7 @@ export default {
 </script>
 
 <style lang="scss">
+@import '../node_modules/feather-webfont/dist/feather-icons.css';
 $status-bar-height: 24px;
 
 body {

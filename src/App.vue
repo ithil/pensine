@@ -4,6 +4,11 @@
       <div class="title">
         {{title}}
       </div>
+      <div class="uncommitedChanges" v-if="uncommitedChanges">
+        <svg height="20" width="20">
+          <circle cx="10" cy="10" r="5" stroke="none" stroke-width="3" fill="cornflowerblue" />
+        </svg>
+      </div>
     </div>
     <splitpanes style="height: calc(100vh - 22px)" @resize="paneSize = $event[0].size">
       <pane :size="paneSize" id="navbar">
@@ -80,6 +85,7 @@ export default {
   data() {
     return {
       paneSize: 20,
+      uncommitedChanges: false,
     }
   },
   watch: {
@@ -141,7 +147,11 @@ export default {
       name: 'collection:commit',
       label: 'Commit',
       action: () => {
-        this.$store.state.currentNoteCollection.commit()
+        this.$store.state.currentNoteCollection.commit().then(() => {
+          this.updateRepoStatus()
+        })
+      },
+    })
       },
     })
     this.$store.commit('registerCommand', {
@@ -182,6 +192,17 @@ export default {
     ipcRenderer.on('toggleNavBar' , (event, data) => {
       this.toggleNavBar()
     })
+    var collection = this.$store.state.currentNoteCollection
+    collection.events.on('noteChange', this.updateRepoStatus)
+    collection.events.on('noteAdd', this.updateRepoStatus)
+    collection.events.on('noteDelete', this.updateRepoStatus)
+    this.updateRepoStatus()
+  },
+  unmounted() {
+    var collection = this.$store.state.currentNoteCollection
+    collection.events.removeListener('noteChange', this.updateRepoStatus)
+    collection.events.removeListener('noteAdd', this.updateRepoStatus)
+    collection.events.removeListener('noteDelete', this.updateRepoStatus)
   },
   methods: {
     cmdsToListItems(cmds) {
@@ -255,6 +276,11 @@ export default {
         }
       })
     },
+    updateRepoStatus() {
+      this.$store.state.currentNoteCollection.checkForChangesAsync().then(status => {
+        this.uncommitedChanges = status.length > 0
+      })
+    },
     toggleNavBar() {
       if (this.paneSize < 1) {
         this.paneSize = 20
@@ -298,6 +324,16 @@ body {
   background-color: #292c2f;
   border-bottom: 1px solid rgba(0, 0, 0, 0.5);
   transition: margin-top 160ms;
+  position: relative;
+  .title {
+    position: absolute;
+    flex: 0 1 auto;
+    left: 50%;
+  }
+  .uncommitedChanges {
+    flex: 0 1 auto;
+    margin-left: auto;
+  }
 }
 
 #statusBar {

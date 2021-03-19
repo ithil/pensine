@@ -6,6 +6,7 @@
     <div>
       <portal to="statusBarRight" :order="1" v-if="portalActive">
         <span class="keybuffer">{{fullKeybuffer}}</span>
+        <span v-if="hasChanged">Has changed!</span>
         <span class="checkbox">
           <input type="checkbox" id="editable" v-model="editable" />
           <label for="editable" style="color:white;">editable</label>
@@ -110,6 +111,11 @@ export default {
     this.portalActive = false
   },
   computed: {
+    hasChanged() {
+      if(this.originalDoc) {
+        return !this.originalDoc.eq(this.editor.view.state.doc)
+      }
+    },
   },
   data() {
     var $this = this
@@ -304,6 +310,9 @@ export default {
       else {
         this.vimMode = 'Normal'
       }
+    },
+    hasChanged(to, from) {
+      this.$emit('hasChanged', to)
     },
   },
   mounted() {

@@ -14,7 +14,10 @@
       </span>
     </div>
     <div class="editorView">
-      <Vimish :note="note"></Vimish>
+      <Vimish
+      :note="note"
+      @hasChanged="hasChangedHandler"
+      ></Vimish>
     </div>
   </div>
 </template>
@@ -30,6 +33,7 @@ export default {
   },
   data () {
     return {
+      hasChanged: null,
     }
   },
   activated() {
@@ -44,7 +48,7 @@ export default {
     },
     routeTab() {
       if (this.$store.state.currentNote) {
-        return this.$store.state.currentNote.label || 'Editor'
+        return `${this.hasChanged ? '* ' : ''}${this.$store.state.currentNote.label}` || 'Editor'
       }
     },
     note() {
@@ -72,6 +76,43 @@ export default {
       this.$store.commit('setCurrentNote', note)
       // this.note = note
     }
+  },
+  methods: {
+    hasChangedHandler(hasChanged) {
+      this.hasChanged = hasChanged
+    },
+  },
+  beforePageLeave(tab, type) {
+    //If the value has not changed, just leave the tab
+    if (!this.hasChanged) return
+
+    console.log(`Trying to ${type} tab`)
+    console.log(tab)
+
+    var confirm = () => {
+      remote.dialog.showMessageBoxSync(
+        remote.getCurrentWindow(),
+        {
+          type:'question',
+          buttons: ['Yes', 'No'],
+          title:'Really close?',
+          message: 'Are you sure?'
+        }
+      )
+    }
+    // Promise resolve to allow the page to leave
+    return new Promise((resolve, reject) => {
+      if (confirm()) {
+        resolve()
+      } else {
+        reject(`Refuse to ${action} the page`)
+      }
+    })
+
+    // The confirm component of Element is used here
+    // You need to configure closeOnHashChange to false
+    // to avoid the route switching causing the confirmation box to close
+    // this.$confirm(msg, 'prompt', { closeOnHashChange: false })
   },
 }
 </script>

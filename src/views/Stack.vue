@@ -1,11 +1,9 @@
 <template>
   <div class="stack">
-    <ul class="fleetingNotes">
-      <li v-for="f in fleetingNotes" :key="f.filename">
-        <fleeting-note :fleetingNoteObj="f" @selectNote="selectNote" @unselectNote="unselectNote">
-        </fleeting-note>
-      </li>
-    </ul>
+    <fleeting-note-list
+    :fleetingNotes="fleetingNotes"
+    >
+  </fleeting-note-list>
   <div class="sendFleetingNote">
     <textarea rows="7" cols="60" v-model="newFleetingNoteContent" @keyup="sendKeymonitor"></textarea>
   </div>
@@ -13,39 +11,22 @@
 </template>
 
 <script>
-import fs from 'fs'
-import path from 'path'
-import treeItem from '@/components/TreeView.vue'
-import fleetingNote from '@/components/FleetingNote.vue'
-import MarkdownIt from 'markdown-it'
+import fleetingNoteList from '@/components/FleetingNoteList.vue'
 
 export default {
   name: 'Stack',
   components: {
-    treeItem,
-    fleetingNote,
+    fleetingNoteList,
   },
   data() {
     return {
-      fleetingNotes: null,
-      selectedNotes: [],
+      fleetingNotes: [],
       newFleetingNoteContent: '',
-      md: new MarkdownIt(),
     }
   },
   methods: {
-    selectNote(fleetingNoteObj) {
-      console.log(`Selected: ${fleetingNoteObj.filename}`)
-      selectedNotes.push(fleetingNoteObj)
-    },
-    unselectNote(fleetingNoteObj) {
-      console.log(`Unselected: ${fleetingNoteObj.filename}`)
-      var index = this.selectedNotes.findIndex(n => n.path == fleetingNoteObj.path)
-      this.selectedNotes.splice(index, 1)
-    },
     updateFleetingNotes() {
       this.fleetingNotes = this.stack.getContent().filter(i => !i.isStack)
-      // console.log(this.fleetingNotes)
     },
     sendNewNote() {
       this.stack.sendText(this.newFleetingNoteContent)
@@ -92,23 +73,9 @@ export default {
 }
 </script>
 <style scoped lang='scss'>
-.fleetingNotes {
-  float: left;
-  max-width: 550px;
+.stack {
+  background: rgba(0, 0, 0, 0.05)
 }
-
-.fleetingNotes li {
-  list-style: none;
-}
-
-#stacksList /deep/ .tree-view.item li {
-  list-style: none;
-}
-
-#stacksList /deep/ .tree-toggle.no-children {
-  color: transparent !important;
-}
-
 .sendFleetingNote {
   margin-left: 80px;
 }

@@ -71,7 +71,7 @@ import NavBar from './components/NavBar.vue'
 import Modal from './components/Modal.vue'
 import SelectList from '@/components/SelectList.vue'
 import TextPrompt from '@/components/TextPrompt.vue'
-import { ipcRenderer } from 'electron'
+import { ipcRenderer, shell } from 'electron'
 import { bus } from './main'
 
 export default {
@@ -200,6 +200,82 @@ export default {
         })
       },
     })
+    this.$store.commit('registerCommand', {
+      name: 'note:delete',
+      label: 'Delete current note',
+      action: () => {
+        setTimeout(() => {
+          this.$store.commit('triggerCustomTextPrompt', {
+            message: `Are you sure you want to delete ${this.$store.state.currentNote.name}?`,
+            action: (text) => {
+              if (['y', 'yes'].includes(text.trim())) {
+                this.$tabs.close()
+                this.$store.state.currentNote.delete()
+              }
+            }
+          })
+        }, 50)
+      },
+    })
+    this.$store.commit('registerCommand', {
+      name: 'note:addTags',
+      label: 'Add tags to current note',
+      action: () => {
+        var note = this.$store.state.currentNote
+        setTimeout(() => {
+          this.$store.commit('triggerCustomTextPrompt', {
+            message: `Enter a comma-separated list of tags you want to add to ${note.name}`,
+            action: (tags) => {
+              note.addTags(tags.split(',').filter(x => x != '').map(x => x.trim()))
+              note.save()
+            }
+          })
+        }, 50)
+      },
+    })
+    this.$store.commit('registerCommand', {
+      name: 'note:removeTag',
+      label: 'Remove a tag from current note',
+      action: () => {
+        var note = this.$store.state.currentNote
+        setTimeout(() => {
+          var items = note.metadata.tags.map(t => {
+            return {
+              label: t,
+              action:() => {
+                note.removeTag(t)
+                note.save()
+              }
+            }
+          })
+          this.$store.commit('triggerCustomSelectList', {items})
+        }, 50)
+      },
+    })
+    this.$store.commit('registerCommand', {
+      name: 'note:categorize',
+      label: 'Categorize current note',
+      action: () => {
+        var note = this.$store.state.currentNote
+        var collection = this.$store.state.currentNoteCollection
+        setTimeout(() => {
+          this.$store.commit('triggerCustomTextPrompt', {
+            message: `Where would you like to categorize ${note.name}?`,
+            action: (category) => {
+              collection.categorize(note, category)
+            }
+          })
+        }, 50)
+      },
+    })
+    this.$store.commit('registerCommand', {
+      name: 'note:revealInFinder',
+      label: 'Reveal current note in Finder',
+      action: () => {
+        var note = this.$store.state.currentNote
+        if (note) {
+          shell.showItemInFolder(note.contentPath)
+        }
       },
     })
     this.$store.commit('registerCommand', {

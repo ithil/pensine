@@ -27,6 +27,7 @@
       <li><a href="#" @click="deleteNote">delete</a></li>
       <li v-if="fleetingNoteObj.isText"><a href="#" @click="editNote">edit</a></li>
       <li v-if="fleetingNoteObj.isText"><a href="#" @click="insertNote">insert</a></li>
+      <li v-if="fleetingNoteObj.isText"><a href="#" @click="intoNewNote">new</a></li>
       <li><a href="#">move</a></li>
       <li><a href="#" @click="addToStack">stack</a></li>
       <li><a href="#" @click="toggleSelectNote">select</a></li>

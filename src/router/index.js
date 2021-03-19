@@ -4,6 +4,7 @@ import Home from '../views/Home.vue'
 import Editor from '../views/Editor.vue'
 import Stack from '../views/Stack.vue'
 import Insert from '../views/Insert.vue'
+import NewNote from '../views/NewNote.vue'
 
 Vue.use(VueRouter)
 
@@ -60,6 +61,17 @@ const routes = [
     component: Insert,
     meta: {
       title: 'Insert', // tab title
+      key: 'path',
+      tips: 'This is a tab', // tab tooltip, optional. defaults to `meta.title`
+      closable: true // is tab closable, defaults to `true`
+    },
+  },
+  {
+    path: '/new-note/:label',
+    name: 'New Note',
+    component: NewNote,
+    meta: {
+      title: 'New Note', // tab title
       key: 'path',
       tips: 'This is a tab', // tab tooltip, optional. defaults to `meta.title`
       closable: true // is tab closable, defaults to `true`

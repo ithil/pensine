@@ -116,102 +116,121 @@ export default {
           this.keybuffer = match[4]
           event.stopPropagation()
           event.preventDefault()
+          if (this.keybuffer == "j")
+          {
+            this.focusNext(1 * (this.keybufferCount || 1))
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "k")
+          {
+            this.focusNext(-1 * (this.keybufferCount || 1))
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "gg")
+          {
+            this.focusedNote = this.fleetingNotes[0]
+            this.scrollFocusedIntoView()
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "G")
+          {
+            var len = this.fleetingNotes.length
+            this.focusedNote = this.fleetingNotes[len - 1]
+            this.scrollFocusedIntoView()
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == " ")
+          {
+            this.getFocusedNoteItem().toggleSelectNote()
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "t")
+          {
+            if (this.selectedNotes.length > 0) {
+              this.addSelectedToStack()
+            }
+            else {
+              this.getFocusedNoteItem().addToStack()
+            }
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "i")
+          {
+            this.getFocusedNoteItem().insertNote()
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "x")
+          {
+            if (this.selectedNotes.length > 0) {
+              this.deleteSelectedNotes()
+            }
+            else {
+              this.getFocusedNoteItem().deleteNote()
+            }
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "e")
+          {
+            this.getFocusedNoteItem().editNote()
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "yr")
+          {
+            var content = this.getFocusedNoteItem().content
+            clipboard.writeText(content)
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "yh")
+          {
+            var content = this.getFocusedNoteItem().renderedContent
+            clipboard.writeHTML(content)
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "gf")
+          {
+            var notePath = this.getFocusedNoteItem().fleetingNoteObj.path
+            shell.showItemInFolder(notePath)
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "go")
+          {
+            var notePath = this.getFocusedNoteItem().fleetingNoteObj.path
+            shell.openPath(notePath)
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "va")
+          {
+            this.selectedNotes = []
+            for (let n of this.$refs.fleetingNoteItems) {
+              n.selected = true
+              this.selectedNotes.push(n.fleetingNoteObj)
+            }
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "vc")
+          {
+            this.selectedNotes = []
+            for (let n of this.$refs.fleetingNoteItems) {
+              n.selected = false
+            }
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "vi")
+          {
+            for (let n of this.$refs.fleetingNoteItems) {
+              n.toggleSelectNote()
+            }
+            this.fullKeybuffer = ''
+          }
         }
-        if (this.keybuffer == "j")
-        {
-          this.focusNext(1 * (this.keybufferCount || 1))
-          this.fullKeybuffer = ''
-        }
-        else if (this.keybuffer == "k")
-        {
-          this.focusNext(-1 * (this.keybufferCount || 1))
-          this.fullKeybuffer = ''
-        }
-        else if (this.keybuffer == "gg")
-        {
-          this.focusedNote = this.fleetingNotes[0]
+      }
+    },
           this.scrollFocusedIntoView()
-          this.fullKeybuffer = ''
         }
-        else if (this.keybuffer == "G")
-        {
           var len = this.fleetingNotes.length
           this.focusedNote = this.fleetingNotes[len - 1]
           this.scrollFocusedIntoView()
-          this.fullKeybuffer = ''
         }
-        else if (this.keybuffer == " ")
-        {
-          this.getFocusedNoteItem().toggleSelectNote()
-          this.fullKeybuffer = ''
-        }
-        else if (this.keybuffer == "t")
-        {
-          this.getFocusedNoteItem().addToStack()
-          this.fullKeybuffer = ''
-        }
-        else if (this.keybuffer == "i")
-        {
-          this.getFocusedNoteItem().insertNote()
-          this.fullKeybuffer = ''
-        }
-        else if (this.keybuffer == "x")
-        {
-          this.getFocusedNoteItem().deleteNote()
-          this.fullKeybuffer = ''
-        }
-        else if (this.keybuffer == "e")
-        {
-          this.getFocusedNoteItem().editNote()
-          this.fullKeybuffer = ''
-        }
-        else if (this.keybuffer == "yr")
-        {
-          var content = this.getFocusedNoteItem().content
-          clipboard.writeText(content)
-          this.fullKeybuffer = ''
-        }
-        else if (this.keybuffer == "yh")
-        {
-          var content = this.getFocusedNoteItem().renderedContent
-          clipboard.writeHTML(content)
-          this.fullKeybuffer = ''
-        }
-        else if (this.keybuffer == "gf")
-        {
-          var notePath = this.getFocusedNoteItem().fleetingNoteObj.path
-          shell.showItemInFolder(notePath)
-          this.fullKeybuffer = ''
-        }
-        else if (this.keybuffer == "go")
-        {
-          var notePath = this.getFocusedNoteItem().fleetingNoteObj.path
-          shell.openPath(notePath)
-          this.fullKeybuffer = ''
-        }
-        else if (this.keybuffer == "va")
-        {
-          this.selectedNotes = []
-          for (let n of this.$refs.fleetingNoteItems) {
-            n.selected = true
-            this.selectedNotes.push(n.fleetingNoteObj)
-          }
-          this.fullKeybuffer = ''
-        }
-        else if (this.keybuffer == "vc")
-        {
-          this.selectedNotes = []
-          for (let n of this.$refs.fleetingNoteItems) {
-            n.selected = false
-          }
-          this.fullKeybuffer = ''
-        }
-        else if (this.keybuffer == "vi")
-        {
-          for (let n of this.$refs.fleetingNoteItems) {
-            n.toggleSelectNote()
-          }
-          this.fullKeybuffer = ''
         }
       }
     },

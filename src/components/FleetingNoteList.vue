@@ -186,6 +186,15 @@ export default {
             clipboard.writeHTML(content)
             this.fullKeybuffer = ''
           }
+          else if (this.keybuffer == "yl")
+          {
+            var count = this.keybufferCount || 1
+            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
+            if (fleetingNoteObj.webLinks[count - 1]) {
+              clipboard.writeText(fleetingNoteObj.webLinks[count - 1])
+            }
+            this.fullKeybuffer = ''
+          }
           else if (this.keybuffer == "gf")
           {
             var notePath = this.getFocusedNoteItem().fleetingNoteObj.path
@@ -196,6 +205,15 @@ export default {
           {
             var notePath = this.getFocusedNoteItem().fleetingNoteObj.path
             shell.openPath(notePath)
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "gl")
+          {
+            var count = this.keybufferCount || 1
+            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
+            if (fleetingNoteObj.webLinks[count - 1]) {
+              shell.openExternal(fleetingNoteObj.webLinks[count - 1])
+            }
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "va")

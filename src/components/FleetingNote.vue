@@ -5,7 +5,7 @@
       <span class="timestamp">{{ moment(fleetingNoteObj.date).format('ddd DD.MM.YYYY HH:mm:ss') }}</span>
     </div>
     <div class="content" v-if="!editing">
-      <div v-if="fleetingNoteObj.isText" v-html="renderedContent">
+      <div v-if="fleetingNoteObj.isText" v-html="renderedContentWithHighlights">
       </div>
       <div v-else-if="fleetingNoteObj.isImage">
         <img
@@ -56,6 +56,7 @@
     name: 'fleeting-note',
     props: {
       'fleetingNoteObj': Object,
+      'searchString': String,
     },
     data: function () {
       return {
@@ -75,6 +76,18 @@
       },
       renderedContent() {
         return this.md.render(this.content)
+      },
+      renderedContentWithHighlights() {
+        var rendered = this.renderedContent
+        if (this.searchString.length > 0) {
+          return rendered.replace(
+            new RegExp(this.searchString, 'gi'),
+            '<span class="match">$&</span>'
+          )
+        }
+        else {
+          return rendered
+        }
       },
     },
   watch: {
@@ -250,6 +263,12 @@
   font-family: 'Georgia';
   margin-top: 5px;
   margin-bottom: 5px;
+  .match {
+    background: #00000012;
+    border: 1px solid #ababab;
+    border-radius: 5px;
+    padding: 2px;
+  }
   blockquote {
     border-left: 3px solid #cfdae6;
     padding-left: 5px;

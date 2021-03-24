@@ -1,5 +1,5 @@
 <template>
-  <div class="fleetingNoteList" tabindex="10" @keydown="keymonitor">
+  <div class="fleetingNoteList" tabindex="10" @keyup="keymonitor" ref="fleetingNoteList">
     <div class="fleetingNotes">
       <div v-for="f in fleetingNotes" :key="f.filename">
         <fleeting-note
@@ -8,10 +8,21 @@
         @unselectNote="unselectNote"
         @focusNote="focusNote"
         :class="f == focusedNote ? 'focused' : ''"
+        :searchString="searchString"
         ref="fleetingNoteItems"
         >
         </fleeting-note>
       </div>
+    </div>
+    <div class="searchBar" v-if="searchBarVisible">
+      <span class="statusBarItem">Search for:</span>
+      <span class="statusBarItem">
+        <input
+        v-model="searchString"
+        ref="searchInput"
+        @keydown="searchKeymonitor"
+        ></input>
+    </span>
     </div>
     <portal to="statusBarLeft" :order="1" v-if="portalActive">
       <span v-if="selectedNotes.length > 0">
@@ -37,6 +48,23 @@ import fleetingNote from '@/components/FleetingNote.vue'
 import MarkdownIt from 'markdown-it'
 import { clipboard, shell, nativeImage } from 'electron'
 
+function* arrIterator(arr) {
+  var len = arr.length
+  var i = 0
+  var dir = 1
+  while (true) {
+    dir = yield arr[i]
+    dir = dir || 1
+    i = i + dir
+    if (i < 0) {
+      i = len + i
+    }
+    else if (i >= len) {
+      i = 0 + (len - i)
+    }
+  }
+}
+
 export default {
   name: 'fleeting-note-list',
   props: {
@@ -56,6 +84,10 @@ export default {
       keybufferCount: null,
       keybufferRegister: null,
       isMounted: false,
+      searchString: '',
+      searchBarVisible: false,
+      foundItems: [],
+      resultsIt: null,
     }
   },
   methods: {
@@ -309,15 +341,80 @@ export default {
             }
             this.fullKeybuffer = ''
           }
+          else if (this.keybuffer == "/")
+          {
+            this.searchBarVisible = true
+            var $this = this
+            this.$nextTick(function () {
+              setTimeout(function () { // This is just a dirty hack so I can go to bed
+                $this.$refs.searchInput.focus()
+                $this.searchString = ''
+              }, 5)
+            })
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "n")
+          {
+            var count = this.keybufferCount || 1
+            var iteration = this.resultsIt.next(1 * count)
+            if (!iteration.done && iteration.value) {
+              this.focusedNote = iteration.value.fleetingNoteObj
+              this.scrollFocusedIntoView()
+            }
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "N")
+          {
+            var count = this.keybufferCount || 1
+            var iteration = this.resultsIt.next(-1 * count)
+            if (!iteration.done && iteration.value) {
+              this.focusedNote = iteration.value.fleetingNoteObj
+              this.scrollFocusedIntoView()
+            }
+            this.fullKeybuffer = ''
+          }
         }
       }
     },
+    searchKeymonitor(event) {
+      if (event.key === "Escape") {
+        this.searchBarVisible = false
+        this.searchString = ''
+        this.$refs.fleetingNoteList.focus()
+      }
+      else if (event.key === "Enter") {
+        this.searchBarVisible = false
+        this.$refs.fleetingNoteList.focus()
+      }
+      else if (event.key === 'Tab' && event.shiftKey) {
+        var iteration = this.resultsIt.next(-1)
+        if (!iteration.done && iteration.value) {
+          this.focusedNote = iteration.value.fleetingNoteObj
           this.scrollFocusedIntoView()
         }
-          var len = this.fleetingNotes.length
-          this.focusedNote = this.fleetingNotes[len - 1]
+        event.preventDefault()
+        event.stopPropagation()
+      }
+      else if (event.key === 'Tab') {
+        var iteration = this.resultsIt.next(1)
+        if (!iteration.done && iteration.value) {
+          this.focusedNote = iteration.value.fleetingNoteObj
           this.scrollFocusedIntoView()
         }
+        event.preventDefault()
+        event.stopPropagation()
+      }
+      else if (this.searchString.length > 0) {
+        var index = this.$refs.fleetingNoteItems.findIndex(n => n.$el.classList.contains('focused'))
+        var fleetingNoteItems = this.$refs.fleetingNoteItems.slice(index)
+          .concat(this.$refs.fleetingNoteItems.slice(0,index))
+        this.foundItems = fleetingNoteItems
+          .filter(n => n.fleetingNoteObj.isText && (new RegExp(this.searchString, 'i')).test(n.content))
+        this.resultsIt = arrIterator(this.foundItems)
+        this.resultsIt.next()
+        if (this.foundItems[0]) {
+          this.focusedNote = this.foundItems[0].fleetingNoteObj
+          this.scrollFocusedIntoView()
         }
       }
     },
@@ -347,5 +444,27 @@ export default {
   max-width: 550px;
   margin-left: 50px;
   padding: 20px;
+}
+
+.searchBar {
+  display: flex;
+  bottom: 23px;
+  z-index: 3;
+  font-family: 'Lucida Grande';
+  font-size: 12px;
+  background-color: #222527;
+  color: white;
+  width: 100%;
+  padding: 2px;
+  height: 24px;
+  position: fixed;
+  input {
+    background: #444444;
+    color: white;
+    border: none;
+    outline: none;
+    font-family: 'Lucida Grande';
+    font-size: 12px;
+  }
 }
 </style>

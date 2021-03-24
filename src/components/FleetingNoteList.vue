@@ -34,7 +34,7 @@ import fs from 'fs'
 import path from 'path'
 import fleetingNote from '@/components/FleetingNote.vue'
 import MarkdownIt from 'markdown-it'
-import { clipboard, shell } from 'electron'
+import { clipboard, shell, nativeImage } from 'electron'
 
 export default {
   name: 'fleeting-note-list',
@@ -184,6 +184,16 @@ export default {
           {
             var content = this.getFocusedNoteItem().renderedContent
             clipboard.writeHTML(content)
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "yi")
+          {
+            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
+            if (fleetingNoteObj.isImage) {
+              let dataURL = `data:${fleetingNoteObj.mime};base64,${fleetingNoteObj.contentBase64}`
+              let img = nativeImage.createFromDataURL(dataURL)
+              clipboard.writeImage(img)
+            }
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "yl")

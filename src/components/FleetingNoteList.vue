@@ -17,7 +17,8 @@
       <span v-if="selectedNotes.length > 0">
         <span class="statusBarItem">{{selectedNotes.length}} items selected</span>
         <span class="statusBarItem">|</span>
-        <span class="statusBarItem">delete</span>
+        <span class="statusBarItem" @click="deleteSelectedNotes">delete</span>
+        <span class="statusBarItem" @click="addSelectedToStack">stack</span>
         <span class="statusBarItem">merge</span>
         <span class="statusBarItem">new</span>
       </span>
@@ -66,6 +67,64 @@ export default {
       console.log(`Unselected: ${fleetingNoteObj.filename}`)
       var index = this.selectedNotes.findIndex(n => n.path == fleetingNoteObj.path)
       this.selectedNotes.splice(index, 1)
+    },
+    deleteSelectedNotes(event) {
+      var $this = this
+      this.$store.commit('triggerCustomTextPrompt', {
+        message: `Are you sure you want to delete ${this.selectedNotes.length} fleeting notes?`,
+        action: (text) => {
+          if (['y', 'yes'].includes(text.trim())) {
+            for (let n of $this.selectedNotes) {
+              n.delete()
+            }
+            $this.selectedNotes = []
+          }
+        }
+      })
+      if (event) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    },
+    addSelectedToStack(event) {
+      var $this = this
+      var stacks = this.$store.state.currentNoteCollection.stacks.getListOfStacks()
+      var items = stacks.map(s => {
+        return {
+          label: s.relativePath,
+          iconClasses: ['feather-icon', 'icon-layers'],
+          action:() => {
+            for (let n of $this.selectedNotes) {
+              n.sendToStack(s.relativePath)
+            }
+            $this.selectedNotes = []
+          }
+        }
+      })
+      var filter = function (context) {
+        var $items = context.itemsWithIds
+        var itemsFiltered = $items.filter(item => {
+          return item.label.toLowerCase().indexOf(context.searchString.toLowerCase()) > -1
+        })
+        itemsFiltered.push({
+          id: context.getHighestId() + 1,
+          iconClasses: ['feather-icon', 'icon-plus'],
+          label: context.searchString.trim(),
+          description: 'Create new stack',
+          action: () => {
+            for (let n of $this.selectedNotes) {
+              n.sendToStack(context.searchString.trim())
+            }
+            $this.selectedNotes = []
+          },
+        })
+        return itemsFiltered
+      }
+      this.$store.commit('triggerCustomSelectList', {items, filter})
+      if (event) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
     },
     focusNote(fleetingNoteObj) {
       console.log(`Focused: ${fleetingNoteObj.filename}`)

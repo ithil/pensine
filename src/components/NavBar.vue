@@ -44,6 +44,12 @@
           name: 'new stuff'
         })
       },
+      updateInboxBadge() {
+        var $this = this
+        var inbox = this.$store.state.currentNoteCollection.inbox
+        var inboxTreeNode = this.treeData.find(node => node.name == 'Inbox')
+        inboxTreeNode.badge = inbox.getList().length
+      },
       updateCategoryTree() {
         var $this = this
         var categoryTree = this.$store.state.currentNoteCollection.getCategoryTree()
@@ -118,30 +124,40 @@
       },
       updateStacks() {
         var $this = this
-        var stacks = this.$store.state.currentNoteCollection.stacks.getListOfStacks()
+        // var stacks = this.$store.state.currentNoteCollection.stacks.getListOfStacks()
+        var stacks = this.$store.state.currentNoteCollection.stacks.getStacks(true)
         var stacksNode = this.treeData.find(node => node.name == 'Stacks')
         // stacksNode.badge = stacks.length
         stacksNode.children = []
-        stacks.forEach((s, i) => {
-          stacksNode.children.push({
-            key: i + 777,
-            name: s.relativePath,
-            iconClasses: ['feather-icon', 'icon-layers'],
-            badge: s.getCountOfNotes(),
-            click: function () {
-              $this.$router.push(`/stacks/${s.relativePath}`).catch(err => {
-                // Ignore the vuex err regarding  navigating to the page they are already on.
-                if (
-                  err.name !== 'NavigationDuplicated' &&
-                  !err.message.includes('Avoided redundant navigation to current location')
-                ) {
-                  // But print any other errors to the console
-                  console.error(err)
-                }
-              })
+        var convertTree = function(tree, node) {
+          for (let s of tree) {
+            var stackNode = {
+              key: `/stacks/${s.relativePath}`,
+              name: s.name,
+              iconClasses: ['feather-icon', 'icon-layers'],
+              badge: s.getCountOfNotes(),
+              children: [],
+              click: function () {
+                $this.$router.push(`/stacks/${s.relativePath}`).catch(err => {
+                  // Ignore the vuex err regarding  navigating to the page they are already on.
+                  if (
+                    err.name !== 'NavigationDuplicated' &&
+                    !err.message.includes('Avoided redundant navigation to current location')
+                  ) {
+                    // But print any other errors to the console
+                    console.error(err)
+                  }
+                })
+              }
             }
-          })
-        })
+            var substacks = s.getContent().filter(se => se.isStack)
+            if (substacks.length > 0) {
+              convertTree(substacks, stackNode)
+            }
+            node.children.push(stackNode)
+          }
+        }
+        convertTree(stacks, stacksNode)
       },
       updateTagTree() {
         var $this = this
@@ -208,6 +224,7 @@
             name: 'Inbox',
             click: () => { this.$router.push('/inbox') },
             iconClasses: ['feather-icon', 'icon-inbox'],
+            badge: null,
           },
         ]
         var stacksNode = {
@@ -245,10 +262,15 @@
         this.updateTagTree()
       }
       createTree()
+      this.updateInboxBadge()
     bus.$on('noteCollectionChanged', () => {
       createTree()
+      this.updateInboxBadge()
     })
     var collection = this.$store.state.currentNoteCollection
+    collection.events.on('inboxItemAdd', this.updateInboxBadge)
+    collection.events.on('inboxItemChange', this.updateInboxBadge)
+    collection.events.on('inboxItemDelete', this.updateInboxBadge)
     collection.events.on('stacksItemAdd', this.updateStacks)
     collection.events.on('stacksItemChange', this.updateStacks)
     collection.events.on('stacksItemDelete', this.updateStacks)
@@ -261,6 +283,9 @@
   },
     unmounted() {
       var collection = this.$store.state.currentNoteCollection
+      collection.events.removeListener('inboxItemAdd', this.updateInboxBadge)
+      collection.events.removeListener('inboxItemChange', this.updateInboxBadge)
+      collection.events.removeListener('inboxItemDelete', this.updateInboxBadge)
       collection.events.removeListener('stacksItemAdd', this.updateStacks)
       collection.events.removeListener('stacksItemChange', this.updateStacks)
       collection.events.removeListener('stacksItemDelete', this.updateStacks)

@@ -7,11 +7,13 @@ import router from './router'
 import Store from 'electron-store'
 import RouterTab from 'vue-router-tab'
 import PortalVue from 'portal-vue'
+import {VueMasonryPlugin} from 'vue-masonry'
 import $ from 'jquery'
 
 Vue.use(Vuex)
 Vue.use(RouterTab)
 Vue.use(PortalVue)
+Vue.use(VueMasonryPlugin)
 
 const config = new Store()
 

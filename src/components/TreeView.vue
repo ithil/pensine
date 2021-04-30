@@ -4,14 +4,17 @@
       <div
       :class="{folder: isFolder}"
       class="tree-row"
-      @click.stop.prevent="triggerClick"
-      @dblclick="toggle">
+      >
       <span class="tree-toggle" :class="{'no-children': !isFolder}" @click="toggle">
         <span v-if="isOpen">▾</span>
         <span v-else>▸</span>
       </span>
       <span class="tree-icon" :class="item.iconClasses || []" v-if="item.icon || item.iconClasses">{{item.icon ? item.icon : ''}}</span>
-      <span class="tree-name">{{ item.name }}</span>
+      <span
+      class="tree-name"
+      @click.stop.prevent="triggerClick"
+      @dblclick="toggle"
+      >{{ item.name }}</span>
       <span class="tree-badge" v-if="item.badge">{{item.badge}}</span>
     </div>
     <ul v-show="isOpen" v-if="isFolder" class="tree">

@@ -1,11 +1,32 @@
 <template>
   <div class="inbox">
+    <div class="filterOptions">
+      <input v-model="filterTerm" type="search" placeholder="Filter ...">
+      <select v-model="sortOrder" class="sortOrder">
+        <option disabled value="">Sort Order</option>
+        <option v-for="option in sortOptions" v-bind:value="option.value">
+          {{ option.text }}
+        </option>
+      </select>
+    </div>
     <fleeting-note-list
     :fleetingNotes="fleetingNotes"
+    @updateFleetingNotes="updateFleetingNotes"
+    @focusSendBox="focusSendBox"
+    @changeSortOrder="changeSortOrder"
+    @changeFilterTerm="changeFilterTerm"
+    :sortOrder="sortOrder"
+    :filterTerm="filterTerm"
+    ref="fleetingNoteList"
     >
   </fleeting-note-list>
   <div class="sendFleetingNote">
-    <textarea rows="7" cols="60" v-model="newFleetingNoteContent" @keyup="sendKeymonitor"></textarea>
+    <textarea
+    v-model="newFleetingNoteContent"
+    @keyup="sendKeymonitor"
+    ref="sendBox"
+    placeholder="Send to Inbox ..."
+    ></textarea>
   </div>
 </div>
 </template>
@@ -25,16 +46,22 @@ export default {
       fleetingNotes: [],
       newFleetingNoteContent: '',
       isMounted: false,
+      sortOrder: 'newestFirst',
+      filterTerm: '',
+      sortOptions: [
+        { text: 'Oldest First', value: 'oldestFirst' },
+        { text: 'Newest First', value: 'newestFirst' },
+      ],
     }
   },
   methods: {
     updateFleetingNotes() {
       this.fleetingNotes = this.inbox.getList()
-      // console.log(this.fleetingNotes)
     },
     sendNewNote() {
       this.inbox.sendText(this.newFleetingNoteContent)
       this.newFleetingNoteContent = ''
+      this.$refs.fleetingNoteList.$el.focus()
     },
     sendKeymonitor(event) {
       if (event.shiftKey && event.key == 'Enter') {
@@ -42,6 +69,18 @@ export default {
         event.stopPropagation()
         event.preventDefault()
       }
+      else if (event.key == 'Escape') {
+        this.$refs.fleetingNoteList.$el.focus()
+      }
+    },
+    focusSendBox() {
+      this.$refs.sendBox.focus()
+    },
+    changeSortOrder(sortOrder) {
+      this.sortOrder = sortOrder
+    },
+    changeFilterTerm(filterTerm) {
+      this.filterTerm = filterTerm
     },
   },
   computed: {
@@ -73,10 +112,60 @@ export default {
 </script>
 <style scoped lang='scss'>
 .inbox {
-  background: rgba(0, 0, 0, 0.05)
+  background: repeating-linear-gradient( 45deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.05) 10px, rgba(0, 0, 0, 0.08) 10px, rgba(0, 0, 0, 0.08) 20px );
+  padding-top: 20px;
+  padding-left: 50px;
+  min-height: -webkit-fill-available;
+  .filterOptions {
+    margin-bottom: 20px;
+    input[type="search"] {
+      width: 450px;
+      border-radius: 5px;
+      border: 2px solid #d6d6d6;
+      padding: 5px;
+      &:focus {
+        outline: none;
+        border-color: cornflowerblue;
+      }
+    }
+    select.sortOrder {
+      font-size: 12px;
+      font-family: sans-serif;
+      font-weight: 700;
+      color: #444;
+      padding: .6em 1.4em .5em .8em;
+      max-width: 100%;
+      box-sizing: border-box;
+      margin: 0;
+      border: 1px solid #aaa;
+      border-radius: 5px;
+      -moz-appearance: none;
+      -webkit-appearance: none;
+      appearance: none;
+      background-color: #fff;
+    }
+  }
+  .fleetingNoteList {
+    padding-bottom: 40px;
+  }
 }
 
 .sendFleetingNote {
-  margin-left: 80px;
+  margin-left: 10px;
+  position: fixed;
+  bottom: 30px;
+  textarea {
+    border-radius: 10px;
+    border: 2px solid #bfbfbf;
+    padding: 10px;
+    width: 38em;
+    height: 1.1em;
+    box-shadow: 0px 0px 15px #9e9e9ed9;
+    &:focus {
+      outline: none;
+      border-color: cornflowerblue;
+      height: 7em;
+    }
+  }
 }
 </style>

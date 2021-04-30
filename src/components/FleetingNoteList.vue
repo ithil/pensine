@@ -1,7 +1,7 @@
 <template>
-  <div class="fleetingNoteList" tabindex="10" @keyup="keymonitor" ref="fleetingNoteList">
+  <div class="fleetingNoteList" tabindex="10" @keyup="keymonitor" @keydown="preventDefaultFix" ref="fleetingNoteList">
     <div class="fleetingNotes">
-      <div v-for="f in fleetingNotes" :key="f.filename">
+      <div v-for="f in processedFleetingNotes" :key="f.filename">
         <fleeting-note
         :fleetingNoteObj="f"
         @selectNote="selectNote"
@@ -26,7 +26,7 @@
     </div>
     <portal to="statusBarLeft" :order="1" v-if="portalActive">
       <span v-if="selectedNotes.length > 0">
-        <span class="statusBarItem">{{selectedNotes.length}} items selected</span>
+        <span class="statusBarItem">{{selectedNotes.length}} selected</span>
         <span class="statusBarItem">|</span>
         <span class="statusBarItem" @click="deleteSelectedNotes">delete</span>
         <span class="statusBarItem" @click="addSelectedToStack">stack</span>
@@ -36,7 +36,7 @@
     </portal>
     <portal to="statusBarRight" :order="1" v-if="portalActive">
       <span class="keybuffer">{{fullKeybuffer}}</span>
-      <span>{{fleetingNotes.length}} items</span>
+      <span><span v-if="filterTerm.length > 0">{{processedFleetingNotes.length}}/</span>{{fleetingNotes.length}} items</span>
     </portal>
   </div>
 </template>
@@ -69,6 +69,14 @@ export default {
   name: 'fleeting-note-list',
   props: {
     'fleetingNotes': Array,
+    'filterTerm': {
+      type: String,
+      default: '',
+    },
+    'sortOrder': {
+      type: String,
+      default: 'oldestFirst',
+    },
   },
   components: {
     fleetingNote,
@@ -91,6 +99,9 @@ export default {
     }
   },
   methods: {
+    updateFleetingNotes() {
+      this.$emit('updateFleetingNotes')
+    },
     selectNote(fleetingNoteObj) {
       console.log(`Selected: ${fleetingNoteObj.filename}`)
       this.selectedNotes.push(fleetingNoteObj)
@@ -164,17 +175,17 @@ export default {
       this.focusedNote = fleetingNoteObj
     },
     focusNext(c = 1) {
-      var index = this.fleetingNotes.findIndex(i => i == this.focusedNote)
-      var len = this.fleetingNotes.length
+      var index = this.processedFleetingNotes.findIndex(i => i == this.focusedNote)
+      var len = this.processedFleetingNotes.length
       if (index > -1) {
         if (index + c >= len) {
-          this.focusedNote = this.fleetingNotes[0]
+          this.focusedNote = this.processedFleetingNotes[0]
         }
         else if (index + c < 0) {
-          this.focusedNote = this.fleetingNotes[len - 1]
+          this.focusedNote = this.processedFleetingNotes[len - 1]
         }
         else {
-          this.focusedNote = this.fleetingNotes[index + c]
+          this.focusedNote = this.processedFleetingNotes[index + c]
         }
         this.scrollFocusedIntoView()
       }
@@ -192,6 +203,15 @@ export default {
     },
     getFocusedNoteItem() {
       return this.$refs.fleetingNoteItems.find(n => n.$el.classList.contains('focused'))
+    },
+    preventDefaultFix(event) {
+      var tagName = event.target.tagName
+      if (!(['INPUT', 'TEXTAREA'].includes(tagName))) {
+        if (event.keyCode == 32) {
+          event.stopPropagation()
+          event.preventDefault()
+        }
+      }
     },
     keymonitor(event) {
       var tagName = event.target.tagName
@@ -219,15 +239,20 @@ export default {
           }
           else if (this.keybuffer == "gg")
           {
-            this.focusedNote = this.fleetingNotes[0]
+            this.focusedNote = this.processedFleetingNotes[0]
             this.scrollFocusedIntoView()
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "G")
           {
-            var len = this.fleetingNotes.length
-            this.focusedNote = this.fleetingNotes[len - 1]
+            var len = this.processedFleetingNotes.length
+            this.focusedNote = this.processedFleetingNotes[len - 1]
             this.scrollFocusedIntoView()
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "r")
+          {
+            this.updateFleetingNotes()
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == " ")
@@ -267,14 +292,20 @@ export default {
           }
           else if (this.keybuffer == "yr")
           {
-            var content = this.getFocusedNoteItem().content
-            clipboard.writeText(content)
+            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
+            if (fleetingNoteObj.isText) {
+              var content = fleetingNoteObj.content
+              clipboard.writeText(content)
+            }
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "yh")
           {
-            var content = this.getFocusedNoteItem().renderedContent
-            clipboard.writeHTML(content)
+            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
+            if (fleetingNoteObj.isText) {
+              var content = fleetingNoteObj.renderedContent
+              clipboard.writeHTML(content)
+            }
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "yi")
@@ -315,6 +346,11 @@ export default {
             if (fleetingNoteObj.webLinks[count - 1]) {
               shell.openExternal(fleetingNoteObj.webLinks[count - 1])
             }
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "gi")
+          {
+            this.$emit('focusSendBox')
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "va")
@@ -373,6 +409,16 @@ export default {
             }
             this.fullKeybuffer = ''
           }
+          else if (this.keybuffer == "sn")
+          {
+            this.$emit('changeSortOrder', 'newestFirst')
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "so")
+          {
+            this.$emit('changeSortOrder', 'oldestFirst')
+            this.fullKeybuffer = ''
+          }
         }
       }
     },
@@ -420,9 +466,28 @@ export default {
     },
   },
   computed: {
+    processedFleetingNotes() {
+      var processedNotes = []
+      if (this.filterTerm && this.filterTerm.length > 0) {
+        processedNotes = this.fleetingNotes.filter(item => {
+          return item.content.toLowerCase().indexOf(this.filterTerm.toLowerCase()) > -1
+        })
+      }
+      else {
+        processedNotes = this.fleetingNotes
+      }
+      if (this.sortOrder == 'newestFirst') {
+        processedNotes = processedNotes.sort((a, b) => b.date - a.date)
+      }
+      else if (this.sortOrder == 'oldestFirst') {
+        processedNotes = processedNotes.sort((a, b) => a.date - b.date)
+      }
+      return processedNotes
+    },
   },
   mounted() {
     this.isMounted = true
+    this.focusedNote = this.processedFleetingNotes[0]
   },
   unmounted() {
     this.isMounted = false
@@ -442,8 +507,6 @@ export default {
 
 .fleetingNotes {
   max-width: 550px;
-  margin-left: 50px;
-  padding: 20px;
 }
 
 .searchBar {

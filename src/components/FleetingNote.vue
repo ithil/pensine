@@ -263,6 +263,7 @@
   font-family: 'Georgia';
   margin-top: 5px;
   margin-bottom: 5px;
+  word-break: break-word;
   .match {
     background: #00000012;
     border: 1px solid #ababab;

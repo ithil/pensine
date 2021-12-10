@@ -50,6 +50,7 @@ const store = new Vuex.Store({
       action: function() { },
       selection: [0, 0],
       selectAll: false,
+      password: false,
     },
     fleetingNoteForInsertion: null,
   },

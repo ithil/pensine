@@ -7,7 +7,7 @@
 
       <template v-slot:body>
         <input
-        type="text"
+        :type="password ? 'password' : 'text'"
         class="modal__input"
         v-model="inputText"
         ref="input"
@@ -39,6 +39,10 @@ import Modal from '@/components/Modal.vue'
       selection: Array,
       selectAll: Boolean,
       action: Function,
+      password: {
+        type: Boolean,
+        default: false,
+      },
     },
     data: function () {
       return {
@@ -76,6 +80,7 @@ import Modal from '@/components/Modal.vue'
       },
     },
     mounted() {
+      this.inputText = this.text || ''
     },
   }
 </script>

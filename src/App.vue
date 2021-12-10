@@ -47,6 +47,7 @@
       :action="customTextPromptProps.action"
       :selection="customTextPromptProps.selection"
       :selectAll="customTextPromptProps.selectAll"
+      :password="customTextPromptProps.password"
       @close="$store.commit('closeCustomTextPrompt')"
       >
       </text-prompt>

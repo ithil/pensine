@@ -74,6 +74,7 @@ import SelectList from '@/components/SelectList.vue'
 import TextPrompt from '@/components/TextPrompt.vue'
 import { ipcRenderer, shell } from 'electron'
 import { bus } from './main'
+import Icon from '@/components/Icon.vue'
 
 export default {
   components: {
@@ -83,6 +84,7 @@ export default {
     Modal,
     SelectList,
     TextPrompt,
+    Icon,
   },
   data() {
     return {
@@ -149,7 +151,7 @@ export default {
     openItems() {
       return [{
         label: 'Inbox',
-        iconClasses: ['feather-icon', 'icon-inbox'],
+        lucideIcon: 'Inbox',
         type: 'inbox',
         action: () => {
           this.$router.push(`/inbox/`).catch(err => {
@@ -314,7 +316,6 @@ export default {
 </script>
 
 <style lang="scss">
-@import '../node_modules/feather-webfont/dist/feather-icons.css';
 $status-bar-height: 24px;
 
 body {
@@ -404,8 +405,6 @@ body {
 }
 
 .router-tab__item-icon{
-  font-family: 'feather-icons';
-  font-style: normal;
 }
 
 .router-tab__item {

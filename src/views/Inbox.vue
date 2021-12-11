@@ -33,11 +33,13 @@
 
 <script>
 import fleetingNoteList from '@/components/FleetingNoteList.vue'
+import Icon from '@/components/Icon.vue'
 
 export default {
   name: 'Inbox',
   components: {
     fleetingNoteList,
+    Icon,
   },
   data() {
     return {

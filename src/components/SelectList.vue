@@ -23,7 +23,7 @@
           :ref="i.id == selected ? 'selectedItem' : ''"
           >
             <div class="primary-line" :title="i.hover ? i.hover : ''">
-              <span :class="i.iconClasses"></span>
+              <Icon v-if="i.lucideIcon" :name="i.lucideIcon" />
               {{ i.label }}
             </div>
             <div class="secondary-line">
@@ -43,11 +43,13 @@
 
 <script>
 import Modal from './Modal.vue'
+import Icon from '@/components/Icon.vue'
 
   export default {
     name: 'select-list',
     components: {
       Modal,
+      Icon,
     },
     props: {
       items: Array,

@@ -51,12 +51,16 @@
   import MarkdownIt from 'markdown-it'
   import { bus } from '@/main'
   import { ipcRenderer } from 'electron'
+  import Icon from '@/components/Icon.vue'
 
   export default {
     name: 'fleeting-note',
     props: {
       'fleetingNoteObj': Object,
       'searchString': String,
+    },
+    components: {
+      Icon,
     },
     data: function () {
       return {
@@ -68,6 +72,14 @@
         editorContent: this.content,
         bus: bus,
         icon: null,
+        customRelationIcons: {
+          'tags': 'Tag',
+          'bib': 'Library',
+          'calendar': 'Calendar',
+          'places': 'MapPin',
+          'people': 'User',
+          'groups': 'Users',
+        },
       }
     },
     computed: {
@@ -165,7 +177,7 @@
         var items = stacks.map(s => {
           return {
             label: s.relativePath,
-            iconClasses: ['feather-icon', 'icon-layers'],
+            lucideIcon: 'Layers',
             action:() => {
               console.log(s.path)
               this.fleetingNoteObj.sendToStack(s.relativePath)
@@ -179,7 +191,7 @@
           })
           itemsFiltered.push({
             id: context.getHighestId() + 1,
-            iconClasses: ['feather-icon', 'icon-plus'],
+            lucideIcon: 'Plus',
             label: context.searchString.trim(),
             description: 'Create new stack',
             action: () => {

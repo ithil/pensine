@@ -9,7 +9,12 @@
         <span v-if="isOpen">▾</span>
         <span v-else>▸</span>
       </span>
-      <span class="tree-icon" :class="item.iconClasses || []" v-if="item.icon || item.iconClasses">{{item.icon ? item.icon : ''}}</span>
+      <span class="tree-icon" v-if="item.icon || item.lucideIcon">
+        <Icon v-if="item.lucideIcon" :name="item.lucideIcon" />
+        <span v-else-if="item.icon">
+          {{item.icon}}
+        </span>
+      </span>
       <span
       class="tree-name"
       @click.stop.prevent="triggerClick"
@@ -32,12 +37,16 @@
 </template>
 
 <script>
+import Icon from '@/components/Icon.vue'
 
   export default {
     name: 'tree-item',
     template: '#item-template',
     props: {
       item: Object
+    },
+    components: {
+      Icon,
     },
     data: function () {
       return {

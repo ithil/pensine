@@ -33,11 +33,13 @@
 
 <script>
 import fleetingNoteList from '@/components/FleetingNoteList.vue'
+import Icon from '@/components/Icon.vue'
 
 export default {
   name: 'Stack',
   components: {
     fleetingNoteList,
+    Icon,
   },
   data() {
     return {

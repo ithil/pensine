@@ -21,7 +21,7 @@
         placeholder="Send to Inbox ..."
         ></textarea>
         <div class="noteLink" @click="$router.push('/inbox')">
-          <span class="icon feather-icon icon-inbox"></span>Show all {{inboxCount}} Inbox items
+          <Icon name="Inbox" /></span>Show all {{inboxCount}} Inbox items
         </div>
       </div>
     </div>
@@ -33,7 +33,7 @@
               <img v-if="s.iconUrl" :src="s.iconUrl"></img>
               <span v-else-if="s.iconClasses" :class="s.iconClasses"></span>
               <span v-else-if="s.emojiIcon"> {{s.emojiIcon}}</span>
-              <span v-else class="feather-icon icon-layers"></span>
+              <Icon v-else name="Layers" />
             </div>
             <div class="label">{{s.name}}</div>
           </div>
@@ -45,7 +45,7 @@
       <ul>
         <li v-for="s in recentlyChangedStacks" :key="s.relativePath">
           <span class="stackLink" @click="$router.push(`/stacks/${s.relativePath}`)">
-            <span class="icon feather-icon icon-layers"></span>{{s.relativePath}}
+            <Icon name="Layers" />{{s.relativePath}}
           </span>
         </li>
       </ul>
@@ -58,6 +58,7 @@
 // @ is an alias to /src
 import fs from 'fs'
 import path from 'path'
+import Icon from '@/components/Icon.vue'
 
 export default {
   name: 'Home',
@@ -70,6 +71,7 @@ export default {
     }
   },
   components: {
+    Icon
   },
   methods: {
     sendNewNote() {

@@ -62,7 +62,7 @@
             var stackNode = {
               key: `/stacks/${s.relativePath}`,
               name: s.name,
-              iconClasses: ['feather-icon', 'icon-layers'],
+              lucideIcon: 'Layers',
               badge: s.getCountOfNotes(),
               children: [],
               click: function () {
@@ -95,19 +95,19 @@
           {
             name: 'Home',
             click: () => { this.$router.push('/') },
-            iconClasses: ['feather-icon', 'icon-home'],
+            lucideIcon: 'Home',
           },
           {
             name: 'Inbox',
             click: () => { this.$router.push('/inbox') },
-            iconClasses: ['feather-icon', 'icon-inbox'],
+            lucideIcon: 'Inbox',
             badge: null,
           },
         ]
         var stacksNode = {
           key: 777,
           name: 'Stacks',
-          iconClasses: ['feather-icon', 'icon-layers'],
+          lucideIcon: 'Layers',
           children: []
         }
         this.treeData.push(stacksNode)

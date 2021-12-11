@@ -25,17 +25,36 @@
     </span>
     </div>
     <portal to="statusBarLeft" :order="1" v-if="portalActive">
-      <span v-if="selectedNotes.length > 0">
-        <span class="statusBarItem">{{selectedNotes.length}} selected</span>
-        <span class="statusBarItem">|</span>
-        <span class="statusBarItem" @click="deleteSelectedNotes">delete</span>
-        <span class="statusBarItem" @click="addSelectedToStack">stack</span>
-        <span class="statusBarItem">merge</span>
-        <span class="statusBarItem">new</span>
+      <span v-if="selectedNotes.length > 0" class="statusBarSection">
+        <span class="statusBarItem bold">{{selectedNotes.length}} selected</span>
+        <span class="statusBarItem">➝</span>
+        <span class="statusBarItem clickable" @click="deleteSelectedNotes">
+          <Icon name="Trash" />
+          delete
+        </span>
+        <span class="statusBarItem clickable" @click="addSelectedToStack">
+          <Icon name="Layers" />
+          stack
+        </span>
+        <span class="statusBarItem clickable" @click="sendSelectedToPort">
+          <Icon name="Truck" />
+          port
+        </span>
+        <span class="statusBarItem clickable" @click="linkSelectedNotes">
+          <Icon name="Link" />
+          link
+        </span>
+        <span class="statusBarItem clickable">
+          <Icon name="GitMerge" />
+          merge
+        </span>
       </span>
     </portal>
     <portal to="statusBarRight" :order="1" v-if="portalActive">
       <span class="keybuffer">{{fullKeybuffer}}</span>
+      <span v-if="$store.state.bag.length > 0" @click="showBag">
+        <Icon name="Pocket" /> {{$store.state.bag.length}}
+      </span>
       <span><span v-if="filterTerm.length > 0">{{processedFleetingNotes.length}}/</span>{{fleetingNotes.length}} items</span>
     </portal>
   </div>
@@ -47,6 +66,7 @@ import path from 'path'
 import fleetingNote from '@/components/FleetingNote.vue'
 import MarkdownIt from 'markdown-it'
 import { clipboard, shell, nativeImage } from 'electron'
+import Icon from '@/components/Icon.vue'
 
 function* arrIterator(arr) {
   var len = arr.length
@@ -80,6 +100,7 @@ export default {
   },
   components: {
     fleetingNote,
+    Icon,
   },
   data() {
     return {

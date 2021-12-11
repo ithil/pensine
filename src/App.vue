@@ -300,10 +300,16 @@ export default {
           typeFilter = 'stack'
           searchString = searchString.slice(1)
         }
-        var itemsFiltered = $items.filter(item => {
-          if (typeFilter && item.type != typeFilter) return false
-          return item.label.toLowerCase().indexOf(searchString) > -1
-        })
+        else if (searchString.startsWith('#')) {
+          typeFilter = 'tag'
+          searchString = searchString.slice(1)
+        }
+        var itemsFiltered = $items.filter(item => (typeFilter && item.type != typeFilter) ? false : true)
+        if (searchString.length == 0) {
+          return itemsFiltered
+        }
+        var fuse = new Fuse(itemsFiltered, {keys: ['label']})
+        itemsFiltered = fuse.search(searchString).map(i => i.item)
         return itemsFiltered
     },
     updateAllStacks() {

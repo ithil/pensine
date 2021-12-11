@@ -1,22 +1,60 @@
 <template>
-  <div id="app">
-    <div id="titlebar" @dblclick="minimizeWindow">
-      <div class="title">
-        {{title}}
-      </div>
-      <div class="uncommitedChanges" v-if="uncommitedChanges">
-        <svg height="20" width="20">
-          <circle cx="10" cy="10" r="5" stroke="none" stroke-width="3" fill="cornflowerblue" />
-        </svg>
-      </div>
-    </div>
-    <splitpanes style="height: calc(100vh - 22px)" @resize="paneSize = $event[0].size">
+  <div id="app" :data-collection="$store.state.currentNoteCollection.collectionJson.name">
+    <splitpanes style="height: calc(100vh - 0px)" @resize="paneSize = $event[0].size">
       <pane :size="paneSize" id="navbar">
         <nav-bar></nav-bar>
       </pane>
       <pane :size="100-paneSize" style="overflow:hidden;">
-        <!-- <router-view :key="$route.fullPath"/> -->
-        <router-tab lang="en"/>
+        <router-tab
+        lang="en"
+        :tab-transition="{
+          name: 'router-tab-slide',
+          enterActiveClass: 'animate__animated animate__slideInLeft animate__faster',
+          }"
+        :page-transition="{
+          name: 'router-page-slide',
+          enterActiveClass: 'animate__animated animate__fadeIn animate__fast',
+          }"
+        append="next"
+        >
+            <template #start>
+              <span class="router-tab__tabbar-left-space"></span>
+            </template>
+            <template #default="tab">
+              <Popper
+              :append-to-body="true"
+              :options="{
+                placement: 'bottom',
+                modifiers: { offset: { offset: '0,10px' } }
+                }">
+                <div class="popper tabtip">
+                  {{tab.tips}}
+                </div>
+                <span class="router-tab__item-wrapper" slot="reference" :class="tab.tabClass">
+                  <Icon v-if="tab.icon" :name="tab.icon" class="router-tab__item-icon"
+                  :style="{color: tab.data.iconColor || 'inherit', background: tab.data.iconBackground || 'none'}"
+                  />
+
+                  <span class="router-tab__item-title">
+                    {{tab.title}}
+                  </span>
+                  <i
+                  v-if="tab.closable"
+                  class="router-tab__item-close"
+                  @click.prevent="tab.close"
+                  />
+                </span>
+              </Popper>
+            </template>
+            <template #end>
+              <div class="router-tab__tabbar-right-space">
+                <div class="currentNoteCollection" @click="collectionModal">
+                  <Icon name="BookOpen" />
+                  <span>{{$store.state.currentNoteCollection.collectionJson.name}}</span>
+                </div>
+              </div>
+            </template>
+          </router-tab>
         <div id="statusBar">
           <portal-target name="statusBarLeft" class="statusBarLeft" multiple />
           <portal-target name="statusBarRight" class="statusBarRight" multiple />
@@ -72,9 +110,12 @@ import NavBar from './components/NavBar.vue'
 import Modal from './components/Modal.vue'
 import SelectList from '@/components/SelectList.vue'
 import TextPrompt from '@/components/TextPrompt.vue'
+import "animate.css"
 import { ipcRenderer, shell } from 'electron'
 import { bus } from './main'
 import Icon from '@/components/Icon.vue'
+import Popper from 'vue-popperjs';
+import 'vue-popperjs/dist/vue-popper.css';
 
 export default {
   components: {
@@ -85,11 +126,11 @@ export default {
     SelectList,
     TextPrompt,
     Icon,
+    Popper,
   },
   data() {
     return {
-      paneSize: 20,
-      uncommitedChanges: false,
+      paneSize: 0,
     }
   },
   watch: {
@@ -323,37 +364,6 @@ body {
   margin: 0;
 }
 
-#titlebar {
-  -webkit-user-select: none;
-  -webkit-app-region: drag;
-  background-color: #1d1f21;
-  color: #aaa;
-  height: 22px;
-  padding-left: 68px;
-  padding-right: 3px;
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: flex-start;
-  overflow: hidden;
-  box-sizing: content-box;
-  font-size: 13px;
-  font-family: 'Lucida Grande';
-  background-color: #292c2f;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.5);
-  transition: margin-top 160ms;
-  position: relative;
-  .title {
-    position: absolute;
-    flex: 0 1 auto;
-    left: 50%;
-  }
-  .uncommitedChanges {
-    flex: 0 1 auto;
-    margin-left: auto;
-  }
-}
-
 #statusBar {
   display: flex;
   bottom: 0px;
@@ -405,14 +415,91 @@ body {
 }
 
 .router-tab__item-icon{
+  padding: 2px;
+  border-radius: 3px;
 }
 
 .router-tab__item {
   color: #949494;
 }
 
+.router-tab__item-title {
+  display: block;
+}
+
+.router-tab-page {
+  min-height: -webkit-fill-available;
+}
+
+.router-tab__header {
+  border-bottom: none;
+  background: #292c2f4f;
+  -webkit-app-region: drag;
+}
+
+.router-tab__tabbar-left-space {
+  margin-left: 70px;
+}
+
+.router-tab__tabbar-right-space {
+  margin: 6px;
+  margin-right: 14px;
+  font-size: 13px;
+  .currentNoteCollection {
+    display: flex;
+    gap: 4px;
+    background: #5e5e5e94;;
+    border: 1px solid #5e5e5eeb;
+    border-radius: 5px;
+    padding: 3px 4px;
+    color: #ecebeb;
+    cursor: pointer;
+  }
+}
+
+.router-tab__item {
+  -webkit-app-region: no-drag;
+  background: #ddddddc4;
+  border-bottom: none;
+  color: black;
+  cursor: default;
+  border-right: none;
+  border-radius: 8px 8px 0px 0px;
+  margin-right: 2px;
+  padding: 0 10px;
+  transition-duration: 0.1s;
+  height: calc(100% - 2px);
+  align-self: flex-end;
+  .router-tab__item-wrapper {
+    display: flex;
+    align-items: center;
+  }
+  &.is-active {
+    background: #f4f3f2;
+    color: black;
+    height: 100%;
+  }
+  &:hover:not(.is-active) {
+    color: white;
+    background-color: #a8a7a770;
+  }
+  .router-tab__item-close {
+    border-radius: 2px;
+    &:hover {
+      color: black;
+      background: #b9b9b963;
+      &::after {
+        background-color: black;
+      }
+      &::before {
+        background-color: black;
+      }
+    }
+}
+}
+
 .splitpanes__pane {
-  overflow: scroll;
+  overflow: hidden;
 }
 .splitpanes__splitter{
   -ms-touch-action:none;
@@ -503,6 +590,20 @@ body {
 
 ::-webkit-scrollbar-corner {
   background-color: rgba(42, 42, 42, 0.5);
+}
+
+.popper.tabtip {
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  color: white;
+  font-family: 'Lucida Grande';
+  padding: 10px;
+  box-shadow: none;
+  border-radius: 10px;
+  border-color: rgba(255, 255, 255, 0.5);
+  .popper__arrow {
+    border-color: transparent transparent black transparent;
+  }
 }
 
 </style>

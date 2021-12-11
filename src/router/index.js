@@ -12,8 +12,9 @@ const routes = [
     component: Home,
     meta: {
       title: 'Home', // tab title
-      icon: 'icon-home',
+      icon: 'Home',
       // tabClass: 'custom-tab', // custom class, optional
+      tips: 'Home', // tab tooltip, optional. defaults to `meta.title`
       closable: true // is tab closable, defaults to `true`
     },
   },
@@ -22,7 +23,9 @@ const routes = [
     name: 'Inbox',
     meta: {
       title: 'Inbox',
-      icon: 'icon-inbox',
+      icon: 'Inbox',
+      iconColor: '#fff',
+      iconBackground: '#00abff',
       closable: true,
     },
     // route level code-splitting
@@ -36,9 +39,11 @@ const routes = [
     component: Stack,
     meta: {
       title: 'Stack', // tab title
-      icon: 'icon-layers',
+      icon: 'Layers',
+      iconColor: '#fff',
+      iconBackground: '#000',
       key: 'path',
-      tips: 'This is a tab', // tab tooltip, optional. defaults to `meta.title`
+      tips: 'Stack', // tab tooltip, optional. defaults to `meta.title`
       closable: true // is tab closable, defaults to `true`
     },
   },

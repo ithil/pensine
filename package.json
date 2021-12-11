@@ -26,7 +26,7 @@
     "vue": "^2.6.11",
     "vue-masonry": "^0.12.0",
     "vue-router": "^3.2.0",
-    "vue-router-tab": "^1.2.1",
+    "vue-router-tab": "^1.2.9",
     "vue-slicksort": "^1.2.0",
     "vuex": "^3.5.1",
     "webpack-node-externals": "^2.5.2"

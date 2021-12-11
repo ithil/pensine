@@ -59,6 +59,9 @@
           <portal-target name="statusBarLeft" class="statusBarLeft" multiple />
           <portal-target name="statusBarRight" class="statusBarRight" multiple />
         </div>
+        <portal to="statusBarLeft" :order="1">
+          <span class="statusBarItem">{{$route.path}}</span>
+        </portal>
       </pane>
     </splitpanes>
 
@@ -608,6 +611,20 @@ body {
 
 .statusBarRight > * {
   margin-left: 5px;
+}
+
+.statusBarItem {
+  margin-left: 5px;
+  &.bold {
+    font-weight: bold;
+  }
+  &.clickable {
+    cursor: pointer;
+    user-select: none;
+  }
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 #navbar {

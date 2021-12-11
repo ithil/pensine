@@ -29,8 +29,13 @@
         </div>
       </div>
     </div>
-    <div class="inboxEditor" v-if="editing">
-      <textarea rows="7" cols="60" v-model="editorContent"></textarea>
+    <div class="fleetingNoteEditor" v-if="editing"
+    @keydown.meta.83="saveNote"
+    @keydown.ctrl.67="cancelEditing"
+    @keydown.meta.76="insertLink"
+    @keydown.meta.75="insertDate"
+    >
+      <codemirror v-model="editorContent" :options="cmOptions" ref="cmEditor" @ready="onCmReady"/>
       <button @click="saveNote">Save</button>
       <button @click="cancelEditing">Cancel</button>
     </div>
@@ -49,6 +54,13 @@
 <script>
   import moment from 'moment'
   import MarkdownIt from 'markdown-it'
+  import { codemirror } from 'vue-codemirror'
+  import 'codemirror/lib/codemirror.css'
+  import 'codemirror/mode/markdown/markdown.js'
+  import 'codemirror/keymap/vim.js'
+  import 'codemirror/addon/selection/active-line.js'
+  import 'codemirror/addon/edit/trailingspace.js'
+  import 'codemirror/theme/seti.css'
   import { bus } from '@/main'
   import { ipcRenderer } from 'electron'
   import Icon from '@/components/Icon.vue'
@@ -60,6 +72,7 @@
       'searchString': String,
     },
     components: {
+      codemirror,
       Icon,
     },
     data: function () {
@@ -79,6 +92,19 @@
           'places': 'MapPin',
           'people': 'User',
           'groups': 'Users',
+        },
+        cmOptions: {
+          tabSize: 2,
+          mode: 'text/x-markdown',
+          theme: 'seti',
+          matchBrackets: true,
+          styleActiveLine: true,
+          keyMap: 'vim',
+          lineWrapping: true,
+          lineNumbers: true,
+          line: true,
+          showTrailingSpace: true,
+          // more CodeMirror options...
         },
       }
     },
@@ -132,6 +158,9 @@
       editNote(event) {
         if (this.fleetingNoteObj.isText) {
           this.editing = !this.editing
+          this.$nextTick(() => {
+            this.$refs.cmEditor.codemirror.focus()
+          })
         }
         if (event) {
           event.preventDefault()
@@ -232,7 +261,20 @@
       cancelEditing(event) {
         // this.content = this.fleetingNoteObj.content
         this.editing = !this.editing
+      insertDate(event) {
+        var dateString = moment().format('dddd, D. MMMM YYYY')
+        var cm = this.$refs.cmEditor.codemirror
+        var cursor = cm.getCursor()
+        cm.replaceRange(dateString, cursor, cursor)
+        if (event) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
       },
+      },
+      onCmReady(cm) {
+        console.log(cm)
+      }
     },
     mounted() {
       this.editorContent = this.content
@@ -307,6 +349,79 @@
       font-size: 12px;
       font-style: italic;
     }
+  }
+}
+
+.fleetingNote .fleetingNoteEditor {
+  textarea {
+    padding: 10px;
+    margin: 10px;
+    font-family: 'Georgia';
+    word-break: break-word;
+    font-size: 16px;
+    height: 200px;
+    background: none;
+    border: 2px dashed #a5a5a5;
+    &:focus {
+      border-color: cornflowerblue;
+      outline: none;
+    }
+  }
+  .vue-codemirror {
+    padding: 10px;
+    .CodeMirror {
+      font-size: 15px;
+      font-family: 'Code New Roman', monospace;
+      border: 3px solid #a5a5a5;
+      height: 60vh;
+      &.CodeMirror-focused {
+        border-color: cornflowerblue;
+        border-style: dashed;
+      }
+    }
+  }
+  button {
+    margin-left: 15px;
+    margin-bottom: 10px;
+    background-color: #88adf1;
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 5px;
+    font-size: 14px;
+  }
+}
+
+.cm-fat-cursor .CodeMirror-cursor, .cm-animate-fat-cursor {
+  width: 0.5em;
+  background-color: #64bddd4f;
+  border: 1px solid !important;
+  border-color: #64bddd !important;
+  visibility: visible;
+}
+
+.CodeMirror-activeline-background {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-bottom: 1px solid;
+  border-bottom-color: #E3CB51;
+}
+
+.cm-header-1 { font-size: 150%; }
+.cm-header-2 { font-size: 130%; }
+.cm-header-3 { font-size: 120%; }
+.cm-header-4 { font-size: 110%; }
+.cm-header-5 { font-size: 100%; }
+.cm-header-6 { font-size: 90%; }
+
+.cm-trailingspace {
+  position: relative;
+  &:after {
+    content: '•';
+    position: absolute;
+    left: 30%;
+    top: 5%;
+    color: grey;
+    font-size: 70%
   }
 }
 

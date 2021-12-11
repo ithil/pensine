@@ -24,6 +24,7 @@
     "portal-vue": "^2.1.7",
     "splitpanes": "^2.3.3",
     "vue": "^2.6.11",
+    "vue-codemirror": "^4.0.6",
     "vue-masonry": "^0.12.0",
     "vue-router": "^3.2.0",
     "vue-router-tab": "^1.2.9",

@@ -15,6 +15,27 @@ Vue.use(RouterTab)
 Vue.use(PortalVue)
 Vue.use(VueMasonryPlugin)
 
+import CodeMirror from 'codemirror'
+CodeMirror.Vim.defineAction('insertHighlight', (cm, actionArgs) => {
+  var selection = cm.getSelection()
+  var color = actionArgs.color ? ` .${actionArgs.color}` : ''
+  cm.replaceSelection(`[${selection}]{{.hl${color}}}`)
+})
+CodeMirror.Vim.mapCommand('ghh', 'action', 'insertHighlight')
+CodeMirror.Vim.mapCommand('ghr', 'action', 'insertHighlight', {color: 'red'})
+CodeMirror.Vim.mapCommand('ghg', 'action', 'insertHighlight', {color: 'green'})
+CodeMirror.Vim.mapCommand('ghb', 'action', 'insertHighlight', {color: 'blue'})
+CodeMirror.Vim.defineAction('surroundEvenlyWith', (cm, actionArgs) => {
+  var selection = cm.getSelection()
+  var delimiter = actionArgs.delimiter
+  cm.replaceSelection(`${delimiter}${selection}${delimiter}`)
+})
+CodeMirror.Vim.mapCommand('gfi', 'action', 'surroundEvenlyWith', {delimiter: '*'})
+CodeMirror.Vim.mapCommand('gfb', 'action', 'surroundEvenlyWith', {delimiter: '**'})
+CodeMirror.Vim.mapCommand('gfe', 'action', 'surroundEvenlyWith', {delimiter: '***'})
+CodeMirror.Vim.mapCommand('gfs', 'action', 'surroundEvenlyWith', {delimiter: '~~'})
+CodeMirror.Vim.mapCommand('gfc', 'action', 'surroundEvenlyWith', {delimiter: '`'})
+
 const config = new Store()
 
 Vue.config.productionTip = false

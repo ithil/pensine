@@ -17,6 +17,7 @@
     @changeFilterTerm="changeFilterTerm"
     :sortOrder="sortOrder"
     :filterTerm="filterTerm"
+    :fleetingNoteOptions="{showRightHandRelations: true}"
     ref="fleetingNoteList"
     >
   </fleeting-note-list>

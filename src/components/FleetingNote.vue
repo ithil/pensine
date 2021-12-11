@@ -3,7 +3,30 @@
     <div class="header">
       <span class="ago">{{ moment(fleetingNoteObj.date).fromNow() }}</span>
       <span class="timestamp">{{ moment(fleetingNoteObj.date).format('ddd DD.MM.YYYY HH:mm:ss') }}</span>
+    <div class="stackBadge" v-if="computedOptions.showStackBadge">
+      <span v-if="fleetingNoteObj.stack" @click="$router.push(`/stacks/${fleetingNoteObj.stack}`)">
+        <Icon name="Layers" /> {{fleetingNoteObj.stack}}
+      </span>
+      <span v-else @click="$router.push(`/inbox/`)">
+        <Icon name="Inbox" /> Inbox
+      </span>
     </div>
+    <transition name="fade">
+      <div class="rightHandRelations" v-if="computedOptions.showRightHandRelations && hasAnyLinks && isFocused">
+        <ul>
+          <li v-for="r in relations" :key="r.fn.relativePath"
+          class="relation"
+          :class="{ title: r.fn.title ? true : false }"
+          :data-stack="r.fn.stack"
+          @click="$router.push(`/fleetingnote/${encodeURIComponent(r.fn.relativePath)}`)"
+          >
+          <Icon v-if="customRelationIcons[r.fn.stack.split('/')[0]]" :name="customRelationIcons[r.fn.stack.split('/')[0]]" />
+          <Icon v-else name="FileText" />
+          {{r.fn.abstract}}
+        </li>
+      </ul>
+    </div>
+  </transition>
     <div class="content" v-if="!editing">
       <div v-if="fleetingNoteObj.isText" v-html="renderedContentWithHighlights">
       </div>
@@ -93,6 +116,10 @@
           'people': 'User',
           'groups': 'Users',
         },
+        computedOptions: {
+          showStackBadge: false,
+          showRightHandRelations: false,
+        },
         cmOptions: {
           tabSize: 2,
           mode: 'text/x-markdown',
@@ -125,7 +152,75 @@
         }
         else {
           return rendered
+      hasAnyLinks() {
+        if (this.relations.length > 0) {
+          return true
         }
+      },
+      numberOfLinks() {
+        return this.relations.length
+      },
+      relations() {
+        var relations = []
+        var fn = this.fleetingNoteObj
+        if (fn.hasMetadata) {
+          var metadata = fn.getMetadata()
+          if (metadata.links) {
+            for (let link of metadata.links) {
+              var [fnName, edgeProperties] = link
+              var fn = this.fleetingNoteObj.collection.getFleetingNoteByPath(fnName)
+              relations.push({fn: fn, properties: edgeProperties})
+            }
+          }
+          if (metadata.backlinks) {
+            for (let link of metadata.backlinks) {
+              var [fnName, edgeProperties] = link
+              var fn = this.fleetingNoteObj.collection.getFleetingNoteByPath(fnName)
+              relations.push({fn: fn, properties: edgeProperties})
+            }
+          }
+        }
+        return relations
+      },
+      linksEdgeProperties() {
+        // TODO: Use this.relations to be more efficient!
+        var linksEdgeProperties = {}
+        var fn = this.fleetingNoteObj
+        if (fn.hasMetadata) {
+          var metadata = fn.getMetadata()
+          if (metadata.links) {
+            for (let l of metadata.links) {
+              if (l[1]) {
+                for (let edgeProperty of l[1]) {
+                  if (linksEdgeProperties.hasOwnProperty(edgeProperty)) {
+                    linksEdgeProperties[edgeProperty] = linksEdgeProperties[edgeProperty] + 1
+                  }
+                  else {
+                    linksEdgeProperties[edgeProperty] = 1
+                  }
+                }
+              }
+            }
+          }
+          if (metadata.backlinks) {
+            for (let l of metadata.backlinks) {
+              if (l[1]) {
+                for (let edgeProperty of l[1]) {
+                  if (linksEdgeProperties.hasOwnProperty(edgeProperty)) {
+                    linksEdgeProperties[edgeProperty] = linksEdgeProperties[edgeProperty] + 1
+                  }
+                  else {
+                    linksEdgeProperties[edgeProperty] = 1
+                  }
+                }
+              }
+            }
+          }
+        }
+        return Object.entries(linksEdgeProperties)
+      },
+      showRightHandRelationsNow() {
+        return this.computedOptions.showRightHandRelations && this.selected
       },
     },
   watch: {
@@ -309,6 +404,89 @@
   &.selected {
     background-color: #c9d6e0;
   }
+  .stackBadge {
+    position: absolute;
+    transform: rotate(90deg) translateX(104%);
+    transform-origin: bottom right;
+    right: 0;
+    font-size: 12px;
+    cursor: pointer;
+    background: black;
+    color: white;
+    padding: 5px;
+    border-radius: 6px 6px 0px 0px;
+  }
+  .rightHandRelations {
+    position: absolute;
+    right: -230px;
+    top: 40px;
+    width: 200px;
+    font-size: 12px;
+    color: black;
+    padding: 5px;
+    border-radius: 6px;
+    h1 {
+      font-size: 14px;
+      text-align: center;
+      color: #696969;
+    }
+    ul {
+      list-style: none;
+      padding-inline-start: 0;
+      .relation {
+        border: 1px solid #bbbbbb;
+        background: #d3d3d3;
+        margin-top: 2px;
+        padding: 2px;
+        border-radius: 5px;
+        cursor: pointer;
+        &.title {
+          font-weight: bold;
+        }
+        &[data-stack="tags"] {
+          border-width: 2px;
+          border-color: #599584;
+        }
+        &[data-stack="bib"] {
+          border-width: 2px;
+          border-color: #956459;
+        }
+        &[data-stack^="calendar"] {
+        }
+        &[data-stack="places"] {
+          background: hsl(38, 97%, 76%);
+          color: hsla(19, 30%, 35%, 1);
+          border: 1.5px solid rgb(197, 166, 112);
+          .svg-icon {
+            color: #bf3516;
+          }
+        }
+        &[data-stack="people"] {
+          background: hsl(38, 97%, 76%);
+          color: hsla(19, 30%, 35%, 1);
+          border: 1.5px solid rgb(197, 166, 112);
+        }
+        &[data-stack="groups"] {
+          background: hsl(38, 97%, 76%);
+          color: hsla(19, 30%, 35%, 1);
+          border: 1.5px solid rgb(197, 166, 112);
+          .svg-icon {
+            color: #428547;
+          }
+        }
+      }
+    }
+  }
+}
+
+
+@media screen and (max-width: 1100px) {
+  .fleetingNote {
+    .rightHandRelations {
+      display: none;
+    }
+  }
+}
 }
 
 
@@ -453,5 +631,11 @@
       font-size: 12px;
     }
   }
+}
+.fade-enter-active, .fade-leave-active {
+  transition: opacity .2s;
+}
+.fade-enter, .fade-leave-to {
+  opacity: 0;
 }
 </style>

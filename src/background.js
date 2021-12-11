@@ -174,6 +174,19 @@ async function createWindow() {
               win.webContents.send('addExistingCollection')
             }
           },
+          {
+            label: 'Set as Default',
+            click: async () => {
+              win.webContents.send('setAsDefaultCollection')
+            }
+          },
+          {
+            label: 'Switch Collection',
+            accelerator: 'CommandOrControl+E',
+            click: async () => {
+              win.webContents.send('collectionModal')
+            }
+          },
           ...addNoteCollections(),
         ],
       },

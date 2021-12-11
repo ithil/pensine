@@ -223,11 +223,17 @@ export default {
     ipcRenderer.on('addExistingCollection' , (event, data) => {
       this.$refs.addExistingCollection.open()
     })
+    ipcRenderer.on('setAsDefaultCollection' , (event, data) => {
+      this.$global.config.set('defaultNoteCollection', this.$global.config.get('currentNoteCollection'))
+    })
     ipcRenderer.send('updateColMenuItems', this.$global.config.get('collections', {}))
     ipcRenderer.on('changeCurrentNoteCollection' , (event, data) => {
-      this.$store.commit('changeCurrentNoteCollection', new this.$global.pensieve.NoteCollection(data.path))
-      this.$global.config.set('currentNoteCollection', data.path)
-      bus.$emit('noteCollectionChanged')
+      var $this = this
+      this.openNoteCollection((collection) => {
+        $this.$store.commit('changeCurrentNoteCollection', collection)
+        $this.$global.config.set('currentNoteCollection', data.path)
+        bus.$emit('noteCollectionChanged')
+      }, data.path)
     })
     ipcRenderer.on('openCommandPalette' , (event, data) => {
       this.$refs.commandPalette.open()
@@ -235,6 +241,8 @@ export default {
     ipcRenderer.on('openNoteModal' , (event, data) => {
       this.$refs.openNote.open()
     })
+    ipcRenderer.on('collectionModal' , (event, data) => {
+      this.collectionModal()
     })
     ipcRenderer.on('closeTab' , (event, data) => {
       this.$tabs.close()
@@ -427,33 +435,115 @@ export default {
       this.allStacks = stacksList
     },
     addExistingCollection(p) {
-      console.log('Path: ', p)
       var config = this.$global.config
       try {
-        var collection = new this.$global.pensieve.NoteCollection(p)
         var cols = config.get('collections', {})
-        if(cols.hasOwnProperty(collection.path)) {
-          console.error(`${collection.path} had already been added`)
-        }
-        else {
-          cols[collection.path] = {
-            name: collection.collectionJson.name,
-            path: collection.path,
+        this.openNoteCollection((collection) => {
+          if(cols.hasOwnProperty(p)) {
+            console.error(`${p} had already been added`)
           }
-          config.set('collections', cols)
-        }
-        ipcRenderer.send('updateColMenuItems', config.get('collections', {}))
+          else {
+            cols[collection.path] = {
+              name: collection.collectionJson.name,
+              path: p,
+            }
+            config.set('collections', cols)
+          }
+          ipcRenderer.send('updateColMenuItems', config.get('collections', {}))
+        }, p)
       }
       catch (e) {
         console.error(e)
       }
 
     },
+    openNoteCollection(callback, dir=process.cwd()) {
       var $this = this
+      try {
+        const NoteCollection = $this.$global.pensieve.NoteCollection
+        var openLoop = function(myRes) {
+          if (myRes.status == 'openNoteCollection') {
+            callback(myRes.collection)
+          }
+          else if (myRes.status == 'passwordRequired') {
+            $this.$store.commit('triggerCustomTextPrompt', {
+              message: `Password required for collection:`,
+              password: true,
+              action: (inputText) => {
+                NoteCollection.open(dir, {password: inputText}, (res) => {
+                  $this.$nextTick(function () {
+                    setTimeout(function () { // This is just a dirty hack so I can go to bed
+                      openLoop(res)
+                    }, 5)
                   })
+                })
+              }
+            })
+          }
+          else if (myRes.status == 'passwordIncorrect') {
+            $this.$store.commit('triggerCustomTextPrompt', {
+              message: `Wrong password! Try again:`,
+              password: true,
+              action: (inputText) => {
+                NoteCollection.open(dir, {password: inputText}, (res) => {
+                  $this.$nextTick(function () {
+                    setTimeout(function () { // This is just a dirty hack so I can go to bed
+                      openLoop(res)
+                    }, 5)
+                  })
+                })
+              }
+            })
+          }
+        }
+        // The problem lies here
+        NoteCollection.open(dir, {}, (res) => {
+          openLoop(res)
+        })
+      }
+      catch (e) {
+        this.errorHandler(e)
+      }
+    },
+    errorHandler(err) {
+      var logger = function(message) {
+        console.error('Error: '+message)
+      }
+      if (err.name == 'noCollectionJson') {
+        logger(err.message)
+      }
+      else if (err.name == 'existantCollectionJson') {
+        logger(err.message)
+      }
+    },
             }
         }
       })
+    collectionModal() {
+      var collections = this.$global.config.get('collections', {})
+      var $this = this
+      var items = []
+      for (let c of Object.keys(collections)) {
+        items.push({
+          label: collections[c].name,
+          lucideIcon: 'Book',
+          description: 'Collection',
+          action:() => {
+            $this.$nextTick(function () {
+              setTimeout(function () { // This is just a dirty hack so I can go to bed
+                $this.openNoteCollection((collection) => {
+                  $this.$store.commit('changeCurrentNoteCollection', collection)
+                  $this.$global.config.set('currentNoteCollection', collections[c].path)
+                  bus.$emit('noteCollectionChanged')
+                }, collections[c].path)
+              }, 5)
+            })
+          }
+        })
+      }
+      items = items.filter(i => i.label != this.$store.state.currentNoteCollection.name)
+      this.$store.commit('triggerCustomSelectList', {items})
+    },
     },
     updateRepoStatus() {
       this.$store.state.currentNoteCollection.checkForChangesAsync().then(status => {

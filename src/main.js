@@ -47,7 +47,9 @@ Vue.prototype.$global = {
 const store = new Vuex.Store({
   state: {
     currentNoteCollection: (function() {
-      var col = new pensieve.NoteCollection(config.get('currentNoteCollection'))
+      var col = new pensieve.NoteCollection(
+        config.get('defaultNoteCollection') || config.get('currentNoteCollection')
+      )
       col.watch()
       return col
     })(),

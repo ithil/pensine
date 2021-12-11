@@ -21,14 +21,20 @@ async function createWindow() {
   win = new BrowserWindow({
     width: 1000,
     height: 600,
-    titleBarStyle: 'hidden',
+    titleBarStyle: 'hiddenInset',
+    // backgroundColor: '#1d1f21',
+    transparent: true,
+    vibrancy: 'dark',
     webPreferences: {
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
+      contextIsolation: false,
       enableRemoteModule: true,
     }
   })
+  win.maximize()
+
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
@@ -39,6 +45,19 @@ async function createWindow() {
     // Load the index.html when not in development
     win.loadURL('app://./index.html')
   }
+
+  // Set a variable when the app is quitting.
+  var isAppQuitting = false
+  app.on('before-quit', function (evt) {
+      isAppQuitting = true
+  });
+
+  win.on('close', function (evt) {
+      if (!isAppQuitting) {
+          evt.preventDefault()
+          win.hide()
+      }
+  });
 
   win.on('closed', () => {
     win = null
@@ -254,6 +273,9 @@ app.on('activate', () => {
   // dock icon is clicked and there are no other windows open.
   if (win === null) {
     createWindow()
+  }
+  else {
+    win.show()
   }
 })
 

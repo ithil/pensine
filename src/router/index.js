@@ -2,6 +2,7 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
 import Stack from '../views/Stack.vue'
+import FleetingNotePage from '../views/FleetingNotePage.vue'
 
 Vue.use(VueRouter)
 
@@ -48,9 +49,17 @@ const routes = [
     },
   },
   {
+    path: '/fleetingnote/:name(.*)',
+    name: 'Fleeting Note Page',
+    alias: '/n/:name(.*)',
+    component: FleetingNotePage,
     meta: {
+      title: 'Fleeting Note Page', // tab title
+      icon: 'FileText',
+      iconColor: '#fff',
+      iconBackground: 'darkseagreen',
       key: 'path',
-      tips: 'This is a tab', // tab tooltip, optional. defaults to `meta.title`
+      tips: 'Fleeting Note Page', // tab tooltip, optional. defaults to `meta.title`
       closable: true // is tab closable, defaults to `true`
     },
   },

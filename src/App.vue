@@ -121,30 +121,6 @@ export default {
     customSelectListFilter() {
       return this.$store.state.customSelectListFilter
     },
-    allNotes() {
-      var allNotes = []
-      for (let n of this.$store.state.currentNoteCollection.allNotes) {
-        allNotes.push({
-          label: n.label,
-          iconClasses: ['feather-icon', 'icon-file-text'],
-          description: `[${n.id}] Note`,
-          type: 'note',
-          action: () => {
-            this.$router.push(`/editor/${n.id}`).catch(err => {
-              // Ignore the vuex err regarding  navigating to the page they are already on.
-              if (
-                err.name !== 'NavigationDuplicated' &&
-                !err.message.includes('Avoided redundant navigation to current location')
-              ) {
-                // But print any other errors to the console
-                console.error(err)
-              }
-            })
-          },
-        })
-      }
-      return allNotes
-    },
     allStacks() {
       var stacks = this.$store.state.currentNoteCollection.stacks.getListOfStacks()
       var stacksList = []
@@ -187,7 +163,7 @@ export default {
             }
           })
         },
-      }].concat(this.allNotes.concat(this.allStacks))
+      }].concat(this.allStacks)
     },
   },
   mounted() {
@@ -202,81 +178,7 @@ export default {
       },
     })
     this.$store.commit('registerCommand', {
-      name: 'note:delete',
-      label: 'Delete current note',
       action: () => {
-        setTimeout(() => {
-          this.$store.commit('triggerCustomTextPrompt', {
-            message: `Are you sure you want to delete ${this.$store.state.currentNote.name}?`,
-            action: (text) => {
-              if (['y', 'yes'].includes(text.trim())) {
-                this.$tabs.close()
-                this.$store.state.currentNote.delete()
-              }
-            }
-          })
-        }, 50)
-      },
-    })
-    this.$store.commit('registerCommand', {
-      name: 'note:addTags',
-      label: 'Add tags to current note',
-      action: () => {
-        var note = this.$store.state.currentNote
-        setTimeout(() => {
-          this.$store.commit('triggerCustomTextPrompt', {
-            message: `Enter a comma-separated list of tags you want to add to ${note.name}`,
-            action: (tags) => {
-              note.addTags(tags.split(',').filter(x => x != '').map(x => x.trim()))
-              note.save()
-            }
-          })
-        }, 50)
-      },
-    })
-    this.$store.commit('registerCommand', {
-      name: 'note:removeTag',
-      label: 'Remove a tag from current note',
-      action: () => {
-        var note = this.$store.state.currentNote
-        setTimeout(() => {
-          var items = note.metadata.tags.map(t => {
-            return {
-              label: t,
-              action:() => {
-                note.removeTag(t)
-                note.save()
-              }
-            }
-          })
-          this.$store.commit('triggerCustomSelectList', {items})
-        }, 50)
-      },
-    })
-    this.$store.commit('registerCommand', {
-      name: 'note:categorize',
-      label: 'Categorize current note',
-      action: () => {
-        var note = this.$store.state.currentNote
-        var collection = this.$store.state.currentNoteCollection
-        setTimeout(() => {
-          this.$store.commit('triggerCustomTextPrompt', {
-            message: `Where would you like to categorize ${note.name}?`,
-            action: (category) => {
-              collection.categorize(note, category)
-            }
-          })
-        }, 50)
-      },
-    })
-    this.$store.commit('registerCommand', {
-      name: 'note:revealInFinder',
-      label: 'Reveal current note in Finder',
-      action: () => {
-        var note = this.$store.state.currentNote
-        if (note) {
-          shell.showItemInFolder(note.contentPath)
-        }
       },
     })
     this.$store.commit('registerCommand', {
@@ -287,10 +189,7 @@ export default {
       },
     })
     this.$store.commit('registerCommand', {
-      name: 'editor:focus',
-      label: 'Focus Editor',
       action: () => {
-        bus.$emit('focusEditor')
       },
     })
     ipcRenderer.on('addExistingCollection' , (event, data) => {
@@ -308,8 +207,6 @@ export default {
     ipcRenderer.on('openNoteModal' , (event, data) => {
       this.$refs.openNote.open()
     })
-    ipcRenderer.on('newNote' , (event, data) => {
-      this.newNote()
     })
     ipcRenderer.on('closeTab' , (event, data) => {
       this.$tabs.close()
@@ -334,16 +231,9 @@ export default {
       })
     })
     var collection = this.$store.state.currentNoteCollection
-    collection.events.on('noteChange', this.updateRepoStatus)
-    collection.events.on('noteAdd', this.updateRepoStatus)
-    collection.events.on('noteDelete', this.updateRepoStatus)
-    this.updateRepoStatus()
   },
   unmounted() {
     var collection = this.$store.state.currentNoteCollection
-    collection.events.removeListener('noteChange', this.updateRepoStatus)
-    collection.events.removeListener('noteAdd', this.updateRepoStatus)
-    collection.events.removeListener('noteDelete', this.updateRepoStatus)
   },
   methods: {
     cmdsToListItems(cmds) {
@@ -396,48 +286,9 @@ export default {
       }
 
     },
-    newNote(content) {
-      content = content || ' '
-      var collection = this.$store.state.currentNoteCollection
       var $this = this
-      var prospectiveId = collection.getHighestId() + 1
-      var suggestedLabel = this.$global.pensieve.utils.createLabelFromId(prospectiveId)
-      this.$store.commit('triggerCustomTextPrompt', {
-        message: `What should be the label of your new note?`,
-        text: suggestedLabel,
-        selectAll: true,
-        action: (label) => {
-          setTimeout(() => {
-          this.$store.commit('triggerCustomTextPrompt', {
-            message: `What should be the tags of your new note ${label}?`,
-            action: (tags) => {
-              setTimeout(() => {
-              this.$store.commit('triggerCustomTextPrompt', {
-                message: `What should be the category of your new note ${label}?`,
-                action: (category) => {
-                  var note = collection.newNote(label)
-                  note.addTags(tags.split(',').filter(x => x != '').map(x => x.trim()))
-                  note.save()
-                  if (category) {
-                    collection.categorize(note, category)
-                  }
-                  note.setContent(content)
-                  $this.$router.push(`/editor/${note.id}`).catch(err => {
-                    // Ignore the vuex err regarding  navigating to the page they are already on.
-                    if (
-                      err.name !== 'NavigationDuplicated' &&
-                      !err.message.includes('Avoided redundant navigation to current location')
-                    ) {
-                      // But print any other errors to the console
-                      console.error(err)
-                    }
                   })
-                }
-              })
-            }, 50)
             }
-          })
-        }, 50)
         }
       })
     },

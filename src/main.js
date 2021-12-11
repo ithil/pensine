@@ -30,7 +30,6 @@ const store = new Vuex.Store({
       col.watch()
       return col
     })(),
-    currentNote: null,
     commands: [],
     title: 'Pensine',
     customSelectListItems: [{label: 'A'}],
@@ -59,9 +58,6 @@ const store = new Vuex.Store({
       state.currentNoteCollection.unwatch()
       state.currentNoteCollection = nc
       state.currentNoteCollection.watch()
-    },
-    setCurrentNote(state, note) {
-      state.currentNote = note
     },
     registerCommand(state, cmd) {
       if (state.commands.findIndex(c => c.name == cmd.name) == -1) {

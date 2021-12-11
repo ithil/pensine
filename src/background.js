@@ -85,17 +85,14 @@ async function createWindow() {
         label: 'Note',
         submenu: [
           {
-            label: 'Open Note',
+            label: 'Open ...',
             accelerator: 'CommandOrControl+O',
             click: async () => {
               win.webContents.send('openNoteModal')
             }
           },
           {
-            label: 'New Note',
-            accelerator: 'CommandOrControl+N',
             click: async () => {
-              win.webContents.send('newNote')
             }
           },
           { type: 'separator' },

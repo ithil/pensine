@@ -3,6 +3,7 @@ import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
 import Stack from '../views/Stack.vue'
 import FleetingNotePage from '../views/FleetingNotePage.vue'
+import NodeExplorer from '../views/NodeExplorer.vue'
 
 Vue.use(VueRouter)
 
@@ -64,9 +65,16 @@ const routes = [
     },
   },
   {
+    path: '/nodeexplorer/:name(.*)',
+    name: 'Node Explorer',
+    component: NodeExplorer,
     meta: {
+      title: 'Node Explorer', // tab title
+      icon: 'LayoutList',
+      iconColor: '#fff',
+      iconBackground: 'orange',
       key: 'path',
-      tips: 'This is a tab', // tab tooltip, optional. defaults to `meta.title`
+      tips: 'Node Explorer', // tab tooltip, optional. defaults to `meta.title`
       closable: true // is tab closable, defaults to `true`
     },
   },

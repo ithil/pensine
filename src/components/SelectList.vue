@@ -2,6 +2,7 @@
   <div>
     <modal ref="selectList" @close="onClose">
       <template v-slot:header>
+        <div class="message">{{message}}</div>
         <input
         type="text"
         class="modal__input"
@@ -10,6 +11,7 @@
         @keydown.enter="runAction"
         @keydown.down="selectNext"
         @keydown.up="selectPrev"
+        @keydown.tab="openSub"
         >
       </template>
 
@@ -21,6 +23,8 @@
           v-for="i in filteredItems"
           :key="i.id"
           :ref="i.id == selected ? 'selectedItem' : ''"
+          @click="selected = i.id"
+          @dblclick="selected = i.id; runAction()"
           >
             <div class="primary-line" :title="i.hover ? i.hover : ''">
               <Icon v-if="i.lucideIcon" :name="i.lucideIcon" />
@@ -28,6 +32,15 @@
             </div>
             <div class="secondary-line">
               {{ i.description }}
+              <span
+              v-if="i.badges && i.badges.length > 0"
+              class="badge"
+              :class="`badge-${badge}`"
+              v-for="(badge, index) in i.badges"
+              :key="index"
+              >
+              {{badge}}
+            </span>
             </div>
           </li>
         </ol>
@@ -57,10 +70,13 @@ import Icon from '@/components/Icon.vue'
     },
     data: function () {
       return {
-        // items: [],
+        message: '',
         itemsWithIds: [],
+        currentItems: [],
         searchString: '',
         selected: null,
+        itemsHistory: [],
+        // {items: [], searchString: '', selectedId: 1}
       }
     },
     computed: {
@@ -84,6 +100,9 @@ import Icon from '@/components/Icon.vue'
         }
       },
       items: function (inputItems) {
+        this.currentItems = inputItems
+      },
+      currentItems: function (inputItems) {
         this.itemsWithIds = []
         this.addItems(inputItems)
       },
@@ -155,12 +174,46 @@ import Icon from '@/components/Icon.vue'
           this.scrollSelectedIntoView()
         }
       },
+      openSub(event) {
+        event.stopPropagation()
+        event.preventDefault()
+        if (event.shiftKey) {
+          if (this.itemsHistory.length > 0) {
+            let prevItem = this.itemsHistory.pop()
+            this.currentItems = prevItem.items
+            this.searchString = prevItem.searchString
+            this.selected = prevItem.selected
+            this.message = prevItem.message,
+            this.scrollSelectedIntoView()
+          }
+        }
+        else {
+          if (this.selected) {
+            var item = this.filteredItems.find(i => i.id == this.selected)
+            if (item && item.getSubItems) {
+              var {newItems, newMessage} = item.getSubItems()
+              if (Array.isArray(newItems)) {
+                this.itemsHistory.push({
+                  items: this.currentItems,
+                  searchString: this.searchString,
+                  selected: this.selected,
+                  message: this.message,
+                })
+                this.currentItems = newItems
+                this.searchString = ''
+                this.selected = this.filteredItems[0].id
+                this.message = newMessage
+              }
+            }
+          }
+        }
+      },
       scrollSelectedIntoView() {
         this.$nextTick(function () {
           var selectedItem = this.$refs.selectedItem
           setTimeout(function () { // This is just a dirty hack so I can go to bed
             if (selectedItem) {
-              selectedItem[0].scrollIntoViewIfNeeded()
+              selectedItem[0].scrollIntoView({ behavior: 'smooth', block: 'nearest' })
             }
           }, 5)
         })
@@ -169,8 +222,13 @@ import Icon from '@/components/Icon.vue'
         this.$refs.selectList.closeModal()
       },
       open() {
+        this.currentItems = this.items
         this.searchString = ''
-        this.selected = this.filteredItems[0].id
+        this.itemsHistory = []
+        this.message = ''
+        if (this.filteredItems[0] && this.filteredItems[0].id) {
+          this.selected = this.filteredItems[0].id
+        }
         this.$refs.selectList.openModal(() => {
           this.$refs.input.focus()
         })
@@ -189,6 +247,11 @@ import Icon from '@/components/Icon.vue'
 .modal {
   overflow-y: hidden;
 }
+.modal__header {
+  .message {
+    margin-bottom: 5px;
+  }
+}
 .modal__body {
   margin-top: 5px;
 }
@@ -198,21 +261,49 @@ ol.list-group {
   max-height: 295px;
   margin: 10px 0 0 0;
   padding: 0;
-  background-color: #27292b;
+  border: 1px solid black;
+  border-radius: 5px;
+  background: #aaacac9c;
   list-style: none;
   cursor: default;
-  font-size: 11px;
+  font-size: 12px;
+  .secondary-line {
+    margin-top: 4px;
+    color: #626262;
+    font-size: 10px;
+    .badge {
+      background: #adadad;
+      padding-left: 4px;
+      padding-right: 4px;
+      border-radius: 4px;
+      color: #333333;
+      border: 1px solid #777777;
+      &.badge-conflicts {
+        color: #b50f0f;
+        background: #d29b9b;
+        border-color: #b50f0f;
+      }
+      &.badge-agrees {
+        color: #0d3e0d;
+        background: #a9c3a9;
+        border-color: #0d3e0d;
+      }
+    }
+  }
 }
 
 ol.list-group li {
   padding: 5px 10px;
   border-bottom: 1px solid #202123;
+  user-select: none;
 }
 ol.list-group li.select-list-item.selected {
-    background-color: #4f99d3;
-    color: #fff;
+    background: #469fe5c9;
+    color: #000;
+    font-weight: bold;
     .secondary-line {
       color: #2d2d2d;
+      font-weight: normal;
     }
 }
 ol.list-group li.select-list-item .secondary-line {

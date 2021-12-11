@@ -131,6 +131,7 @@ export default {
   data() {
     return {
       paneSize: 0,
+      allStacks: [],
     }
   },
   watch: {
@@ -144,6 +145,15 @@ export default {
         this.$refs.customTextPrompt.open()
       }
     },
+    '$store.state.currentNoteCollection': function(oldCollection, newCollection) {
+      oldCollection.events.removeListener('stacksItemAdd', this.updateAllStacks)
+      oldCollection.events.removeListener('stacksItemChange', this.updateAllStacks)
+      oldCollection.events.removeListener('stacksItemDelete', this.updateAllStacks)
+      this.$store.state.currentNoteCollection.events.on('stacksItemAdd', this.updateAllStacks)
+      this.$store.state.currentNoteCollection.events.on('stacksItemChange', this.updateAllStacks)
+      this.$store.state.currentNoteCollection.events.on('stacksItemDelete', this.updateAllStacks)
+      this.updateAllStacks()
+    }
   },
   computed: {
     title() {
@@ -163,31 +173,6 @@ export default {
     },
     customSelectListFilter() {
       return this.$store.state.customSelectListFilter
-    },
-    allStacks() {
-      var stacks = this.$store.state.currentNoteCollection.stacks.getListOfStacks()
-      var stacksList = []
-      for (let s of stacks) {
-        stacksList.push({
-          label: s.relativePath,
-          iconClasses: ['feather-icon', 'icon-layers'],
-          description: 'Stack',
-          type: 'stack',
-          action: () => {
-            this.$router.push(`/stacks/${s.relativePath}`).catch(err => {
-              // Ignore the vuex err regarding  navigating to the page they are already on.
-              if (
-                err.name !== 'NavigationDuplicated' &&
-                !err.message.includes('Avoided redundant navigation to current location')
-              ) {
-                // But print any other errors to the console
-                console.error(err)
-              }
-            })
-          },
-        })
-      }
-      return stacksList
     },
     openItems() {
       return [{
@@ -274,9 +259,16 @@ export default {
       })
     })
     var collection = this.$store.state.currentNoteCollection
+    collection.events.on('stacksItemAdd', this.updateAllStacks)
+    collection.events.on('stacksItemChange', this.updateAllStacks)
+    collection.events.on('stacksItemDelete', this.updateAllStacks)
+    this.updateAllStacks()
   },
   unmounted() {
     var collection = this.$store.state.currentNoteCollection
+    collection.events.removeListener('stacksItemAdd', this.updateAllStacks)
+    collection.events.removeListener('stacksItemChange', this.updateAllStacks)
+    collection.events.removeListener('stacksItemDelete', this.updateAllStacks)
   },
   methods: {
     cmdsToListItems(cmds) {
@@ -305,6 +297,134 @@ export default {
           return item.label.toLowerCase().indexOf(searchString) > -1
         })
         return itemsFiltered
+    },
+    updateAllStacks() {
+      var $this = this
+      var stacks = this.$store.state.currentNoteCollection.stacks.getListOfStacks()
+      var stacksList = []
+      var getSubItemsOfStack = function (stack) {
+        var fleetingNotes = stack.getContent().filter(i => !i.isStack)
+        var fnList = []
+        for (let fn of fleetingNotes) {
+          let numberOfLinks = fn.relations.length
+          fnList.push({
+            label: fn.abstract,
+            lucideIcon: 'FileText',
+            description: `${numberOfLinks} relations`,
+            description: `${numberOfLinks > 0 ? numberOfLinks+' relations – ' : ''}${moment(fn.date).format('DD.MM.YYYY')}`,
+            type: 'fleetingNote',
+            action: () => {
+              var encodedPath = fn.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
+              $this.$router.push(`/fleetingNote/${encodedPath}`).catch(err => {
+                // Ignore the vuex err regarding  navigating to the page they are already on.
+                if (
+                  err.name !== 'NavigationDuplicated' &&
+                  !err.message.includes('Avoided redundant navigation to current location')
+                ) {
+                  // But print any other errors to the console
+                  console.error(err)
+                }
+              })
+            },
+            getSubItems: () => {
+              return {
+                newItems: getSubItemsOfFleetingNote(fn),
+                newMessage: fn.abstract,
+              }
+            },
+          })
+        }
+        return fnList
+      }
+      var getSubItemsOfFleetingNote = function (parentFn) {
+        var relations = parentFn.relations
+        if (relations.length < 1) {
+          return false
+        }
+        var fnList = []
+        for (let relation of relations) {
+          let fn = relation.fn
+          let numberOfLinks = fn.relations.length
+          fnList.push({
+            label: fn.abstract,
+            lucideIcon: 'FileText',
+            description: `${fn.stack || 'Inbox'} –${numberOfLinks > 0 ? ' '+numberOfLinks+' relations –' : ''}  ${moment(fn.date).format('DD.MM.YYYY')}`,
+            type: 'fleetingNote',
+            action: () => {
+              var encodedPath = fn.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
+              $this.$router.push(`/fleetingNote/${encodedPath}`).catch(err => {
+                // Ignore the vuex err regarding  navigating to the page they are already on.
+                if (
+                  err.name !== 'NavigationDuplicated' &&
+                  !err.message.includes('Avoided redundant navigation to current location')
+                ) {
+                  // But print any other errors to the console
+                  console.error(err)
+                }
+              })
+            },
+            getSubItems: () => {
+              return {
+                newItems: getSubItemsOfFleetingNote(fn),
+                newMessage: fn.abstract,
+              }
+            },
+          })
+        }
+        var myStack = parentFn.collection.stacks.getStackByPath(parentFn.stack)
+        fnList.push({
+          label: myStack.relativePath,
+          lucideIcon: 'Layers',
+          description: 'Stack',
+          type: 'stack',
+          action: () => {
+            $this.$router.push(`/stacks/${myStack.relativePath}`).catch(err => {
+              // Ignore the vuex err regarding  navigating to the page they are already on.
+              if (
+                err.name !== 'NavigationDuplicated' &&
+                !err.message.includes('Avoided redundant navigation to current location')
+              ) {
+                // But print any other errors to the console
+                console.error(err)
+              }
+            })
+          },
+          getSubItems: () => {
+            return {
+              newItems: getSubItemsOfStack(myStack),
+              newMessage: myStack.relativePath,
+            }
+          },
+        })
+        return fnList
+      }
+      for (let s of stacks) {
+        stacksList.push({
+          label: s.relativePath,
+          lucideIcon: 'Layers',
+          description: 'Stack',
+          type: 'stack',
+          action: () => {
+            $this.$router.push(`/stacks/${s.relativePath}`).catch(err => {
+              // Ignore the vuex err regarding  navigating to the page they are already on.
+              if (
+                err.name !== 'NavigationDuplicated' &&
+                !err.message.includes('Avoided redundant navigation to current location')
+              ) {
+                // But print any other errors to the console
+                console.error(err)
+              }
+            })
+          },
+          getSubItems: () => {
+            return {
+            newItems: getSubItemsOfStack(s),
+            newMessage: s.relativePath,
+            }
+          },
+        })
+      }
+      this.allStacks = stacksList
     },
     addExistingCollection(p) {
       console.log('Path: ', p)

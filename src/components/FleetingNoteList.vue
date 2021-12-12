@@ -7,9 +7,11 @@
         @selectNote="selectNote"
         @unselectNote="unselectNote"
         @focusNote="focusNote"
-        :class="f == focusedNote ? 'focused' : ''"
+        @scrollFocusedIntoView="scrollFocusedIntoView"
         @markNote="markNote"
         @gotoMark="gotoMark"
+        :class="checkFocus(f) ? 'focused' : ''"
+        :isFocused="checkFocus(f)"
         :searchString="searchString"
         ref="fleetingNoteItems"
         >
@@ -107,8 +109,8 @@ export default {
   data() {
     return {
       selectedNotes: [],
-      focusedNote: null,
       markedNotes: {},
+      focusedNotePath: '',
       md: new MarkdownIt({linkify: true}),
       portalActive: true,
       fullKeybuffer: '',
@@ -145,6 +147,12 @@ export default {
         this.focusNote(this.markedNotes[mark])
         this.scrollFocusedIntoView()
       }
+    },
+    checkFocus(f) {
+      if (f && f.path && this.focusedNotePath) {
+        return f.path == this.focusedNotePath
+      }
+      return false
     },
     showBag() {
       var $this = this
@@ -242,23 +250,37 @@ export default {
         event.stopPropagation()
       }
     },
-    focusNote(fleetingNoteObj) {
-      console.log(`Focused: ${fleetingNoteObj.filename}`)
-      console.log(this.focusedNoteItem)
-      this.focusedNote = fleetingNoteObj
+    focusNote(fleetingNoteObj, event) {
+      this.focusedNotePath = fleetingNoteObj.path
+      if (event) {
+        var el = event.target
+        var classes = []
+        while (el) {
+          if (el.classList) {
+            classes = [...classes, ...el.classList.values()]
+          }
+          el = el.parentNode
+        }
+        if (!classes.includes('fleetingNoteEditor')) {
+          this.$refs.fleetingNoteList.focus()
+        }
+      }
+      else {
+        this.$refs.fleetingNoteList.focus()
+      }
     },
     focusNext(c = 1) {
-      var index = this.processedFleetingNotes.findIndex(i => i == this.focusedNote)
+      var index = this.processedFleetingNotes.findIndex(i => i.path == this.focusedNotePath)
       var len = this.processedFleetingNotes.length
       if (index > -1) {
         if (index + c >= len) {
-          this.focusedNote = this.processedFleetingNotes[0]
+          this.focusedNotePath = this.processedFleetingNotes[0].path
         }
         else if (index + c < 0) {
-          this.focusedNote = this.processedFleetingNotes[len - 1]
+          this.focusedNotePath = this.processedFleetingNotes[len - 1].path
         }
         else {
-          this.focusedNote = this.processedFleetingNotes[index + c]
+          this.focusedNotePath = this.processedFleetingNotes[index + c].path
         }
         this.scrollFocusedIntoView()
       }
@@ -269,13 +291,16 @@ export default {
         setTimeout(function () { // This is just a dirty hack so I can go to bed
           var focusedItem = $this.getFocusedNoteItem()
           if (focusedItem) {
-            focusedItem.$el.scrollIntoViewIfNeeded()
+            focusedItem.$el.scrollIntoView({ behavior: 'smooth', block: 'start' })
           }
         }, 5)
       })
     },
     getFocusedNoteItem() {
       return this.$refs.fleetingNoteItems.find(n => n.$el.classList.contains('focused'))
+    },
+    getSelectedNotesItems() {
+      return this.$refs.fleetingNoteItems.filter(n => n.$el.classList.contains('selected'))
     },
     preventDefaultFix(event) {
       var tagName = event.target.tagName
@@ -302,24 +327,28 @@ export default {
           event.preventDefault()
           if (this.keybuffer == "j")
           {
+            // Focus next item down
             this.focusNext(1 * (this.keybufferCount || 1))
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "k")
           {
+            // Focus next item up
             this.focusNext(-1 * (this.keybufferCount || 1))
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "gg")
           {
-            this.focusedNote = this.processedFleetingNotes[0]
+            // Focus first item in list
+            this.focusedNotePath = this.processedFleetingNotes[0].path
             this.scrollFocusedIntoView()
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "G")
           {
+            // Focus last item in list
             var len = this.processedFleetingNotes.length
-            this.focusedNote = this.processedFleetingNotes[len - 1]
+            this.focusedNotePath = this.processedFleetingNotes[len - 1].path
             this.scrollFocusedIntoView()
             this.fullKeybuffer = ''
           }
@@ -531,7 +560,7 @@ export default {
       else if (event.key === 'Tab' && event.shiftKey) {
         var iteration = this.resultsIt.next(-1)
         if (!iteration.done && iteration.value) {
-          this.focusedNote = iteration.value.fleetingNoteObj
+          this.focusedNotePath = iteration.value.fleetingNoteObj.path
           this.scrollFocusedIntoView()
         }
         event.preventDefault()
@@ -540,7 +569,7 @@ export default {
       else if (event.key === 'Tab') {
         var iteration = this.resultsIt.next(1)
         if (!iteration.done && iteration.value) {
-          this.focusedNote = iteration.value.fleetingNoteObj
+          this.focusedNotePath = iteration.value.fleetingNoteObj.path
           this.scrollFocusedIntoView()
         }
         event.preventDefault()
@@ -555,7 +584,7 @@ export default {
         this.resultsIt = arrIterator(this.foundItems)
         this.resultsIt.next()
         if (this.foundItems[0]) {
-          this.focusedNote = this.foundItems[0].fleetingNoteObj
+          this.focusedNotePath = this.foundItems[0].fleetingNoteObj.path
           this.scrollFocusedIntoView()
         }
       }
@@ -583,7 +612,8 @@ export default {
   },
   mounted() {
     this.isMounted = true
-    this.focusedNote = this.processedFleetingNotes[0]
+    this.focusedNotePath = this.processedFleetingNotes[0] ? this.processedFleetingNotes[0].path : ''
+    this.$refs.fleetingNoteList.focus()
   },
   unmounted() {
     this.isMounted = false

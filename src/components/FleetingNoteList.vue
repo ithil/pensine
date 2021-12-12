@@ -895,14 +895,28 @@ export default {
             }
             this.fullKeybuffer = ''
           }
-          else if (this.keybuffer == "sn")
+          else if (this.keybuffer == ",sn")
           {
+            // Change sort order: newest first
             this.$emit('changeSortOrder', 'newestFirst')
             this.fullKeybuffer = ''
           }
-          else if (this.keybuffer == "so")
+          else if (this.keybuffer == ",so")
           {
+            // Change sort order: oldest first
             this.$emit('changeSortOrder', 'oldestFirst')
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == ",sr")
+          {
+            // Change sort order: random
+            this.$emit('changeSortOrder', 'random')
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == ",si")
+          {
+            // Change sort order: inherit
+            this.$emit('changeSortOrder', 'inherit')
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "dd")
@@ -1001,6 +1015,23 @@ export default {
       }
       else if (this.sortOrder == 'oldestFirst') {
         processedNotes = processedNotes.sort((a, b) => a.date - b.date)
+      }
+      else if (this.sortOrder == 'shortestFirst') {
+        processedNotes = processedNotes.sort((a, b) => a.content.length - b.content.length)
+      }
+      else if (this.sortOrder == 'longestFirst') {
+        processedNotes = processedNotes.sort((a, b) => b.content.length - a.content.length)
+      }
+      else if (this.sortOrder == 'inherit') {
+        processedNotes = processedNotes
+      }
+      else if (this.sortOrder == 'random') {
+        for (let i = processedNotes.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          const temp = processedNotes[i];
+          processedNotes[i] = processedNotes[j];
+          processedNotes[j] = temp;
+        }
       }
       return processedNotes
     },

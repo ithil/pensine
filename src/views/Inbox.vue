@@ -1,20 +1,30 @@
 <template>
   <div class="inbox">
-    <div class="filterOptions">
-      <input v-model="filterTerm" type="search" placeholder="Filter ...">
-      <select v-model="sortOrder" class="sortOrder">
-        <option disabled value="">Sort Order</option>
-        <option v-for="option in sortOptions" v-bind:value="option.value">
-          {{ option.text }}
-        </option>
-      </select>
+    <div class="header">
+      <div class="name">
+        <Icon name="Inbox" />
+        Inbox
+      </div>
+      <div class="filterOptions">
+        <input v-model="filterTerm" type="search" placeholder="Filter ..." ref="filterInput">
+        <select v-model="sortOrder" class="sortOrder">
+          <option disabled value="">Sort Order</option>
+          <option v-for="option in sortOptions" v-bind:value="option.value">
+            {{ option.text }}
+          </option>
+        </select>
+      </div>
+      <div>
+      </div>
     </div>
     <fleeting-note-list
     :fleetingNotes="fleetingNotes"
     @updateFleetingNotes="updateFleetingNotes"
     @focusSendBox="focusSendBox"
+    @focusFilterInput="focusFilterInput"
     @changeSortOrder="changeSortOrder"
     @changeFilterTerm="changeFilterTerm"
+    @sendNewNote="_sendNewNote"
     :sortOrder="sortOrder"
     :filterTerm="filterTerm"
     ref="fleetingNoteList"
@@ -23,7 +33,7 @@
   <div class="sendFleetingNote">
     <textarea
     v-model="newFleetingNoteContent"
-    @keyup="sendKeymonitor"
+    @keydown="sendKeymonitor"
     ref="sendBox"
     placeholder="Send to Inbox ..."
     ></textarea>
@@ -33,6 +43,7 @@
 
 <script>
 import fleetingNoteList from '@/components/FleetingNoteList.vue'
+import { bus } from '@/main'
 import Icon from '@/components/Icon.vue'
 
 export default {
@@ -53,6 +64,9 @@ export default {
       sortOptions: [
         { text: 'Oldest First', value: 'oldestFirst' },
         { text: 'Newest First', value: 'newestFirst' },
+        { text: 'Shortest First', value: 'shortestFirst' },
+        { text: 'Longest First', value: 'longestFirst' },
+        { text: 'Random', value: 'random' },
       ],
     }
   },
@@ -65,8 +79,11 @@ export default {
       this.newFleetingNoteContent = ''
       this.$refs.fleetingNoteList.$el.focus()
     },
+    _sendNewNote(text) {
+      this.inbox.sendText(text)
+    },
     sendKeymonitor(event) {
-      if (event.shiftKey && event.key == 'Enter') {
+      if ((event.shiftKey && event.key == 'Enter') || (event.metaKey && event.key == 's')) {
         this.sendNewNote()
         event.stopPropagation()
         event.preventDefault()
@@ -77,6 +94,9 @@ export default {
     },
     focusSendBox() {
       this.$refs.sendBox.focus()
+    },
+    focusFilterInput() {
+      this.$refs.filterInput.focus()
     },
     changeSortOrder(sortOrder) {
       this.sortOrder = sortOrder
@@ -92,17 +112,25 @@ export default {
   },
   mounted() {
     this.isMounted = true
+    this.$store.commit('setTitle', 'Inbox')
     var collection = this.$store.state.currentNoteCollection
     collection.events.on('inboxItemAdd', this.updateFleetingNotes)
     collection.events.on('inboxItemChange', this.updateFleetingNotes)
     collection.events.on('inboxItemDelete', this.updateFleetingNotes)
     this.updateFleetingNotes()
+    var $this = this
+    bus.$on('filterTag', (opts) => {
+      if (!$this._inactive) {
+        this.filterTerm = `#${opts.tag}`
+      }
+    })
   },
   unmounted() {
     var collection = this.$store.state.currentNoteCollection
     collection.events.removeListener('inboxItemAdd', this.updateFleetingNotes)
     collection.events.removeListener('inboxItemChange', this.updateFleetingNotes)
     collection.events.removeListener('inboxItemDelete', this.updateFleetingNotes)
+    this.$store.commit('resetTitle')
   },
   activated() {
     this.$store.commit('setTitle', 'Inbox')
@@ -115,47 +143,76 @@ export default {
 <style scoped lang='scss'>
 .inbox {
   background: repeating-linear-gradient( 45deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.05) 10px, rgba(0, 0, 0, 0.08) 10px, rgba(0, 0, 0, 0.08) 20px );
-  padding-top: 20px;
-  padding-left: 50px;
   min-height: -webkit-fill-available;
-  .filterOptions {
-    margin-bottom: 20px;
-    input[type="search"] {
-      width: 450px;
+  .header {
+    position: sticky;
+    padding: 10px 10px 10px 0px;
+    display: flex;
+    justify-content: space-between;
+    top: 0px;
+    left: 60px;
+    background: linear-gradient(#9e9e9ec9, #7373731c);
+    backdrop-filter: blur(4px);
+    border-bottom: 1px solid #e8e8e8ab;
+    z-index: 20;
+    font-size: 20px;
+    .name {
+      display: flex;
+      gap: 4px;
+      font-family: Helvetica;
+      background: black;
+      color: white;
+      padding: 3px 10px 3px 15px;
       border-radius: 5px;
-      border: 2px solid #d6d6d6;
-      padding: 5px;
-      &:focus {
-        outline: none;
-        border-color: cornflowerblue;
-      }
+      border-top-left-radius: 0px;
+      border-bottom-left-radius: 0px;
     }
-    select.sortOrder {
-      font-size: 12px;
-      font-family: sans-serif;
-      font-weight: 700;
-      color: #444;
-      padding: .6em 1.4em .5em .8em;
-      max-width: 100%;
-      box-sizing: border-box;
-      margin: 0;
-      border: 1px solid #aaa;
-      border-radius: 5px;
-      -moz-appearance: none;
-      -webkit-appearance: none;
-      appearance: none;
-      background-color: #fff;
+    .filterOptions {
+      input[type="search"] {
+        width: 450px;
+        border-radius: 5px;
+        border: 2px solid #d6d6d6;
+        padding: 5px;
+        &:focus {
+          outline: none;
+          border-color: cornflowerblue;
+        }
+      }
+      select.sortOrder {
+        font-size: 12px;
+        font-family: sans-serif;
+        font-weight: 700;
+        color: #444;
+        padding: .6em 1.4em .5em .8em;
+        max-width: 100%;
+        box-sizing: border-box;
+        margin: 0;
+        border: 1px solid #aaa;
+        border-radius: 5px;
+        -moz-appearance: none;
+        -webkit-appearance: none;
+        appearance: none;
+        background-color: #fff;
+      }
     }
   }
   .fleetingNoteList {
-    padding-bottom: 40px;
+    padding-top: 30px;
+    padding-bottom: 30px;
+    margin: 0 auto;
+    width: 630px;
+    /deep/ .fleetingNote {
+      scroll-margin-top: 55px;
+      scroll-margin-bottom: 55px;
+    }
   }
 }
 
 .sendFleetingNote {
-  margin-left: 10px;
-  position: fixed;
-  bottom: 30px;
+  margin: auto auto;
+  width: 38em;
+  position: sticky;
+  bottom: 10px;
   textarea {
     border-radius: 10px;
     border: 2px solid #bfbfbf;

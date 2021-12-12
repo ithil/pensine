@@ -65,10 +65,11 @@
     <ul class="actions">
       <li><a href="#" @click="deleteNote">delete</a></li>
       <li v-if="fleetingNoteObj.isText"><a href="#" @click="editNote">edit</a></li>
-      <li v-if="fleetingNoteObj.isText"><a href="#" @click="insertNote">insert</a></li>
-      <li v-if="fleetingNoteObj.isText"><a href="#" @click="intoNewNote">new</a></li>
-      <li><a href="#">move</a></li>
       <li><a href="#" @click="addToBag">bag</a></li>
+      <li><a href="#" @click="linkNote">link</a></li>
+      <li><a href="#" @click="unlinkNote">unlink</a></li>
+      <li><a href="#" @click="showLinkToDatePrompt">date</a></li>
+      <li><a href="#" @click="sendToPort">port</a></li>
       <li><a href="#" @click="addToStack">stack</a></li>
       <li><a href="#" @click="toggleSelectNote">select</a></li>
     </ul>
@@ -333,6 +334,280 @@
       },
       addToBag() {
         this.$store.commit('addToBag', this.fleetingNoteObj.path)
+        if (event) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+      },
+      linkNote() {
+        var $this = this
+        var bag = this.$store.state.bag
+        var items = bag.map(fnPath => {
+          var fn = $this.fleetingNoteObj.collection.getFleetingNoteByPath(fnPath)
+          if (fn) {
+            return {
+              label: fn.abstract,
+              lucideIcon: 'File',
+              action:() => {
+                console.log(fn.path)
+                setTimeout(() => {
+                  this.$store.commit('triggerCustomTextPrompt', {
+                    message: `Edge Properties (comma-separated)`,
+                    action: (edgeProperties) => {
+                      edgeProperties = edgeProperties.split(',').map(i => i.trim()).filter(i => i)
+                      this.fleetingNoteObj.addLink(fn.relativePath, edgeProperties)
+                      this.$refs.fleetingNote.focus()
+                    }
+                  })
+                }, 50)
+              }
+            }
+          }
+        })
+        var filter = function (context) {
+          var $items = context.itemsWithIds
+          var searchString = context.searchString.toLowerCase()
+          var registers = $this.fleetingNoteObj.collection.registers
+          var registerPath = null
+          var registerName = null
+          for (let r of registers) {
+            if (searchString.startsWith(r.prefix)) {
+              registerPath = r.path
+              registerName = r.name
+              searchString = searchString.slice(r.prefix.length)
+            }
+          }
+          if (registerPath) {
+            var stack = $this.fleetingNoteObj.collection.stacks.getStackByPath(registerPath)
+            var stackContent = stack.getContent()
+            var items = []
+            var id = 1
+            for (let i of stackContent) {
+              if (!i.isStack && i.content.toLowerCase().indexOf(searchString) > -1) {
+                items.push({
+                  id: id,
+                  lucideIcon: 'AtSign',
+                  label: i.abstract,
+                  description: registerName,
+                  action: () => {
+                    setTimeout(() => {
+                      this.$store.commit('triggerCustomTextPrompt', {
+                        message: `Edge Properties (comma-separated)`,
+                        action: (edgeProperties) => {
+                          edgeProperties = edgeProperties.split(',').map(i => i.trim()).filter(i => i)
+                          $this.fleetingNoteObj.addLink(i.relativePath, edgeProperties)
+                        }
+                      })
+                    }, 50)
+                  },
+                })
+                id++
+              }
+            }
+            return items
+          }
+          var itemsFiltered = $items.filter(item => {
+            return item.label.toLowerCase().indexOf(context.searchString.toLowerCase()) > -1
+          })
+          itemsFiltered.push({
+            id: context.getHighestId() + 1,
+            lucideIcon: 'Plus',
+            label: 'Link all bagged notes',
+            action: () => {
+              for (let fnPath of bag) {
+                // this fnPath is absolute but needs to be relative!!!
+                $this.fleetingNoteObj.addLink(fnPath)
+              }
+            },
+          })
+          return itemsFiltered
+        }
+        this.$store.commit('triggerCustomSelectList', {items, filter})
+        if (event) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+      },
+      unlinkNote() {
+        var $this = this
+        if (!$this.fleetingNoteObj.hasMetadata) {
+          return false
+        }
+        var links = this.fleetingNoteObj.getMetadata().links || []
+        var backlinks = this.fleetingNoteObj.getMetadata().backlinks || []
+        var linksItems = links.map(link => {
+          var [fnName, edgeProperties] = link
+          var fn = $this.fleetingNoteObj.collection.getFleetingNoteByPath(fnName)
+          if (fn) {
+            return {
+              label: fn.abstract,
+              description: 'Link',
+              lucideIcon: 'File',
+              badges: (edgeProperties && edgeProperties.length > 0) ? edgeProperties : [],
+              action:() => {
+                console.log(fn.path)
+                fn.removeBacklink($this.fleetingNoteObj.relativePath)
+                $this.fleetingNoteObj.removeLink(fn.relativePath)
+              }
+            }
+          }
+        })
+        var backlinksItems = backlinks.map(link => {
+          var [fnName, edgeProperties] = link
+          var fn = $this.fleetingNoteObj.collection.getFleetingNoteByPath(fnName)
+          if (fn) {
+            return {
+              label: fn.abstract,
+              description: 'Backlink',
+              lucideIcon: 'File',
+              badges: (edgeProperties && edgeProperties.length > 0) ? edgeProperties : [],
+              action:() => {
+                console.log(fn.path)
+                $this.fleetingNoteObj.removeBacklink(fn.relativePath)
+                fn.removeLink($this.fleetingNoteObj.relativePath)
+              }
+            }
+          }
+        })
+        var items = [...linksItems, ...backlinksItems]
+        var filter = function (context) {
+          var $items = context.itemsWithIds
+          var itemsFiltered = $items.filter(item => {
+            return item.label.toLowerCase().indexOf(context.searchString.toLowerCase()) > -1
+          })
+          return itemsFiltered
+        }
+        if (items.length > 0) {
+          this.$store.commit('triggerCustomSelectList', {items, filter})
+        }
+        else {
+          console.log('There arent any here')
+        }
+        if (event) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+      },
+      showLinks() {
+        var $this = this
+        if (!$this.fleetingNoteObj.hasMetadata) {
+          return false
+        }
+        var links = this.fleetingNoteObj.getMetadata().links || []
+        var backlinks = this.fleetingNoteObj.getMetadata().backlinks || []
+        var linksItems = links.map(link => {
+          var fnName = link[0]
+          var edgeProperties = link[1]
+          var fn = $this.fleetingNoteObj.collection.getFleetingNoteByPath(fnName)
+          if (fn) {
+            return {
+              label: fn.abstract,
+              description: 'Link',
+              lucideIcon: 'File',
+              badges: (edgeProperties && edgeProperties.length > 0) ? edgeProperties : [],
+              action:() => {
+                console.log(fn.path)
+                if ((fn.inInbox && $this.fleetingNoteObj.inInbox) || (fn.stack == $this.fleetingNoteObj.stack)) {
+                  console.log('Yay! I let my partner shine! :)')
+                  $this.$emit('focusNote', fn)
+                  $this.$emit('scrollFocusedIntoView')
+                }
+                else {
+                  console.log('My partner is in a different stack but thats no problemo :)')
+                  var encodedPath = fn.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
+                  $this.$router.push(`/fleetingnote/${encodedPath}`)
+                }
+              }
+            }
+          }
+        })
+        var backlinksItems = backlinks.map(link => {
+          var fnName = link[0]
+          var edgeProperties = link[1]
+          var fn = $this.fleetingNoteObj.collection.getFleetingNoteByPath(fnName)
+          if (fn) {
+            return {
+              label: fn.abstract,
+              description: 'Backlink',
+              lucideIcon: 'File',
+              badges: (edgeProperties && edgeProperties.length > 0) ? edgeProperties : [],
+              action:() => {
+                console.log(fn.path)
+                if ((fn.inInbox && $this.fleetingNoteObj.inInbox) || (fn.stack == $this.fleetingNoteObj.stack)) {
+                  console.log('Yay! I let my partner shine! :)')
+                  $this.$emit('focusNote', fn)
+                  $this.$emit('scrollFocusedIntoView')
+                }
+                else {
+                  console.log('My partner is in a different stack but thats no problemo :)')
+                  let encodedPath = fn.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
+                  $this.$router.push(`/fleetingnote/${encodedPath}`)
+                }
+              }
+            }
+          }
+        })
+        var items = [...linksItems, ...backlinksItems]
+        var filter = function (context) {
+          var $items = context.itemsWithIds
+          var itemsFiltered = $items.filter(item => {
+            return item.label.toLowerCase().indexOf(context.searchString.toLowerCase()) > -1
+          })
+          return itemsFiltered
+        }
+        if (items.length > 0) {
+          this.$store.commit('triggerCustomSelectList', {items, filter})
+        }
+        else {
+          console.log('There arent any here')
+        }
+        if (event) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+      },
+      showLinkToDatePrompt(event) {
+        var $this = this
+        var suggestedDate = moment().format('YYYY/MM/DD')
+        this.$store.commit('triggerCustomTextPrompt', {
+          message: `Link fleeting note to following date:`,
+          text: suggestedDate,
+          selection: [suggestedDate.length, suggestedDate.length],
+          action: (date) => {
+            var date = moment(date)
+            console.log(date.format('YYYY_MM_DD'))
+            var fn = $this.fleetingNoteObj.collection.createDateNode('calendar', date)
+            $this.fleetingNoteObj.addLink(fn.relativePath, ['date'])
+          }
+        })
+        if (event) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+      },
+      linkToDate(date) {
+        var date = moment(date)
+        console.log(date.format('YYYY_MM_DD'))
+        var fn = this.fleetingNoteObj.collection.createDateNode('calendar', date)
+        this.fleetingNoteObj.addLink(fn.relativePath, ['date'])
+      },
+      sendToPort(event) {
+        var $this = this
+        var ports = this.$global.pensieve.ports
+        ports = ports.filter(p => p.collectionName != this.fleetingNoteObj.collection.name)
+        var items = ports.map(p => {
+          return {
+            label: p.name,
+            lucideIcon: 'Truck',
+            description: p.collectionName,
+            action:() => {
+              console.log(p.id)
+              p.sendToPort(this.fleetingNoteObj)
+              this.$refs.fleetingNote.focus()
+            }
+          }
+        })
+        this.$store.commit('triggerCustomSelectList', {items})
         if (event) {
           event.preventDefault()
           event.stopPropagation()

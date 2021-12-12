@@ -67,6 +67,9 @@
 <script>
 import fs from 'fs'
 import path from 'path'
+import sanitizeFilename from 'sanitize-filename'
+import moment from 'moment'
+import 'moment/locale/de'
 import fleetingNote from '@/components/FleetingNote.vue'
 import MarkdownIt from 'markdown-it'
 import { clipboard, shell, nativeImage } from 'electron'
@@ -210,6 +213,191 @@ export default {
         event.stopPropagation()
       }
     },
+    linkSelectedNotes() {
+      var $this = this
+      var bag = this.$store.state.bag
+      var items = bag.map(fnPath => {
+        var fn = $this.$store.state.currentNoteCollection.getFleetingNoteByPath(fnPath)
+        if (fn) {
+          return {
+            label: fn.abstract,
+            lucideIcon: 'File',
+            action:() => {
+              setTimeout(() => {
+                this.$store.commit('triggerCustomTextPrompt', {
+                  message: `Edge Properties (comma-separated)`,
+                  action: (edgeProperties) => {
+                    edgeProperties = edgeProperties.split(',').map(i => i.trim()).filter(i => i)
+                    for (let n of $this.selectedNotes) {
+                      n.addLink(fn.relativePath, edgeProperties)
+                    }
+                    $this.selectedNotes = []
+                    for (let n of this.$refs.fleetingNoteItems) {
+                      n.selected = false
+                    }
+                    this.$refs.fleetingNoteList.focus()
+                  }
+                })
+              }, 50)
+            }
+          }
+        }
+      })
+      var filter = function (context) {
+        var $items = context.itemsWithIds
+        var searchString = context.searchString.toLowerCase()
+        var registers = $this.$store.state.currentNoteCollection.registers
+        var registerPath = null
+        var registerName = null
+        for (let r of registers) {
+          if (searchString.startsWith(r.prefix)) {
+            registerPath = r.path
+            registerName = r.name
+            searchString = searchString.slice(r.prefix.length)
+          }
+        }
+        if (registerPath) {
+          var stack = $this.$store.state.currentNoteCollection.stacks.getStackByPath(registerPath)
+          var stackContent = stack.getContent()
+          var items = []
+          var id = 1
+          for (let i of stackContent) {
+            if (!i.isStack && i.content.toLowerCase().indexOf(searchString) > -1) {
+              items.push({
+                id: id,
+                lucideIcon: 'AtSign',
+                label: i.abstract,
+                description: registerName,
+                action: () => {
+                  setTimeout(() => {
+                    this.$store.commit('triggerCustomTextPrompt', {
+                      message: `Edge Properties (comma-separated)`,
+                      action: (edgeProperties) => {
+                        edgeProperties = edgeProperties.split(',').map(i => i.trim()).filter(i => i)
+                        for (let n of $this.selectedNotes) {
+                          n.addLink(i.relativePath, edgeProperties)
+                        }
+                        $this.selectedNotes = []
+                        for (let n of $this.$refs.fleetingNoteItems) {
+                          n.selected = false
+                        }
+                      }
+                    })
+                  }, 50)
+                },
+              })
+              id++
+            }
+          }
+          return items
+        }
+        var itemsFiltered = $items.filter(item => {
+          return item.label.toLowerCase().indexOf(context.searchString.toLowerCase()) > -1
+        })
+        itemsFiltered.push({
+          id: context.getHighestId() + 1,
+          lucideIcon: 'FilePlus',
+          label: 'Link all bagged notes',
+          action: () => {
+            for (let fnPath of bag) {
+              for (let n of $this.selectedNotes) {
+                // this fnPath is absoulte but needs to be relative!!!
+                n.addLink(fnPath)
+              }
+              $this.selectedNotes = []
+              for (let n of $this.$refs.fleetingNoteItems) {
+                n.selected = false
+              }
+            }
+          },
+        })
+        return itemsFiltered
+      }
+      this.$store.commit('triggerCustomSelectList', {items, filter})
+      if (event) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    },
+    tagSelectedNotes() {
+      var $this = this
+      var stacksPath = $this.$store.state.currentNoteCollection.paths.stacks
+      var tagStackPath = path.join(stacksPath, 'tags')
+      if (!fs.existsSync(tagStackPath)) {
+        fs.mkdirSync(tagStackPath, { recursive: true })
+      }
+      var stack = $this.$store.state.currentNoteCollection.stacks.getStackByPath('tags')
+      var stackContent = stack.getContent()
+      var items = []
+      var filter = function (context) {
+        var $items = context.itemsWithIds
+        var searchString = context.searchString.toLowerCase()
+        var items = []
+        var id = 1
+        for (let i of stackContent) {
+          if (!i.isStack && i.content.toLowerCase().indexOf(searchString) > -1) {
+            items.push({
+              id: id,
+              lucideIcon: 'Tag',
+              label: i.abstract,
+              action: () => {
+                var edgeProperties = ['tag']
+                if ($this.selectedNotes.length > 0) {
+                  for (let n of $this.selectedNotes) {
+                    n.addLink(i.relativePath, edgeProperties)
+                  }
+                  $this.selectedNotes = []
+                  for (let n of $this.$refs.fleetingNoteItems) {
+                    n.selected = false
+                  }
+                }
+                else {
+                  let n = $this.getFocusedNoteItem().fleetingNoteObj
+                  if (n) {
+                    n.addLink(i.relativePath, edgeProperties)
+                  }
+                }
+              },
+            })
+          }
+          id++
+        }
+        var newTag = context.searchString.trim()
+        items.push({
+          id: id + 1,
+          lucideIcon: 'FilePlus',
+          label: newTag,
+          description: 'Create new tag',
+          action: () => {
+            var newFnPath = path.join(tagStackPath, `${sanitizeFilename(newTag)}.md`)
+            fs.writeFileSync(newFnPath, `# ${newTag}`, 'utf8')
+            var newFn = $this.$store.state.currentNoteCollection.getFleetingNoteByPath(newFnPath)
+            var edgeProperties = ['tag']
+            if ($this.selectedNotes.length > 0) {
+              for (let n of $this.selectedNotes) {
+                n.addLink(newFn.relativePath, edgeProperties)
+              }
+              $this.selectedNotes = []
+              for (let n of $this.$refs.fleetingNoteItems) {
+                n.selected = false
+              }
+            }
+            else {
+              let n = $this.getFocusedNoteItem().fleetingNoteObj
+              if (n) {
+                n.addLink(newFn.relativePath, edgeProperties)
+              }
+            }
+          },
+        })
+        return items
+      }
+      this.$store.commit('triggerCustomSelectList', {items, filter})
+      if (event) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    },
     addSelectedToStack(event) {
       var $this = this
       var stacks = this.$store.state.currentNoteCollection.stacks.getListOfStacks()
@@ -245,6 +433,30 @@ export default {
         return itemsFiltered
       }
       this.$store.commit('triggerCustomSelectList', {items, filter})
+      if (event) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    },
+    sendSelectedToPort(event) {
+      var $this = this
+      var ports = this.$global.pensieve.ports
+      ports = ports.filter(p => p.collectionName != this.$store.state.currentNoteCollection.name)
+      var items = ports.map(p => {
+        return {
+          label: p.name,
+          lucideIcon: 'Truck',
+          description: p.collectionName,
+          action:() => {
+            for (let n of $this.selectedNotes) {
+              p.sendToPort(n)
+            }
+            $this.selectedNotes = []
+            this.$refs.fleetingNoteList.focus()
+          }
+        }
+      })
+      this.$store.commit('triggerCustomSelectList', {items})
       if (event) {
         event.preventDefault()
         event.stopPropagation()
@@ -372,9 +584,15 @@ export default {
             }
             this.fullKeybuffer = ''
           }
-          else if (this.keybuffer == "i")
+          else if (this.keybuffer == ",p")
           {
-            this.getFocusedNoteItem().insertNote()
+            // Send all selected items OR focused item to port
+            if (this.selectedNotes.length > 0) {
+              this.sendSelectedToPort()
+            }
+            else {
+              this.getFocusedNoteItem().sendToPort()
+            }
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "x")
@@ -390,6 +608,35 @@ export default {
           else if (this.keybuffer == "e")
           {
             this.getFocusedNoteItem().editNote()
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "ll")
+          {
+            // Show links of focused note
+            this.getFocusedNoteItem().showLinks()
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "la")
+          {
+            // Add links to all selected notes OR focused note
+            if (this.selectedNotes.length > 0) {
+              this.linkSelectedNotes()
+            }
+            else {
+              this.getFocusedNoteItem().linkNote()
+            }
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "lu")
+          {
+            // Remove a link from selected note
+            this.getFocusedNoteItem().unlinkNote()
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "lt")
+          {
+            // Add tag to all selected notes OR focused note
+            this.tagSelectedNotes()
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "b")
@@ -542,6 +789,40 @@ export default {
           else if (this.keybuffer == "so")
           {
             this.$emit('changeSortOrder', 'oldestFirst')
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "dd")
+          {
+            // Link note to a calendar date
+            this.getFocusedNoteItem().showLinkToDatePrompt()
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "dn")
+          {
+            // Link note to calendar date that equals creation date
+            let note = this.getFocusedNoteItem()
+            note.linkToDate(note.fleetingNoteObj.date)
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "dt")
+          {
+            // Link note to today's calendar date
+            this.getFocusedNoteItem().linkToDate(moment())
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "dy")
+          {
+            // Link note to yesterday's calendar date
+            this.getFocusedNoteItem().linkToDate(moment().subtract(this.keybufferCount || 1, 'day'))
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "dw")
+          {
+            // Link note to calendar date of last weekday X 
+            let today = moment()
+            let count = this.keybufferCount
+            count = count > 6 ? 0 : count
+            this.getFocusedNoteItem().linkToDate(today.day(today.day() >= count ? count : count-7))
             this.fullKeybuffer = ''
           }
         }

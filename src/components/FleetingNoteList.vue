@@ -680,16 +680,19 @@ export default {
           }
           else if (this.keybuffer == "r")
           {
+            // Refresh note list
             this.updateFleetingNotes()
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == " ")
           {
+            // Toggle selection of focused item
             this.getFocusedNoteItem().toggleSelectNote()
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "t")
           {
+            // Move all selected items OR focused item to stack
             if (this.selectedNotes.length > 0) {
               this.addSelectedToStack()
             }
@@ -711,6 +714,7 @@ export default {
           }
           else if (this.keybuffer == "x")
           {
+            // Delete all selected items OR focused item
             if (this.selectedNotes.length > 0) {
               this.deleteSelectedNotes()
             }
@@ -721,6 +725,7 @@ export default {
           }
           else if (this.keybuffer == "e")
           {
+            // Edit focused note
             this.getFocusedNoteItem().editNote()
             this.fullKeybuffer = ''
           }
@@ -755,6 +760,7 @@ export default {
           }
           else if (this.keybuffer == "b")
           {
+            // Add focused note to bag
             let fn = this.getFocusedNoteItem().fleetingNoteObj
             this.$store.commit('addToBag', fn.path)
             this.fullKeybuffer = ''
@@ -766,19 +772,23 @@ export default {
           }
           else if (/^m[a-zA-Z0-9]/.test(this.keybuffer))
           {
+            // Set jump mark for focused note
             let mark = this.keybuffer[1]
             this.markNote(this.getFocusedNoteItem().fleetingNoteObj, mark)
             this.fullKeybuffer = ''
           }
           else if (/^'[a-zA-Z0-9]/.test(this.keybuffer))
           {
+            // Jump to jump mark
             let mark = this.keybuffer[1]
             this.gotoMark(mark)
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "yr")
           {
-            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
+            // Copy note as markdown (raw) to clipboard
+            var fleetingNoteItem = this.getFocusedNoteItem()
+            var fleetingNoteObj = fleetingNoteItem.fleetingNoteObj
             if (fleetingNoteObj.isText) {
               var content = fleetingNoteObj.content
               clipboard.writeText(content)
@@ -787,15 +797,18 @@ export default {
           }
           else if (this.keybuffer == "yh")
           {
-            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
+            // Copy note as HTML to clipboard
+            var fleetingNoteItem = this.getFocusedNoteItem()
+            var fleetingNoteObj = fleetingNoteItem.fleetingNoteObj
             if (fleetingNoteObj.isText) {
-              var content = fleetingNoteObj.renderedContent
+              var content = fleetingNoteItem.renderedContent
               clipboard.writeHTML(content)
             }
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "yi")
           {
+            // Copy image to clipboard if note is image
             var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
             if (fleetingNoteObj.isImage) {
               let dataURL = `data:${fleetingNoteObj.mime};base64,${fleetingNoteObj.contentBase64}`
@@ -806,6 +819,7 @@ export default {
           }
           else if (this.keybuffer == "yl")
           {
+            // Copy note's nth link to clipboard
             var count = this.keybufferCount || 1
             var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
             if (fleetingNoteObj.webLinks[count - 1]) {
@@ -866,18 +880,21 @@ export default {
           }
           else if (this.keybuffer == "gf")
           {
+            // Reveal note in finder
             var notePath = this.getFocusedNoteItem().fleetingNoteObj.path
             shell.showItemInFolder(notePath)
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "go")
           {
+            // Open note (.md file or other) in default App
             var notePath = this.getFocusedNoteItem().fleetingNoteObj.path
             shell.openPath(notePath)
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "gl")
           {
+            // Open nth weblink of note
             var count = this.keybufferCount || 1
             var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
             if (fleetingNoteObj.webLinks[count - 1]) {
@@ -887,6 +904,7 @@ export default {
           }
           else if (this.keybuffer == "gi")
           {
+            // Focus send box
             this.$emit('focusSendBox')
             this.fullKeybuffer = ''
           }
@@ -920,16 +938,18 @@ export default {
             }
             this.fullKeybuffer = ''
           }
-          else if (this.keybuffer == "vc")
+          else if (this.keybuffer == "sn")
           {
+            // Unselect all notes
             this.selectedNotes = []
             for (let n of this.$refs.fleetingNoteItems) {
               n.selected = false
             }
             this.fullKeybuffer = ''
           }
-          else if (this.keybuffer == "vi")
+          else if (this.keybuffer == "si")
           {
+            // Inverse note selection
             for (let n of this.$refs.fleetingNoteItems) {
               n.toggleSelectNote()
             }
@@ -937,6 +957,7 @@ export default {
           }
           else if (this.keybuffer == "/")
           {
+            // Search for string in notes
             this.searchBarVisible = true
             var $this = this
             this.$nextTick(function () {
@@ -947,25 +968,40 @@ export default {
             })
             this.fullKeybuffer = ''
           }
+          else if (this.keybuffer == ",c")
+          {
+            // Clear search
+            var $this = this
+            $this.searchString = ''
+            this.fullKeybuffer = ''
+          }
           else if (this.keybuffer == "n")
           {
+            // Jump to next search result
+            this.fullKeybuffer = ''
+            if (!(this.resultsIt && this.resultsIt.next)) {
+              return
+            }
             var count = this.keybufferCount || 1
             var iteration = this.resultsIt.next(1 * count)
             if (!iteration.done && iteration.value) {
-              this.focusedNote = iteration.value.fleetingNoteObj
+              this.focusedNotePath = iteration.value.fleetingNoteObj.path
               this.scrollFocusedIntoView()
             }
-            this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "N")
           {
+            // Jump to previous search result
+            this.fullKeybuffer = ''
+            if (!(this.resultsIt && this.resultsIt.next)) {
+              return
+            }
             var count = this.keybufferCount || 1
             var iteration = this.resultsIt.next(-1 * count)
             if (!iteration.done && iteration.value) {
-              this.focusedNote = iteration.value.fleetingNoteObj
+              this.focusedNotePath = iteration.value.fleetingNoteObj.path
               this.scrollFocusedIntoView()
             }
-            this.fullKeybuffer = ''
           }
           else if (this.keybuffer == ",sn")
           {

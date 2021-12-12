@@ -8,6 +8,8 @@
         @unselectNote="unselectNote"
         @focusNote="focusNote"
         :class="f == focusedNote ? 'focused' : ''"
+        @markNote="markNote"
+        @gotoMark="gotoMark"
         :searchString="searchString"
         ref="fleetingNoteItems"
         >
@@ -106,6 +108,7 @@ export default {
     return {
       selectedNotes: [],
       focusedNote: null,
+      markedNotes: {},
       md: new MarkdownIt({linkify: true}),
       portalActive: true,
       fullKeybuffer: '',
@@ -131,6 +134,17 @@ export default {
       console.log(`Unselected: ${fleetingNoteObj.filename}`)
       var index = this.selectedNotes.findIndex(n => n.path == fleetingNoteObj.path)
       this.selectedNotes.splice(index, 1)
+    },
+    markNote(fleetingNoteObj, mark) {
+      console.log(`Marked as ${mark}: ${fleetingNoteObj.filename}`)
+      this.markedNotes[mark] = fleetingNoteObj
+    },
+    gotoMark(mark) {
+      console.log(`Goto mark ${mark}`)
+      if (this.markedNotes[mark]) {
+        this.focusNote(this.markedNotes[mark])
+        this.scrollFocusedIntoView()
+      }
     },
     showBag() {
       var $this = this
@@ -358,6 +372,18 @@ export default {
           else if (this.keybuffer == "B")
           {
             this.showBag()
+            this.fullKeybuffer = ''
+          }
+          else if (/^m[a-zA-Z0-9]/.test(this.keybuffer))
+          {
+            let mark = this.keybuffer[1]
+            this.markNote(this.getFocusedNoteItem().fleetingNoteObj, mark)
+            this.fullKeybuffer = ''
+          }
+          else if (/^'[a-zA-Z0-9]/.test(this.keybuffer))
+          {
+            let mark = this.keybuffer[1]
+            this.gotoMark(mark)
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "yr")

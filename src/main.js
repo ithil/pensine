@@ -75,6 +75,7 @@ const store = new Vuex.Store({
       password: false,
     },
     fleetingNoteForInsertion: null,
+    bag: [],
   },
   mutations: {
     changeCurrentNoteCollection(state, nc) {
@@ -90,6 +91,16 @@ const store = new Vuex.Store({
     setTitle(state, title) {
       state.title = title
       document.title = title
+    },
+    addToBag(state, fleetingNotePath) {
+      state.bag.push(fleetingNotePath)
+      state.bag = [...new Set(state.bag)]
+    },
+    removeFromBag(state, fleetingNotePath) {
+      state.bag = state.bag.filter(i => i != fleetingNotePath)
+    },
+    emptyBag(state) {
+      state.bag = []
     },
     resetTitle(state) {
       state.title = 'Pensine'

@@ -132,6 +132,44 @@ export default {
       var index = this.selectedNotes.findIndex(n => n.path == fleetingNoteObj.path)
       this.selectedNotes.splice(index, 1)
     },
+    showBag() {
+      var $this = this
+      var bag = this.$store.state.bag
+      var items = bag.map(fnPath => {
+        var fn = $this.$store.state.currentNoteCollection.getFleetingNoteByPath(fnPath)
+        if (fn) {
+          return {
+            label: fn.abstract,
+            lucideIcon: 'File',
+            description: fn.stack || 'Inbox',
+            action:() => {
+              console.log(fn.path)
+              this.$store.commit('removeFromBag', fn.path)
+            }
+          }
+        }
+      })
+      var filter = function (context) {
+        var $items = context.itemsWithIds
+        var itemsFiltered = $items.filter(item => {
+          return item.label.toLowerCase().indexOf(context.searchString.toLowerCase()) > -1
+        })
+        itemsFiltered.push({
+          id: context.getHighestId() + 1,
+          lucideIcon: 'Delete',
+          label: 'Empty Bag',
+          action: () => {
+            this.$store.commit('emptyBag')
+          },
+        })
+        return itemsFiltered
+      }
+      this.$store.commit('triggerCustomSelectList', {items, filter})
+      if (event) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    },
     deleteSelectedNotes(event) {
       var $this = this
       this.$store.commit('triggerCustomTextPrompt', {
@@ -309,6 +347,17 @@ export default {
           else if (this.keybuffer == "e")
           {
             this.getFocusedNoteItem().editNote()
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "b")
+          {
+            let fn = this.getFocusedNoteItem().fleetingNoteObj
+            this.$store.commit('addToBag', fn.path)
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "B")
+          {
+            this.showBag()
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "yr")

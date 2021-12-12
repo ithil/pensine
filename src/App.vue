@@ -209,7 +209,10 @@ export default {
       },
     })
     this.$store.commit('registerCommand', {
+      name: 'bag:empty',
+      label: 'Empty bag',
       action: () => {
+        this.$store.commit('emptyBag')
       },
     })
     this.$store.commit('registerCommand', {

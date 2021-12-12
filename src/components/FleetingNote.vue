@@ -68,6 +68,7 @@
       <li v-if="fleetingNoteObj.isText"><a href="#" @click="insertNote">insert</a></li>
       <li v-if="fleetingNoteObj.isText"><a href="#" @click="intoNewNote">new</a></li>
       <li><a href="#">move</a></li>
+      <li><a href="#" @click="addToBag">bag</a></li>
       <li><a href="#" @click="addToStack">stack</a></li>
       <li><a href="#" @click="toggleSelectNote">select</a></li>
     </ul>
@@ -325,6 +326,13 @@
           return itemsFiltered
         }
         this.$store.commit('triggerCustomSelectList', {items, filter})
+        if (event) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+      },
+      addToBag() {
+        this.$store.commit('addToBag', this.fleetingNoteObj.path)
         if (event) {
           event.preventDefault()
           event.stopPropagation()

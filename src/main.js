@@ -128,6 +128,7 @@ const store = new Vuex.Store({
         action: props.action || function() { },
         selection: props.selection || [0, 0],
         selectAll: props.selectAll || false,
+        password: props.password || false,
       }
       state.showCustomTextPrompt = true
     },

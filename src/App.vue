@@ -114,6 +114,8 @@ import Modal from './components/Modal.vue'
 import SelectList from '@/components/SelectList.vue'
 import TextPrompt from '@/components/TextPrompt.vue'
 import "animate.css"
+import Fuse from 'fuse.js'
+import moment from 'moment'
 import { ipcRenderer, shell } from 'electron'
 import { bus } from './main'
 import Icon from '@/components/Icon.vue'
@@ -777,7 +779,6 @@ body {
 }
 .splitpanes--vertical>.splitpanes__splitter,.splitpanes--vertical>.splitpanes__splitter{
   width:7px;
-  // border-left:1px solid #eee;
   margin-left:-1px
 }
 .splitpanes--vertical>.splitpanes__splitter:after,.default-theme .splitpanes--vertical>.splitpanes__splitter:after,.splitpanes--vertical>.splitpanes__splitter:before,.splitpanes--vertical>.splitpanes__splitter:before{
@@ -794,7 +795,6 @@ body {
 }
 .splitpanes--horizontal>.splitpanes__splitter,.splitpanes--horizontal>.splitpanes__splitter{
   height:7px;
-  // border-top:1px solid #eee;
   margin-top:-1px
 }
 .splitpanes--horizontal>.splitpanes__splitter:after,.default-theme .splitpanes--horizontal>.splitpanes__splitter:after,.default-theme.splitpanes--horizontal>.splitpanes__splitter:before,.default-theme .splitpanes--horizontal>.splitpanes__splitter:before{
@@ -812,16 +812,15 @@ body {
 
 
 ::-webkit-scrollbar {
-  background-color: rgba(42, 42, 42, 0.5);
+  background-color: #2a2a2a24;
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-thumb:window-inactive,
 ::-webkit-scrollbar-thumb {
-  background: rgba(92, 92, 92, 0.5);
+  background: rgb(96, 96, 96);
   border-radius: 5px;
-  box-shadow: 0 0 1px black inset;
 }
 
 ::-webkit-scrollbar-corner {

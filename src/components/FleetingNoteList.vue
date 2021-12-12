@@ -404,7 +404,7 @@ export default {
       var items = stacks.map(s => {
         return {
           label: s.relativePath,
-          iconClasses: ['feather-icon', 'icon-layers'],
+          lucideIcon: 'Layers',
           action:() => {
             for (let n of $this.selectedNotes) {
               n.sendToStack(s.relativePath)
@@ -420,7 +420,7 @@ export default {
         })
         itemsFiltered.push({
           id: context.getHighestId() + 1,
-          iconClasses: ['feather-icon', 'icon-plus'],
+          lucideIcon: 'Plus',
           label: context.searchString.trim(),
           description: 'Create new stack',
           action: () => {
@@ -913,7 +913,9 @@ export default {
 }
 
 .fleetingNotes {
-  max-width: 550px;
+  .fleetingNote {
+    margin-bottom: 10px;
+  }
 }
 
 .searchBar {

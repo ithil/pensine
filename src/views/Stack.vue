@@ -167,6 +167,7 @@ export default {
     width: 38em;
     height: 1.1em;
     box-shadow: 0px 0px 15px #9e9e9ed9;
+    font-family: 'Code New Roman';
     &:focus {
       outline: none;
       border-color: cornflowerblue;

@@ -78,6 +78,7 @@
 
 <script>
   import moment from 'moment'
+  import 'moment/locale/de'
   import MarkdownIt from 'markdown-it'
   import { codemirror } from 'vue-codemirror'
   import 'codemirror/lib/codemirror.css'
@@ -90,11 +91,15 @@
   import { ipcRenderer } from 'electron'
   import Icon from '@/components/Icon.vue'
 
+  moment.locale('de')
+
   export default {
     name: 'fleeting-note',
     props: {
       'fleetingNoteObj': Object,
       'searchString': String,
+      'options': Object,
+      'isFocused': Boolean,
     },
     components: {
       codemirror,
@@ -244,6 +249,7 @@
           action: (text) => {
             if (['y', 'yes'].includes(text.trim())) {
               this.fleetingNoteObj.delete()
+              this.$refs.fleetingNote.focus()
             }
           }
         })
@@ -307,6 +313,7 @@
             action:() => {
               console.log(s.path)
               this.fleetingNoteObj.sendToStack(s.relativePath)
+              this.$refs.fleetingNote.focus()
             }
           }
         })
@@ -322,6 +329,7 @@
             description: 'Create new stack',
             action: () => {
               $this.fleetingNoteObj.sendToStack(context.searchString.trim())
+              $this.$refs.fleetingNote.focus()
             },
           })
           return itemsFiltered
@@ -626,19 +634,23 @@
           event.stopPropagation()
         }
       },
-      focusNote() {
+      focusNote(event) {
         this.focused = true
-        this.$emit('focusNote', this.fleetingNoteObj)
+        this.$emit('focusNote', this.fleetingNoteObj, event)
       },
       saveNote(event) {
         this.fleetingNoteObj.setContent(this.editorContent)
         this.editing = !this.editing
+        this.$emit('focusNote', this.fleetingNoteObj)
         event.preventDefault()
         event.stopPropagation()
       },
       cancelEditing(event) {
-        // this.content = this.fleetingNoteObj.content
         this.editing = !this.editing
+        this.$emit('focusNote', this.fleetingNoteObj)
+        event.preventDefault()
+        event.stopPropagation()
+      },
       insertDate(event) {
         var dateString = moment().format('dddd, D. MMMM YYYY')
         var cm = this.$refs.cmEditor.codemirror
@@ -670,19 +682,16 @@
 .fleetingNote {
   min-width: 100px;
   height: min-content;
-  padding: 10px;
-  // border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
   border: 2px solid #ffd400;
-  // background-color: #d2d2d2;
   background-color: #FAFAFA;
   opacity: 0.96;
   color: black;
-  border-radius: 2px;
-  // box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  border-radius: 5px;
   box-shadow: 0 0 15px rgba(181, 181, 181, 0.67);
   font-family: 'Lucida Grande', 'Segoe UI', 'Open Sans', sans-serif;
   &.focused {
-    outline: 2px solid cornflowerblue;
+    box-shadow: 0 0 0 3px cornflowerblue;
   }
   &.selected {
     background-color: #c9d6e0;

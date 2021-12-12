@@ -115,10 +115,10 @@
       }
       createTree()
       this.updateInboxBadge()
-    bus.$on('noteCollectionChanged', () => {
-      createTree()
-      this.updateInboxBadge()
-    })
+      bus.$on('noteCollectionChanged', () => {
+        createTree()
+        this.updateInboxBadge()
+      })
     var collection = this.$store.state.currentNoteCollection
     collection.events.on('inboxItemAdd', this.updateInboxBadge)
     collection.events.on('inboxItemChange', this.updateInboxBadge)
@@ -164,19 +164,6 @@ ul {
   ul, li {
     list-style: none;
   }
-  // .toggle::before {
-  //   font-family: 'Octicons Regular';
-  //   font-weight: normal;
-  //   font-style: normal;
-  //   display: inline-block;
-  //   line-height: 1;
-  //   -webkit-font-smoothing: antialiased;
-  //   text-decoration: none;
-  //   font-size: 12px;
-  //   width: 12px;
-  //   height: 12px;
-  //   content: "\f0a3";
-  // }
 }
 .navbar-tree /deep/ .tree-row {
   display: flex;
@@ -211,7 +198,6 @@ ul {
     font-weight: bold;
     color: white;
     padding-left: 2px;
-    // font-family: Monaco;
     text-align: center;
 }
 

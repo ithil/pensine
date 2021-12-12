@@ -271,6 +271,7 @@ export default {
       height: 1.1em;
       transition: height 0.1s linear;
       resize: none;
+      font-family: 'Code New Roman';
       &:focus {
         outline: none;
         border-color: #b99b50;

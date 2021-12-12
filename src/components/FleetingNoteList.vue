@@ -1,5 +1,5 @@
 <template>
-  <div class="fleetingNoteList" tabindex="10" @keyup="keymonitor" @keydown="preventDefaultFix" ref="fleetingNoteList">
+  <div class="fleetingNoteList" tabindex="10" @keydown="keymonitor" ref="fleetingNoteList">
     <div class="fleetingNotes">
       <div v-for="f in processedFleetingNotes" :key="f.filename">
         <fleeting-note
@@ -532,9 +532,20 @@ export default {
     },
     keymonitor(event) {
       var tagName = event.target.tagName
-      if (!(['INPUT', 'TEXTAREA'].includes(tagName))) {
+      var el = event.target
+      var classes = []
+      while (el) {
+        if (el.classList) {
+          classes = [...classes, ...el.classList.values()]
+        }
+        el = el.parentNode
+      }
+      if (!(['INPUT', 'TEXTAREA'].includes(tagName)) && !classes.includes('fleetingNoteEditor')) {
         if (event.key === "Escape") {
           this.fullKeybuffer = ''
+        }
+        else if (event.metaKey && event.key=='f') {
+          this.$emit('focusFilterInput')
         }
         else if (event.key.length == 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
           this.fullKeybuffer += event.key

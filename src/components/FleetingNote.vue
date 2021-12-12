@@ -32,6 +32,23 @@
       </ul>
     </div>
   </transition>
+    <header class="header">
+      <span class="ago" @click="$router.push(`/fleetingnote/${encodedPath}`)">
+        <Icon name="Clock" />
+        {{ moment(fleetingNoteObj.date).fromNow() }}
+        <span class="timestamp">{{ moment(fleetingNoteObj.date).format('ddd DD.MM.YYYY HH:mm:ss') }}</span>
+      </span>
+      <span class="links" v-if="hasAnyLinks">
+        <span v-for="p in linksEdgeProperties" :key="p[0]" class="badge" :class="`badge-${p[0]}`">
+          <span class="name">{{p[0]}}</span>
+          <span class="amount">{{p[1]}}</span>
+        </span>
+        <span class="allLinks" @click="showLinks">
+          <Icon name="Share2" />
+          {{numberOfLinks}}
+        </span>
+      </span>
+    </header>
     <div class="content" v-if="!editing">
       <div v-if="fleetingNoteObj.isText" v-html="renderedContentWithHighlights">
       </div>
@@ -74,6 +91,9 @@
       <li><a href="#" @click="linkNote">link</a></li>
       <li><a href="#" @click="unlinkNote">unlink</a></li>
       <li><a href="#" @click="showLinkToDatePrompt">date</a></li>
+      <li><a href="#"
+        @click="$router.push(`/nodeexplorer/${encodedPath}`)"
+        >explore</a></li>
       <li><a href="#" @click="sendToPort">port</a></li>
       <li><a href="#" @click="addToStack">stack</a></li>
       <li><a href="#" @click="toggleSelectNote">select</a></li>
@@ -157,15 +177,20 @@
         return this.md.render(this.content)
       },
       renderedContentWithHighlights() {
-        var rendered = this.renderedContent
+        if (!this.searchString) return this.renderedContent
         if (this.searchString.length > 0) {
-          return rendered.replace(
+          return this.md.render(this.content.replace(
             new RegExp(this.searchString, 'gi'),
-            '<span class="match">$&</span>'
-          )
+            '[$&]{{.match}}'
+          ))
         }
         else {
-          return rendered
+          return this.renderedContent
+        }
+      },
+      encodedPath() {
+        return this.fleetingNoteObj.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
+      },
       hasAnyLinks() {
         if (this.relations.length > 0) {
           return true
@@ -688,6 +713,24 @@
       }
     },
     mounted() {
+      this.md.use(require('markdown-it-hashtag'))
+      this.md.renderer.rules.hashtag_open  = function(tokens, idx) {
+        var tagName = tokens[idx].content.toLowerCase();
+        return '<a href="special://tag/' + tagName + '" class="tag">';
+      }
+      this.md.use( require('markdown-it-bracketed-spans') )
+      this.md.use( require('markdown-it-attrs'), {
+        // optional, these are default options
+        leftDelimiter: '{{',
+        rightDelimiter: '}}',
+        allowedAttributes: []  // empty array = all attributes are allowed
+      })
+      this.md.renderer.rules.fence = function (tokens, idx, options, env, slf) {
+        const token = tokens[idx]
+        return  '<pre' + slf.renderAttrs(token) + '>'
+        + '<code>' + token.content + '</code>'
+        + '</pre>'
+      }
       this.editorContent = this.content
       if (this.options) {
         for (let o of Object.keys(this.options)) {
@@ -833,31 +876,257 @@
   }
 }
 
+@mixin favicon {
+  background-size: 18px 18px;
+  background-position: center center;
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  content:"";
+  margin-right: 2px;
+}
 
 .fleetingNote .content {
-  padding: 2px;
+  padding: 5px;
   font-family: 'Georgia';
-  margin-top: 5px;
-  margin-bottom: 5px;
+  margin: 10px;
   word-break: break-word;
+  &::after {
+    // Clearfix
+    content: "";
+    clear: both;
+    display: table;
+  }
+  blockquote:first-child, h1:first-child, h2:first-child, h3:first-child, ol:first-child, p:first-child, pre:first-child, ul:first-child {
+    margin-top: 0;
+  }
   .match {
-    background: #00000012;
-    border: 1px solid #ababab;
+    background: #000000;
+    color: white;
     border-radius: 5px;
     padding: 2px;
   }
   blockquote {
     border-left: 3px solid #cfdae6;
     padding-left: 5px;
+    text-align: justify;
+  }
+  :not(pre) > code {
+    background: #d7d5d5;
+    border-radius: 4px;
+    padding: 1px 3px;
+    font-family: 'Monaco', monospace;
+    font-size: 13px;
+  }
+  pre {
+    white-space: pre-wrap;
+    background: #000000e3;
+    padding: 10px;
+    border-radius: 5px;
+    color: white;
+    font-family: 'Code New Roman', monospace;
+    font-size: 15px;
+    &.prose {
+      background: none;
+      color: inherit;
+      font-family: 'Georgia';
+      font-size: 16px;
+      code {
+        font-family: 'Georgia';
+      }
+    }
+  }
+  h1 {
+    font-size: 24px;
+  }
+  h2 {
+    font-size: 20px;
+  }
+  h3 {
+    font-size: 17px;
+  }
+  h4 {
+    font-size: 15px;
+  }
+  h5 {
+    font-size: 13px;
+  }
+  h1, h2, h3, h4, h5 {
+    font-family: 'Baskerville';
+  }
+  .hl {
+    background-color: #ffd97da1;
+    padding: 1px;
+    border-radius: 2px;
+    &.green {
+      background-color: #0080005e;
+    }
+    &.red {
+      background-color: #ff000061;
+    }
+    &.blue {
+      background-color: #0000ff4f;
+    }
   }
   a {
     color: royalblue;
+    word-break: break-all;
+    position: relative;
   }
+  a:after {
+    visibility: hidden;
+    opacity: 0;
+  }
+  a:hover:after {
+    content: attr(href);
+    visibility: visible;
+    opacity: 1;
+    position: absolute;
+    background: black;
+    color: white;
+    white-space: nowrap;
+    font-family: 'Code New Roman';
+    font-size: 13px;
+    border-radius: 6px;
+    padding: 5px 1px;
+    transition: visibility 0.2s linear,opacity 0.2s linear;
+    bottom: 120%;
+    left: 0%;
+  }
+  a[href$=".pdf"]:before {
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/6/60/Adobe_Acrobat_Reader_icon_%282020%29.svg');
+    @include favicon;
+  }
+  a[href*="wikipedia.org/"]:before {
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/2/2c/Tango_style_Wikipedia_Icon.svg');
+    @include favicon;
+  }
+  a[href*="youtube.com/"]:before, a[href*="youtu.be/"]:before {
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/b/b8/YouTube_play_button_icon_%282013%E2%80%932017%29.svg');
+    @include favicon;
+  }
+  a[href*="facebook.com/"]:before {
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/c/c2/F_icon.svg');
+    @include favicon;
+  }
+  a[href*="reddit.com/"]:before {
+    background-image: url('https://www.reddit.com/favicon.ico');
+    @include favicon;
+  }
+  a[href*="instagram.com/"]:before {
+    background-image: url('https://www.instagram.com/favicon.ico');
+    @include favicon;
+  }
+  a[href*="wiktionary.org/"]:before {
+    background-image: url('https://en.wiktionary.org/favicon.ico');
+    @include favicon;
+  }
+  a[href*="github.com/"]:before {
+    background-image: url('https://github.com/favicon.ico');
+    @include favicon;
+  }
+  a[href*="spotify.com/"]:before {
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg');
+    @include favicon;
+  }
+  a[href*="dwds.de/"]:before {
+    background-image: url('https://www.dwds.de/favicon-32x32.png');
+    @include favicon;
+  }
+  a[href*="disco.uni-muenster.de/"]:before {
+    background-image: url('https://disco.uni-muenster.de/images/favicon.ico');
+    @include favicon;
+  }
+  a[href*="imdb.com/"]:before {
+    background-image: url('https://www.imdb.com/favicon.ico');
+    @include favicon;
+  }
+  a[href*="/n/Stacks%2Fpeople%"] {
+    background: hsl(38, 97%, 76%);
+    color: hsla(19, 30%, 35%, 1);
+    border-radius: 5px;
+    font-weight: 700;
+    border: 1.5px solid rgb(197, 166, 112);
+    text-decoration: none;
+    padding: 1px 5px;
+    font-family: Helvetica;
+    font-size: smaller;
+    &:before {
+      content: '\f203';
+      font-family: "feather-icons";
+      display: inline-block;
+      line-height: 1;
+      font-weight: 700;
+      font-style: normal;
+      speak: none;
+      text-decoration: inherit;
+      text-transform: none;
+      text-rendering: auto;
+      -webkit-font-smoothing: antialiased;
+    }
+  }
+  a[href*="/n/Stacks%2Fgroups%"] {
+    background: hsl(38, 97%, 76%);
+    color: hsla(19, 30%, 35%, 1);
+    border-radius: 5px;
+    font-weight: 700;
+    border: 1.5px solid rgb(197, 166, 112);
+    text-decoration: none;
+    padding: 1px 5px;
+    font-family: Helvetica;
+    font-size: smaller;
+    &:before {
+      content: '\f204';
+      font-family: "feather-icons";
+      display: inline-block;
+      line-height: 1;
+      font-weight: 700;
+      font-style: normal;
+      speak: none;
+      text-decoration: inherit;
+      text-transform: none;
+      text-rendering: auto;
+      -webkit-font-smoothing: antialiased;
+    }
+  }
+  a[href*="/n/Stacks%2Fplaces%"] {
+    background: hsl(38, 97%, 76%);
+    color: hsla(19, 30%, 35%, 1);
+    border-radius: 5px;
+    font-weight: 700;
+    border: 1.5px solid rgb(197, 166, 112);
+    text-decoration: none;
+    padding: 1px 5px;
+    font-family: Helvetica;
+    font-size: smaller;
+    &:before {
+      content: '\f194';
+      font-family: "feather-icons";
+      display: inline-block;
+      line-height: 1;
+      font-weight: 700;
+      font-style: normal;
+      speak: none;
+      text-decoration: inherit;
+      text-transform: none;
+      text-rendering: auto;
+      -webkit-font-smoothing: antialiased;
+    }
+  }
+  .tag {
+    background-color: #dad8d8;
+    padding: 3px;
+    color: black;
+    border-radius: 5px;
+    text-decoration: none;
+    border: 1px solid #b7b7b7;
+    font-family: Alice;
+}
   div p:last-child {
     margin-block-end: 0;
   }
-  .image {
-    max-height: 250px;
+  img {
+    max-width: 500px;
   }
   .miscFile {
     display: flex;
@@ -950,20 +1219,123 @@
 .fleetingNote .header {
   font-size: 12px;
   color: rgb(17, 17, 17);
-  font-family: 'PT Mono';
+  padding: 10px 10px 5px;
+  background-color: #5082ce12;
+  border-bottom: 1px solid #6495ed3b;
+  display: flex;
+  justify-content: space-between;
+  .links {
+    transform: translate(0px, -2px);
+    font-size: 14px;
+  }
+  .allLinks {
+    cursor: pointer;
+    font-weight: bold;
+    background: #ffffffbd;
+    border-radius: 5px;
+    padding: 3px;
+    border: 1.5px solid #0000004a;
+  }
+  .badge {
+    display: none;
+    padding: 3px;
+    background: #cacaca;
+    border-radius: 5px;
+    width: fit-content;
+    color: black;
+    margin-right: 3px;
+    border: 1px solid #6d6d6d;
+    font-family: 'Lucida Grande';
+    .name {
+      display: none;
+    }
+    &.badge-conflicts {
+      display: inline;
+      color: #b50f0f;
+      background: #d29b9b;
+      border-color: #b50f0f;
+      .amount:before {
+        content: "✗";
+        display: inline-block;
+        line-height: 1;
+        font-weight: normal;
+        font-style: normal;
+        speak: none;
+        text-decoration: inherit;
+        text-transform: none;
+        text-rendering: auto;
+        -webkit-font-smoothing: antialiased;
+      }
+    }
+    &.badge-agrees {
+      display: inline;
+      color: #0d3e0d;
+      background: #a9c3a9;
+      border-color: #0d3e0d;
+      .amount:before {
+        content: "✓";
+        display: inline-block;
+        line-height: 1;
+        font-weight: normal;
+        font-style: normal;
+        speak: none;
+        text-decoration: inherit;
+        text-transform: none;
+        text-rendering: auto;
+        -webkit-font-smoothing: antialiased;
+      }
+    }
+  }
 }
 
 .fleetingNote .header .ago {
   padding-right: 5px;
+  position: relative;
+  cursor: pointer;
+  .timestamp {
+    visibility: hidden;
+    opacity: 0;
+    font-family: 'Code New Roman';
+    font-size: 13px;
+    width: 180px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 1px;
+    transition: visibility 0.2s linear,opacity 0.2s linear;
+
+    /* Position the tooltip */
+    position: absolute;
+    z-index: 1;
+    bottom: 120%;
+    left: 50%;
+    margin-left: -90px;
+    &:after {
+      content: " ";
+      position: absolute;
+      top: 100%; /* At the bottom of the tooltip */
+      left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: black transparent transparent transparent;
+    }
+  }
 }
 
-.fleetingNote .header .timestamp {
-  font-size: 10px;
+.fleetingNote .header .ago:hover .timestamp {
+  visibility: visible;
+  opacity: 1;
 }
+
 
 .fleetingNote ul.actions {
   padding-inline-start: 0;
+  padding: 5px 10px 10px 10px;
   margin: 0;
+  border-top: 1px solid #6495ed3b;
+  background-color: #5082ce12;
   li {
     display: inline-block;
     list-style: none;
@@ -981,5 +1353,14 @@
 }
 .fade-enter, .fade-leave-to {
   opacity: 0;
+}
+.fold, .fold-leave-active {
+  transition: all .1s ease-in;
+  position: absolute;
+}
+.fold-enter, .fold-leave-to {
+  position: absolute;
+  opacity: 0;
+  transform: translateY(-100%);
 }
 </style>

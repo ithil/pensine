@@ -4,6 +4,7 @@
       <div v-for="f in processedFleetingNotes" :key="f.filename">
         <fleeting-note
         :fleetingNoteObj="f"
+        :options="fleetingNoteOptions"
         @selectNote="selectNote"
         @unselectNote="unselectNote"
         @focusNote="focusNote"
@@ -96,6 +97,12 @@ export default {
   name: 'fleeting-note-list',
   props: {
     'fleetingNotes': Array,
+    'fleetingNoteOptions': {
+      type: Object,
+      default() {
+        return {}
+      },
+    },
     'filterTerm': {
       type: String,
       default: '',
@@ -562,6 +569,66 @@ export default {
             var len = this.processedFleetingNotes.length
             this.focusedNotePath = this.processedFleetingNotes[len - 1].path
             this.scrollFocusedIntoView()
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "za")
+          {
+            // Toggle compact mode (fold) of focused item
+            if (this.selectedNotes.length > 0) {
+              let selectedNotesItems = this.getSelectedNotesItems()
+              for (let n of selectedNotesItems) {
+                n.toggleCompactMode()
+              }
+            }
+            else {
+              this.getFocusedNoteItem().toggleCompactMode()
+            }
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "zo")
+          {
+            // Disable compact mode (open fold) of focused item
+            if (this.selectedNotes.length > 0) {
+              let selectedNotesItems = this.getSelectedNotesItems()
+              for (let n of selectedNotesItems) {
+                n.toggleCompactMode(false)
+              }
+            }
+            else {
+              this.getFocusedNoteItem().toggleCompactMode(false)
+            }
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "zO")
+          {
+            // Disable compact mode (open fold) for all items
+            let allNotesItems = this.$refs.fleetingNoteItems
+            for (let n of allNotesItems) {
+              n.toggleCompactMode(false)
+            }
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "zc")
+          {
+            // Enable compact mode (close fold) of focused item
+            if (this.selectedNotes.length > 0) {
+              let selectedNotesItems = this.getSelectedNotesItems()
+              for (let n of selectedNotesItems) {
+                n.toggleCompactMode(true)
+              }
+            }
+            else {
+              this.getFocusedNoteItem().toggleCompactMode(true)
+            }
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "zC")
+          {
+            // Enable compact mode (close fold) for all items
+            let allNotesItems = this.$refs.fleetingNoteItems
+            for (let n of allNotesItems) {
+              n.toggleCompactMode(true)
+            }
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "r")

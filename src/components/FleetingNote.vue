@@ -1,8 +1,13 @@
 <template id='#item-template'>
-  <div class="fleetingNote" @keydown="keymonitor" @click="focusNote" :class="{ selected: selected }">
-    <div class="header">
-      <span class="ago">{{ moment(fleetingNoteObj.date).fromNow() }}</span>
-      <span class="timestamp">{{ moment(fleetingNoteObj.date).format('ddd DD.MM.YYYY HH:mm:ss') }}</span>
+  <transition name="fold">
+  <div v-if="computedOptions.compact" class="fleetingNote compactFleetingNote" @keydown="keymonitor" @click="focusNote" :class="{ selected: selected }" ref="fleetingNote" key="compact">
+    <span class="content">
+      <span class="abstract" :class="{ title: fleetingNoteObj.title ? true : false }">
+        {{fleetingNoteObj.abstract}}
+      </span>
+    </span>
+  </div>
+  <article v-else class="fleetingNote" @keydown="keymonitor" @click="focusNote" :class="{ selected: selected }" ref="fleetingNote" key="full">
     <div class="stackBadge" v-if="computedOptions.showStackBadge">
       <span v-if="fleetingNoteObj.stack" @click="$router.push(`/stacks/${fleetingNoteObj.stack}`)">
         <Icon name="Layers" /> {{fleetingNoteObj.stack}}
@@ -73,7 +78,8 @@
       <li><a href="#" @click="addToStack">stack</a></li>
       <li><a href="#" @click="toggleSelectNote">select</a></li>
     </ul>
-  </div>
+  </article>
+  </transition>
 </template>
 
 <script>
@@ -126,6 +132,7 @@
         computedOptions: {
           showStackBadge: false,
           showRightHandRelations: false,
+          compact: false,
         },
         cmOptions: {
           tabSize: 2,
@@ -241,6 +248,20 @@
           // this.closeModal()
           event.preventDefault()
           event.stopPropagation()
+        }
+      },
+      setOption(opt, value) {
+        this.computedOptions[opt] = value
+      },
+      getOption(opt) {
+        return this.computedOptions[opt]
+      },
+      toggleCompactMode(state) {
+        if (state != null) {
+          this.computedOptions.compact = state
+        }
+        else {
+          this.computedOptions.compact = !this.computedOptions.compact
         }
       },
       deleteNote(event) {
@@ -668,6 +689,11 @@
     },
     mounted() {
       this.editorContent = this.content
+      if (this.options) {
+        for (let o of Object.keys(this.options)) {
+          this.$set(this.computedOptions, o, this.options[o])
+        }
+      }
       var $this = this;
 
       (async () => {
@@ -779,6 +805,32 @@
     }
   }
 }
+
+.fleetingNote.compactFleetingNote {
+  padding: 10px;
+  background: #49499b;
+  border: none;
+  color: white;
+  &.selected {
+    background: #684b8f;
+  }
+  &.focused {
+    box-shadow: 0 0 0 3px #dbb91b;
+  }
+  .content {
+    margin: 0;
+    padding: 0;
+    .abstract {
+      font-size: 14px;
+      font-family: 'Georgia';
+      margin-block-end: 0;
+      color: #c3c3c3;
+      &.title {
+        font-size: 18px;
+        color: white;
+      }
+    }
+  }
 }
 
 

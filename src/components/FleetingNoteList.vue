@@ -582,6 +582,42 @@ export default {
             this.scrollFocusedIntoView()
             this.fullKeybuffer = ''
           }
+          else if (this.keybuffer == "zz")
+          {
+            // Scroll to center of focused item
+            var $this = this
+            setTimeout(function () { // This is just a dirty hack so I can go to bed
+              var focusedItem = $this.getFocusedNoteItem()
+              if (focusedItem) {
+                focusedItem.$el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+              }
+            }, 5)
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "zt")
+          {
+            // Scroll to top of focused item
+            var $this = this
+            setTimeout(function () { // This is just a dirty hack so I can go to bed
+              var focusedItem = $this.getFocusedNoteItem()
+              if (focusedItem) {
+                focusedItem.$el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }
+            }, 5)
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "zb")
+          {
+            // Scroll to bottom of focused item
+            var $this = this
+            setTimeout(function () { // This is just a dirty hack so I can go to bed
+              var focusedItem = $this.getFocusedNoteItem()
+              if (focusedItem) {
+                focusedItem.$el.scrollIntoView({ behavior: 'smooth', block: 'end' })
+              }
+            }, 5)
+            this.fullKeybuffer = ''
+          }
           else if (this.keybuffer == "za")
           {
             // Toggle compact mode (fold) of focused item

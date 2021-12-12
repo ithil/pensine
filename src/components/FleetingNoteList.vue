@@ -813,6 +813,57 @@ export default {
             }
             this.fullKeybuffer = ''
           }
+          else if (this.keybuffer == "yp")
+          {
+            // Copy note's path (.md) to clipboard
+            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
+            clipboard.writeText(fleetingNoteObj.path)
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "yt")
+          {
+            // Copy note's title to clipboard
+            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
+            clipboard.writeText(fleetingNoteObj.abstract)
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "pp")
+          {
+            // Create new note from clipboard content
+            var text = clipboard.readText() || ''
+            this.$emit('sendNewNote', text)
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "pq")
+          {
+            // Create new note from clipboard content wrapped in blockquote
+            var text = clipboard.readText() || ''
+            var lines = text.split('\n')
+            lines = lines.map(l => `> ${l}`)
+            text = lines.join('\n')
+            this.$emit('sendNewNote', text)
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "pl")
+          {
+            // Create new note from clipboard content as bullet list
+            var text = clipboard.readText() || ''
+            var lines = text.split('\n')
+            lines = lines.map(l => `* ${l}`)
+            text = lines.join('\n')
+            this.$emit('sendNewNote', text)
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "ph")
+          {
+            // Create new note from clipboard content; first line as headline
+            var text = clipboard.readText() || ''
+            var lines = text.split('\n')
+            lines[0] = `# ${lines[0]}`
+            text = lines.join('\n')
+            this.$emit('sendNewNote', text)
+            this.fullKeybuffer = ''
+          }
           else if (this.keybuffer == "gf")
           {
             var notePath = this.getFocusedNoteItem().fleetingNoteObj.path
@@ -839,8 +890,29 @@ export default {
             this.$emit('focusSendBox')
             this.fullKeybuffer = ''
           }
-          else if (this.keybuffer == "va")
+          else if (this.keybuffer == ",yp")
           {
+            // Copy note's metadata path (.json) to clipboard
+            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
+            clipboard.writeText(fleetingNoteObj.metadataPath)
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == ",ym")
+          {
+            // Copy note's metadata (.json) to clipboard
+            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
+            var metadata = fleetingNoteObj.getMetadata()
+            if (metadata) {
+              clipboard.writeText(JSON.stringify(metadata, null, 2))
+            }
+            else {
+              clipboard.writeText(`The note "${fleetingNoteObj.path}" has no metadata.`)
+            }
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "sa")
+          {
+            // Select all notes
             this.selectedNotes = []
             for (let n of this.$refs.fleetingNoteItems) {
               n.selected = true

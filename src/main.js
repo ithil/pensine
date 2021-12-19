@@ -9,6 +9,7 @@ import RouterTab from 'vue-router-tab'
 import PortalVue from 'portal-vue'
 import {VueMasonryPlugin} from 'vue-masonry'
 import $ from 'jquery'
+import path from 'path'
 
 Vue.use(Vuex)
 Vue.use(RouterTab)
@@ -153,6 +154,15 @@ $(document).on('click', 'a[href^="/"]', function(event) {
    event.preventDefault()
    var url = new URL(this.href)
    bus.$emit('openRoute', url.pathname)
+ })
+
+$(document).on('click', 'a[href^="special"]', function(event) {
+   event.preventDefault()
+   var url = new URL(this.href)
+   var parsedPath = path.parse(url.pathname)
+   if (parsedPath.dir == '//tag') {
+     bus.$emit('filterTag', { tag: parsedPath.base })
+   }
  })
 
 export { bus }

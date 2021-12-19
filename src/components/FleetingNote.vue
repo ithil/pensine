@@ -968,6 +968,24 @@
       background-color: #0000ff4f;
     }
   }
+  .question {
+    background: rgba(234, 183, 70, 0.8);
+    border-radius: 4px;
+    padding: 3px;
+    position: relative;
+    margin-left: 25px;
+    &:before {
+      content: '?';
+      background: rgba(234, 183, 70, 0.8);
+      padding: 3px 8px;
+      border-radius: 20px;
+      left: -27px;
+      position: absolute;
+      color: black;
+      top: -2px;
+      font-family: 'Arial Black';
+    }
+  }
   a {
     color: royalblue;
     word-break: break-all;

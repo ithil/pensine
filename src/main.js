@@ -38,6 +38,7 @@ CodeMirror.Vim.mapCommand('gfs', 'action', 'surroundEvenlyWith', {delimiter: '~~
 CodeMirror.Vim.mapCommand('gfc', 'action', 'surroundEvenlyWith', {delimiter: '`'})
 
 const config = new Store()
+// Important TODO: Put config in main process
 
 Vue.config.productionTip = false
 Vue.prototype.$global = {

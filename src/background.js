@@ -1,6 +1,6 @@
 'use strict'
 
-import { app, protocol, BrowserWindow, Menu, ipcMain } from 'electron'
+import { app, protocol, BrowserWindow, Menu, ipcMain, globalShortcut, Notification, shell } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 // import { bus } from './main'
@@ -225,18 +225,6 @@ async function createWindow() {
           ])
         ]
       },
-      {
-        role: 'help',
-        submenu: [
-          {
-            label: 'Learn More',
-            click: async () => {
-              const { shell } = require('electron')
-              await shell.openExternal('https://electronjs.org')
-            }
-          }
-        ]
-      }
     ]
   }
 
@@ -291,6 +279,7 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString())
     }
   }
+  app.dock.setMenu(dockMenu)
   createWindow()
 })
 

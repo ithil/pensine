@@ -224,10 +224,7 @@ export default {
         ipcRenderer.send('quit')
       },
     })
-    this.$store.commit('registerCommand', {
-      action: () => {
-      },
-    })
+
     ipcRenderer.on('addExistingCollection' , (event, data) => {
       this.$refs.addExistingCollection.open()
     })

@@ -269,8 +269,8 @@
   },
     methods: {
       keymonitor(event) {
+        // Why do I need this?
         if (event.key === "Escape") {
-          // this.closeModal()
           event.preventDefault()
           event.stopPropagation()
         }

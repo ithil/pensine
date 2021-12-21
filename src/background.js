@@ -3,9 +3,14 @@
 import { app, protocol, BrowserWindow, Menu, ipcMain, globalShortcut, Notification, shell } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
+import contextMenu from 'electron-context-menu'
 // import { bus } from './main'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const isMac = process.platform === 'darwin'
+
+contextMenu({
+	showSaveImageAs: true
+})
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.

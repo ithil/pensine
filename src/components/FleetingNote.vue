@@ -954,35 +954,165 @@
     font-family: 'Baskerville';
   }
   .hl {
-    background-color: #ffd97da1;
+    --highlight-color: #ffd97da1;
+    background-color: var(--highlight-color);
     padding: 1px;
     border-radius: 2px;
     &.green {
-      background-color: #0080005e;
+      --highlight-color: #0080005e;
     }
     &.red {
-      background-color: #ff000061;
+      --highlight-color: #ff000061;
     }
     &.blue {
-      background-color: #0000ff4f;
+      --highlight-color: #0000ff4f;
     }
-  }
-  .question {
-    background: rgba(234, 183, 70, 0.8);
-    border-radius: 4px;
-    padding: 3px;
-    position: relative;
-    margin-left: 25px;
-    &:before {
-      content: '?';
-      background: rgba(234, 183, 70, 0.8);
-      padding: 3px 8px;
-      border-radius: 20px;
-      left: -27px;
-      position: absolute;
-      color: black;
-      top: -2px;
-      font-family: 'Arial Black';
+    @mixin mark-highlight {
+      position: relative;
+      margin-left: 33px;
+      &:before {
+        background: var(--highlight-color);
+        left: -34px;
+        position: absolute;
+        line-height: 90%;
+        color: black;
+        top: -1px;
+        font-family: 'Arial Black';
+        border: 4px solid #00000087;
+      }
+    }
+    &.question {
+      @include mark-highlight;
+      &:before {
+        content: '?';
+        padding: 0px 6px;
+        border-radius: 20px;
+      }
+    }
+    &.exclamation {
+      @include mark-highlight;
+      &:before {
+        content: '!';
+        padding: 2px 8px;
+        border-radius: 20px 20px 5px 5px;
+      }
+    }
+    @mixin emoji-highlight {
+      position: relative;
+      margin-left: 27px;
+      &:before {
+        left: -29px;
+        position: absolute;
+        line-height: 100%;
+        padding: 2px;
+        border-radius: 10px;
+        background: #0090f729;
+        font-size: larger;
+        top: -1px;
+      }
+    }
+    &.thumbs-up {
+      @include emoji-highlight;
+      &:before {
+        content: '👍';
+      }
+    }
+    &.thumbs-down {
+      @include emoji-highlight;
+      &:before {
+        content: '👎';
+      }
+    }
+    &.yes {
+      @include emoji-highlight;
+      &:before {
+        content: '✅';
+      }
+    }
+    &.no {
+      @include emoji-highlight;
+      &:before {
+        content: '❌';
+      }
+    }
+    &.thoughts {
+      @include emoji-highlight;
+      &:before {
+        content: '💭';
+      }
+    }
+    &.lab {
+      @include emoji-highlight;
+      &:before {
+        content: '🧪';
+      }
+    }
+    &.search {
+      @include emoji-highlight;
+      &:before {
+        content: '🔍';
+      }
+    }
+    &.book {
+      @include emoji-highlight;
+      &:before {
+        content: '📖';
+      }
+    }
+    &.trash {
+      @include emoji-highlight;
+      &:before {
+        content: '🗑️';
+      }
+    }
+    &.link {
+      @include emoji-highlight;
+      &:before {
+        content: '🔗';
+      }
+    }
+    &.pointing {
+      @include emoji-highlight;
+      &:before {
+        content: '👉';
+      }
+    }
+    &.target {
+      @include emoji-highlight;
+      &:before {
+        content: '🎯';
+      }
+    }
+    &.idea {
+      @include emoji-highlight;
+      &:before {
+        content: '💡';
+      }
+    }
+    &[data-gloss] {
+      position: relative;
+      &:after {
+        visibility: hidden;
+        opacity: 0;
+      }
+      &:hover:after {
+        content: attr(data-gloss);
+        visibility: visible;
+        opacity: 1;
+        position: absolute;
+        background: black;
+        color: white;
+        max-width: 400px;
+        width: max-content;
+        display: inline-block;
+        font-family: 'Code New Roman';
+        font-size: 13px;
+        border-radius: 6px;
+        padding: 5px;
+        transition: visibility 0.2s linear,opacity 0.2s linear;
+        bottom: 120%;
+        left: 0%;
+      }
     }
   }
   a {

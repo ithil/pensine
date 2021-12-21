@@ -539,9 +539,6 @@ export default {
         logger(err.message)
       }
     },
-            }
-        }
-      })
     collectionModal() {
       var collections = this.$global.config.get('collections', {})
       var $this = this
@@ -566,7 +563,6 @@ export default {
       }
       items = items.filter(i => i.label != this.$store.state.currentNoteCollection.name)
       this.$store.commit('triggerCustomSelectList', {items})
-    },
     },
     updateRepoStatus() {
       this.$store.state.currentNoteCollection.checkForChangesAsync().then(status => {

@@ -110,10 +110,6 @@ async function createWindow() {
               win.webContents.send('openNoteModal')
             }
           },
-          {
-            click: async () => {
-            }
-          },
           { type: 'separator' },
           // isMac ? { role: 'close' } : { role: 'quit' },
           {
@@ -279,7 +275,6 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString())
     }
   }
-  app.dock.setMenu(dockMenu)
   createWindow()
 })
 

@@ -707,9 +707,8 @@
           event.stopPropagation()
         }
       },
-      },
       onCmReady(cm) {
-        console.log(cm)
+        // console.log(cm)
       }
     },
     mounted() {

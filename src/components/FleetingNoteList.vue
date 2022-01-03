@@ -1124,6 +1124,15 @@ export default {
       else if (this.sortOrder == 'oldestFirst') {
         processedNotes = processedNotes.sort((a, b) => a.date - b.date)
       }
+      else if (this.sortOrder == 'mostRelationsFirst') {
+        processedNotes = processedNotes.sort((a, b) => b.numberOfRelations - a.numberOfRelations)
+      }
+      else if (this.sortOrder == 'fewestRelationsFirst') {
+        processedNotes = processedNotes.sort((a, b) => a.numberOfRelations - b.numberOfRelations)
+      }
+      else if (this.sortOrder == 'alphabetical') {
+        processedNotes = processedNotes.sort((a, b) => a.abstract.localeCompare(b.abstract))
+      }
       else if (this.sortOrder == 'shortestFirst') {
         processedNotes = processedNotes.sort((a, b) => a.content.length - b.content.length)
       }

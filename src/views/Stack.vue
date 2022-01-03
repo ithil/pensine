@@ -74,6 +74,9 @@ export default {
       sortOptions: [
         { text: 'Oldest First', value: 'oldestFirst' },
         { text: 'Newest First', value: 'newestFirst' },
+        { text: 'Most Relations', value: 'mostRelationsFirst' },
+        { text: 'Fewest Relations', value: 'fewestRelationsFirst' },
+        { text: 'Alphabetical', value: 'alphabetical' },
         { text: 'Shortest First', value: 'shortestFirst' },
         { text: 'Longest First', value: 'longestFirst' },
         { text: 'Random', value: 'random' },

@@ -48,6 +48,9 @@
             <Icon name="Layers" />{{s.relativePath}}
           </span>
         </li>
+        <div class="stackLink showAll" @click="$router.push('/stacks')">
+          <Icon name="Table" /></span>Show all {{stackCount}} Stacks
+        </div>
       </ul>
     </div>
   </div>
@@ -68,6 +71,7 @@ export default {
       newFleetingNoteContent: '',
       inboxCount: 0,
       recentlyChangedStacks: [],
+      stackCount: 0,
     }
   },
   components: {
@@ -94,6 +98,7 @@ export default {
     },
     updateRecentlyChangedStacks() {
         var stacks = this.$store.state.currentNoteCollection.stacks.getListOfStacks()
+        this.stackCount = stacks.length
         this.recentlyChangedStacks = stacks.sort((a, b) => b.lastAddedTo - a.lastAddedTo).slice(0, 10)
     },
   },

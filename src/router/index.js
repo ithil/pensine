@@ -36,6 +36,20 @@ const routes = [
     component: () => import(/* webpackChunkName: "inbox" */ '../views/Inbox.vue'),
   },
   {
+    path: '/stacks',
+    name: 'Stack',
+    component: () => import(/* webpackChunkName: "inbox" */ '../views/Stacks.vue'),
+    meta: {
+      title: 'All Stacks', // tab title
+      icon: 'Layers',
+      iconColor: '#000',
+      iconBackground: '#fff',
+      key: 'path',
+      tips: 'All Stacks', // tab tooltip, optional. defaults to `meta.title`
+      closable: true // is tab closable, defaults to `true`
+    },
+  },
+  {
     path: '/stacks/:name(.*)',
     name: 'Stack',
     component: Stack,

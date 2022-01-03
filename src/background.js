@@ -9,7 +9,30 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 const isMac = process.platform === 'darwin'
 
 contextMenu({
-	showSaveImageAs: true
+  showSaveImageAs: true,
+  prepend: (defaultActions, parameters, browserWindow) => [
+    {
+      label: 'Open in WayBack Machine',
+      visible: parameters.linkURL.trim().startsWith('http'),
+      click: () => {
+        shell.openExternal(`https://web.archive.org/web/*/${parameters.linkURL}`);
+        }
+      },
+      {
+        label: 'Open in Google Cache',
+        visible: parameters.linkURL.trim().startsWith('http'),
+        click: () => {
+          shell.openExternal(`http://webcache.googleusercontent.com/search?q=cache:${encodeURIComponent(parameters.linkURL)}`);
+          }
+        },
+      {
+        label: 'Search Google for Image',
+        visible: parameters.mediaType === 'image' && parameters.srcURL.trim().startsWith('http'),
+        click: () => {
+          shell.openExternal(`https://www.google.com/searchbyimage?image_url=${encodeURIComponent(parameters.srcURL)}`);
+          }
+        },
+      ]
 })
 
 // Keep a global reference of the window object, if you don't, the window will

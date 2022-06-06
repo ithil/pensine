@@ -16,6 +16,7 @@
           enterActiveClass: 'animate__animated animate__fadeIn animate__fast',
           }"
         append="next"
+        :tabs="tabs"
         >
             <template #start>
               <span class="router-tab__tabbar-left-space"></span>
@@ -137,6 +138,9 @@ export default {
     return {
       paneSize: 0,
       allStacks: [],
+      tabs: [
+        '/',
+      ],
     }
   },
   watch: {
@@ -232,9 +236,10 @@ export default {
       this.$global.config.set('defaultNoteCollection', this.$global.config.get('currentNoteCollection'))
     })
     ipcRenderer.send('updateColMenuItems', this.$global.config.get('collections', {}))
+    var $this = this
     ipcRenderer.on('changeCurrentNoteCollection' , (event, data) => {
-      var $this = this
       this.openNoteCollection((collection) => {
+        $this.$tabs.reset()
         $this.$store.commit('changeCurrentNoteCollection', collection)
         $this.$global.config.set('currentNoteCollection', data.path)
         bus.$emit('noteCollectionChanged')
@@ -552,6 +557,7 @@ export default {
             $this.$nextTick(function () {
               setTimeout(function () { // This is just a dirty hack so I can go to bed
                 $this.openNoteCollection((collection) => {
+                  $this.$tabs.reset()
                   $this.$store.commit('changeCurrentNoteCollection', collection)
                   $this.$global.config.set('currentNoteCollection', collections[c].path)
                   bus.$emit('noteCollectionChanged')

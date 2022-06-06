@@ -69,6 +69,7 @@
 import fs from 'fs'
 import path from 'path'
 import sanitizeFilename from 'sanitize-filename'
+import Fuse from 'fuse.js'
 import moment from 'moment'
 import 'moment/locale/de'
 import fleetingNote from '@/components/FleetingNote.vue'
@@ -156,6 +157,37 @@ export default {
       if (this.markedNotes[mark]) {
         this.focusNote(this.markedNotes[mark])
         this.scrollFocusedIntoView()
+      }
+    },
+    chooseNoteModal() {
+      var $this = this
+      var processedFleetingNotes = this.processedFleetingNotes
+      var items = processedFleetingNotes.map(fn => {
+        let numberOfLinks = fn.relations.length
+        return {
+          label: fn.abstract,
+          lucideIcon: 'FileText',
+          description: `${numberOfLinks > 0 ? numberOfLinks+' relations – ' : ''}${moment(fn.date).format('DD.MM.YYYY')}`,
+          action:() => {
+            $this.focusNote(fn)
+            $this.scrollFocusedIntoView()
+          }
+        }
+      })
+      var filter = function (context) {
+        var $items = context.itemsWithIds
+        var searchString = context.searchString.toLowerCase()
+        if (searchString.length == 0) {
+          return $items
+        }
+        var fuse = new Fuse($items, {keys: ['label']})
+        var itemsFiltered = fuse.search(searchString).map(i => i.item)
+        return itemsFiltered
+      }
+      this.$store.commit('triggerCustomSelectList', {items, filter})
+      if (event) {
+        event.preventDefault()
+        event.stopPropagation()
       }
     },
     checkFocus(f) {
@@ -546,6 +578,9 @@ export default {
         }
         else if (event.metaKey && event.key=='f') {
           this.$emit('focusFilterInput')
+        }
+        else if (event.metaKey && event.key=='r') {
+          this.chooseNoteModal()
         }
         else if (event.key.length == 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
           this.fullKeybuffer += event.key

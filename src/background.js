@@ -197,8 +197,20 @@ async function createWindow() {
             }
           },
           { type: 'separator' },
-          { role: 'reload' },
-          { role: 'forcereload' },
+          {
+            label: 'Reload',
+            click: async () => {
+              win.webContents.reload()
+            }
+          },
+          {
+            label: 'Force Reload',
+            click: async () => {
+              win.webContents.reloadIgnoringCache()
+            }
+          },
+          // { role: 'reload' },
+          // { role: 'forcereload' },
           { role: 'toggledevtools' },
           { type: 'separator' },
           { role: 'resetzoom' },

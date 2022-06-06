@@ -27,6 +27,7 @@
     data: function () {
       return {
         show: false,
+        previouslyFocusedElement: null,
       }
     },
     methods: {
@@ -37,8 +38,12 @@
           cb()
         }
         this.$emit('close')
+        if(this.previouslyFocusedElement) {
+          this.previouslyFocusedElement.focus()
+        }
       },
       openModal(cb) {
+        this.previouslyFocusedElement = document.activeElement
         this.show = true
         document.querySelector("body").classList.add("overflow-hidden")
         this.$nextTick(() => {

@@ -44,12 +44,6 @@
           name: 'new stuff'
         })
       },
-      updateInboxBadge() {
-        var $this = this
-        var inbox = this.$store.state.currentNoteCollection.inbox
-        var inboxTreeNode = this.treeData.find(node => node.name == 'Inbox')
-        inboxTreeNode.badge = inbox.getList().length
-      },
       updateStacks() {
         var $this = this
         // var stacks = this.$store.state.currentNoteCollection.stacks.getListOfStacks()
@@ -97,12 +91,6 @@
             click: () => { this.$router.push('/') },
             lucideIcon: 'Home',
           },
-          {
-            name: 'Inbox',
-            click: () => { this.$router.push('/inbox') },
-            lucideIcon: 'Inbox',
-            badge: null,
-          },
         ]
         var stacksNode = {
           key: 777,
@@ -114,24 +102,16 @@
         this.updateStacks()
       }
       createTree()
-      this.updateInboxBadge()
       bus.$on('noteCollectionChanged', () => {
         createTree()
-        this.updateInboxBadge()
       })
     var collection = this.$store.state.currentNoteCollection
-    collection.events.on('inboxItemAdd', this.updateInboxBadge)
-    collection.events.on('inboxItemChange', this.updateInboxBadge)
-    collection.events.on('inboxItemDelete', this.updateInboxBadge)
     collection.events.on('stacksItemAdd', this.updateStacks)
     collection.events.on('stacksItemChange', this.updateStacks)
     collection.events.on('stacksItemDelete', this.updateStacks)
   },
     unmounted() {
       var collection = this.$store.state.currentNoteCollection
-      collection.events.removeListener('inboxItemAdd', this.updateInboxBadge)
-      collection.events.removeListener('inboxItemChange', this.updateInboxBadge)
-      collection.events.removeListener('inboxItemDelete', this.updateInboxBadge)
       collection.events.removeListener('stacksItemAdd', this.updateStacks)
       collection.events.removeListener('stacksItemChange', this.updateStacks)
       collection.events.removeListener('stacksItemDelete', this.updateStacks)

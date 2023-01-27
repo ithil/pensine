@@ -184,12 +184,10 @@ export default {
       return this.$store.state.customSelectListFilter
     },
     openItems() {
-      return [{
-        label: 'Inbox',
-        lucideIcon: 'Inbox',
-        type: 'inbox',
-        action: () => {
-          this.$router.push(`/inbox/`).catch(err => {
+      return this.allStacks
+    },
+  mounted() {
+    document.title = this.title
             // Ignore the vuex err regarding  navigating to the page they are already on.
             if (
               err.name !== 'NavigationDuplicated' &&
@@ -199,12 +197,8 @@ export default {
               console.error(err)
             }
           })
-        },
-      }].concat(this.allStacks)
-    },
-  },
-  mounted() {
-    document.title = this.title
+      },
+    })
     this.$store.commit('registerCommand', {
       name: 'collection:commit',
       label: 'Commit',
@@ -334,6 +328,18 @@ export default {
     })
     bus.$on('newNote', (content) => {
       this.newNote(content)
+    ipcRenderer.on('openInbox', (event, data) => {
+      var inbox = this.$store.state.currentNoteCollection.stacks.getSpecialStack('inbox')
+      this.$router.push(`/stacks/${inbox.relativePath}`).catch(err => {
+        // Ignore the vuex err regarding  navigating to the page they are already on.
+        if (
+          err.name !== 'NavigationDuplicated' &&
+          !err.message.includes('Avoided redundant navigation to current location')
+        ) {
+          // But print any other errors to the console
+          console.error(err)
+        }
+      })
     })
     bus.$on('openRoute', (route) => {
       console.log(route)

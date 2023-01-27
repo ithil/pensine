@@ -21,24 +21,9 @@ const routes = [
     },
   },
   {
-    path: '/inbox',
-    name: 'Inbox',
-    meta: {
-      title: 'Inbox',
-      icon: 'Inbox',
-      iconColor: '#fff',
-      iconBackground: '#00abff',
-      closable: true,
-    },
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "inbox" */ '../views/Inbox.vue'),
-  },
-  {
     path: '/stacks',
     name: 'Stack',
-    component: () => import(/* webpackChunkName: "inbox" */ '../views/Stacks.vue'),
+    component: () => import(/* webpackChunkName: "stacks" */ '../views/Stacks.vue'),
     meta: {
       title: 'All Stacks', // tab title
       icon: 'Layers',

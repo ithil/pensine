@@ -20,7 +20,7 @@
         ref="sendBox"
         placeholder="Send to Inbox ..."
         ></textarea>
-        <div class="noteLink" @click="$router.push('/inbox')">
+        <div class="stackLink showAll" @click="$router.push(`/stacks/${inbox.relativePath}`)">
           <Icon name="Inbox" /></span>Show all {{inboxCount}} Inbox items
         </div>
       </div>
@@ -72,6 +72,8 @@ export default {
       inboxCount: 0,
       recentlyChangedStacks: [],
       stackCount: 0,
+      lastUpdatedInboxCount: 0,
+      lastUpdatedStacks: 0,
     }
   },
   components: {
@@ -94,12 +96,18 @@ export default {
       }
     },
     updateInboxCount() {
-      this.inboxCount = this.inbox.getList().length
+      if ((new Date() - this.lastUpdatedInboxCount) > 1000 ) {
+        this.inboxCount = this.inbox.getContent().length
+        this.lastUpdatedInboxCount = new Date()
+      }
     },
     updateRecentlyChangedStacks() {
+      if ((new Date() - this.lastUpdatedStacks) > 1000 ) {
         var stacks = this.$store.state.currentNoteCollection.stacks.getListOfStacks()
         this.stackCount = stacks.length
         this.recentlyChangedStacks = stacks.sort((a, b) => b.lastAddedTo - a.lastAddedTo).slice(0, 10)
+        this.lastUpdatedStacks = new Date()
+      }
     },
   },
   computed: {
@@ -114,20 +122,20 @@ export default {
       }
     },
     inbox() {
-      return this.currentNoteCollection.inbox
+      return this.currentNoteCollection.stacks.getSpecialStack('inbox')
     },
   },
   watch: {
     '$store.state.currentNoteCollection': function(oldCollection, newCollection) {
-      oldCollection.events.removeListener('inboxItemAdd', this.updateInboxCount)
-      oldCollection.events.removeListener('inboxItemChange', this.updateInboxCount)
-      oldCollection.events.removeListener('inboxItemDelete', this.updateInboxCount)
+      oldCollection.events.removeListener('stacksItemAdd', this.updateInboxCount)
+      oldCollection.events.removeListener('stacksItemChange', this.updateInboxCount)
+      oldCollection.events.removeListener('stacksItemDelete', this.updateInboxCount)
       oldCollection.events.removeListener('stacksItemAdd', this.updateRecentlyChangedStacks)
       oldCollection.events.removeListener('stacksItemChange', this.updateRecentlyChangedStacks)
       oldCollection.events.removeListener('stacksItemDelete', this.updateRecentlyChangedStacks)
-      this.$store.state.currentNoteCollection.events.on('inboxItemAdd', this.updateInboxCount)
-      this.$store.state.currentNoteCollection.events.on('inboxItemChange', this.updateInboxCount)
-      this.$store.state.currentNoteCollection.events.on('inboxItemDelete', this.updateInboxCount)
+      this.$store.state.currentNoteCollection.events.on('stacksItemAdd', this.updateInboxCount)
+      this.$store.state.currentNoteCollection.events.on('stacksItemChange', this.updateInboxCount)
+      this.$store.state.currentNoteCollection.events.on('stacksItemDelete', this.updateInboxCount)
       this.$store.state.currentNoteCollection.events.on('stacksItemAdd', this.updateRecentlyChangedStacks)
       this.$store.state.currentNoteCollection.events.on('stacksItemChange', this.updateRecentlyChangedStacks)
       this.$store.state.currentNoteCollection.events.on('stacksItemDelete', this.updateRecentlyChangedStacks)
@@ -141,9 +149,9 @@ export default {
       window.resizeTo(window.outerWidth-1,window.outerHeight)
     }, 1000)
     var collection = this.$store.state.currentNoteCollection
-    collection.events.on('inboxItemAdd', this.updateInboxCount)
-    collection.events.on('inboxItemChange', this.updateInboxCount)
-    collection.events.on('inboxItemDelete', this.updateInboxCount)
+    collection.events.on('stacksItemAdd', this.updateInboxCount)
+    collection.events.on('stacksItemChange', this.updateInboxCount)
+    collection.events.on('stacksItemDelete', this.updateInboxCount)
     collection.events.on('stacksItemAdd', this.updateRecentlyChangedStacks)
     collection.events.on('stacksItemChange', this.updateRecentlyChangedStacks)
     collection.events.on('stacksItemDelete', this.updateRecentlyChangedStacks)
@@ -152,9 +160,9 @@ export default {
   },
   unmounted() {
     var collection = this.$store.state.currentNoteCollection
-    collection.events.removeListener('inboxItemAdd', this.updateInboxCount)
-    collection.events.removeListener('inboxItemChange', this.updateInboxCount)
-    collection.events.removeListener('inboxItemDelete', this.updateInboxCount)
+    collection.events.removeListener('stacksItemAdd', this.updateInboxCount)
+    collection.events.removeListener('stacksItemChange', this.updateInboxCount)
+    collection.events.removeListener('stacksItemDelete', this.updateInboxCount)
     collection.events.removeListener('stacksItemAdd', this.updateRecentlyChangedStacks)
     collection.events.removeListener('stacksItemChange', this.updateRecentlyChangedStacks)
     collection.events.removeListener('stacksItemDelete', this.updateRecentlyChangedStacks)

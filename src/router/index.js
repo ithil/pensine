@@ -35,6 +35,19 @@ const routes = [
     },
   },
   {
+    path: '/search',
+    name: 'Search',
+    component: () => import(/* webpackChunkName: "search" */ '../views/Search.vue'),
+    meta: {
+      title: 'Search', // tab title
+      icon: 'Search',
+      iconColor: '#6495ed',
+      key: 'path',
+      tips: 'Search', // tab tooltip, optional. defaults to `meta.title`
+      closable: true // is tab closable, defaults to `true`
+    },
+  },
+  {
     path: '/stacks/:name(.*)',
     name: 'Stack',
     component: Stack,

@@ -188,6 +188,22 @@ export default {
     },
   mounted() {
     document.title = this.title
+    this.$store.commit('registerCommand', {
+      name: 'collection:search',
+      label: 'Search',
+      action: () => {
+          this.$router.push(`/search/`).catch(err => {
+            // Ignore the vuex err regarding  navigating to the page they are already on.
+            if (
+              err.name !== 'NavigationDuplicated' &&
+              !err.message.includes('Avoided redundant navigation to current location')
+            ) {
+              // But print any other errors to the console
+              console.error(err)
+            }
+          })
+      },
+    })
             // Ignore the vuex err regarding  navigating to the page they are already on.
             if (
               err.name !== 'NavigationDuplicated' &&

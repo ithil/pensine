@@ -140,13 +140,6 @@ async function createWindow() {
           },
           { type: 'separator' },
           // isMac ? { role: 'close' } : { role: 'quit' },
-          {
-            label: 'Close Tab',
-            accelerator: 'CommandOrControl+W',
-            click: async () => {
-              win.webContents.send('closeTab')
-            }
-          },
         ]
       },
       // { role: 'editMenu' }
@@ -249,6 +242,92 @@ async function createWindow() {
       {
         label: 'Window',
         submenu: [
+          {
+            label: 'Close Tab',
+            accelerator: 'CommandOrControl+W',
+            click: async () => {
+              win.webContents.send('closeTab')
+            }
+          },
+          {
+            label: 'Next Tab',
+            accelerator: 'Control+Tab',
+            click: async () => {
+              win.webContents.send('nextTab')
+            }
+          },
+          {
+            label: 'Previous Tab',
+            accelerator: 'Control+Shift+Tab',
+            click: async () => {
+              win.webContents.send('previousTab')
+            }
+          },
+          { type: 'separator' },
+          {
+            label: '1st Tab',
+            accelerator: 'CommandOrControl+1',
+            click: async () => {
+              win.webContents.send('switchToTab', 0)
+            }
+          },
+          {
+            label: '2nd Tab',
+            accelerator: 'CommandOrControl+2',
+            click: async () => {
+              win.webContents.send('switchToTab', 1)
+            }
+          },
+          {
+            label: '3rd Tab',
+            accelerator: 'CommandOrControl+3',
+            click: async () => {
+              win.webContents.send('switchToTab', 2)
+            }
+          },
+          {
+            label: '4th Tab',
+            accelerator: 'CommandOrControl+4',
+            click: async () => {
+              win.webContents.send('switchToTab', 3)
+            }
+          },
+          {
+            label: '5th Tab',
+            accelerator: 'CommandOrControl+5',
+            click: async () => {
+              win.webContents.send('switchToTab', 4)
+            }
+          },
+          {
+            label: '6th Tab',
+            accelerator: 'CommandOrControl+6',
+            click: async () => {
+              win.webContents.send('switchToTab', 5)
+            }
+          },
+          {
+            label: '7th Tab',
+            accelerator: 'CommandOrControl+7',
+            click: async () => {
+              win.webContents.send('switchToTab', 6)
+            }
+          },
+          {
+            label: '8th Tab',
+            accelerator: 'CommandOrControl+8',
+            click: async () => {
+              win.webContents.send('switchToTab', 7)
+            }
+          },
+          {
+            label: 'Last Tab',
+            accelerator: 'CommandOrControl+9',
+            click: async () => {
+              win.webContents.send('lastTab')
+            }
+          },
+          { type: 'separator' },
           { role: 'minimize' },
           { role: 'zoom' },
           ...(isMac ? [

@@ -257,11 +257,16 @@ export default {
     ipcRenderer.on('closeTab' , (event, data) => {
       this.$tabs.close()
     })
-    ipcRenderer.on('toggleNavBar' , (event, data) => {
-      this.toggleNavBar()
-    })
-    ipcRenderer.on('openInbox' , (event, data) => {
-      this.$router.push('/inbox').catch(err => {
+    ipcRenderer.on('nextTab' , (event, data) => {
+      var activeTabIndex = this.$tabs.activeTabIndex
+      var tabs = this.$tabs.items
+      if (activeTabIndex + 1 < tabs.length) {
+        var nextTabTo = tabs[activeTabIndex + 1].to
+      }
+      else {
+        var nextTabTo = tabs[0].to
+      }
+      this.$router.push(nextTabTo).catch(err => {
         // Ignore the vuex err regarding  navigating to the page they are already on.
         if (
           err.name !== 'NavigationDuplicated' &&
@@ -271,6 +276,61 @@ export default {
           console.error(err)
         }
       })
+    })
+    ipcRenderer.on('previousTab' , (event, data) => {
+      var activeTabIndex = this.$tabs.activeTabIndex
+      var tabs = this.$tabs.items
+      if (activeTabIndex - 1 > -1) {
+        var nextTabTo = tabs[activeTabIndex - 1].to
+      }
+      else {
+        var nextTabTo = tabs[tabs.length - 1].to
+      }
+      this.$router.push(nextTabTo).catch(err => {
+        // Ignore the vuex err regarding  navigating to the page they are already on.
+        if (
+          err.name !== 'NavigationDuplicated' &&
+          !err.message.includes('Avoided redundant navigation to current location')
+        ) {
+          // But print any other errors to the console
+          console.error(err)
+        }
+      })
+    })
+    ipcRenderer.on('switchToTab' , (event, tabIndex) => {
+      var tabs = this.$tabs.items
+      if (tabs[tabIndex]) {
+        var nextTabTo = tabs[tabIndex].to
+        this.$router.push(nextTabTo).catch(err => {
+          // Ignore the vuex err regarding  navigating to the page they are already on.
+          if (
+            err.name !== 'NavigationDuplicated' &&
+            !err.message.includes('Avoided redundant navigation to current location')
+          ) {
+            // But print any other errors to the console
+            console.error(err)
+          }
+        })
+      }
+    })
+    ipcRenderer.on('lastTab' , (event, data) => {
+      var tabs = this.$tabs.items
+      if (tabs.length > 1) {
+        var nextTabTo = tabs[tabs.length - 1].to
+        this.$router.push(nextTabTo).catch(err => {
+          // Ignore the vuex err regarding  navigating to the page they are already on.
+          if (
+            err.name !== 'NavigationDuplicated' &&
+            !err.message.includes('Avoided redundant navigation to current location')
+          ) {
+            // But print any other errors to the console
+            console.error(err)
+          }
+        })
+      }
+    })
+    ipcRenderer.on('toggleNavBar' , (event, data) => {
+      this.toggleNavBar()
     })
     bus.$on('newNote', (content) => {
       this.newNote(content)

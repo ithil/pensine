@@ -45,6 +45,7 @@ export default {
       decodedPath: this.$route.params.name.split('/').map(c => decodeURIComponent(c)).join('/'),
       sortOrder: 'newestFirst',
       filterTerm: '',
+      previouslyFocusedElement: null,
     }
   },
   methods: {
@@ -118,8 +119,12 @@ export default {
     collection.events.removeListener('inboxItemDelete', this.updateFleetingNotes)
   },
   activated() {
+    if (this.previouslyFocusedElement) {
+      this.previouslyFocusedElement.focus()
+    }
   },
   deactivated() {
+    this.previouslyFocusedElement = document.activeElement
   },
 }
 </script>

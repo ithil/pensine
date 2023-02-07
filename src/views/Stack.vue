@@ -81,6 +81,7 @@ export default {
         { text: 'Longest First', value: 'longestFirst' },
         { text: 'Random', value: 'random' },
       ],
+      previouslyFocusedElement: null,
     }
   },
   methods: {
@@ -108,9 +109,11 @@ export default {
       }
     },
     focusSendBox() {
+      this.previouslyFocusedElement = document.activeElement
       this.$refs.sendBox.focus()
     },
     focusFilterInput() {
+      this.previouslyFocusedElement = document.activeElement
       this.$refs.filterInput.focus()
     },
     changeSortOrder(sortOrder) {
@@ -160,9 +163,13 @@ export default {
     this.$store.commit('resetTitle')
   },
   activated() {
+    if (this.previouslyFocusedElement) {
+      this.previouslyFocusedElement.focus()
+    }
     this.$store.commit('setTitle', 'Stack')
   },
   deactivated() {
+    this.previouslyFocusedElement = document.activeElement
     this.$store.commit('resetTitle')
   },
 }

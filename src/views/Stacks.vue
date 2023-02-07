@@ -88,6 +88,7 @@ export default {
       portalActive: true,
       stacks: [],
       sortOrder: '',
+      previouslyFocusedElement: null,
     }
   },
   methods: {
@@ -177,9 +178,13 @@ export default {
   unmounted() {
   },
   activated() {
+    if (this.previouslyFocusedElement) {
+      this.previouslyFocusedElement.focus()
+    }
     this.portalActive = true
   },
   deactivated() {
+    this.previouslyFocusedElement = document.activeElement
     this.portalActive = false
   },
 }

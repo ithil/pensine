@@ -133,6 +133,7 @@ export default {
       searchBarVisible: false,
       foundItems: [],
       resultsIt: null,
+      previouslyFocusedElement: null,
     }
   },
   methods: {

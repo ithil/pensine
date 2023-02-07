@@ -56,6 +56,7 @@ export default {
       tree: [],
       focused: '',
       focusedFnObj: null,
+      previouslyFocusedElement: null,
     }
   },
   methods: {
@@ -151,8 +152,12 @@ export default {
   unmounted() {
   },
   activated() {
+    if (this.previouslyFocusedElement) {
+      this.previouslyFocusedElement.focus()
+    }
   },
   deactivated() {
+    this.previouslyFocusedElement = document.activeElement
   },
 }
 </script>

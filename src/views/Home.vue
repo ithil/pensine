@@ -74,6 +74,7 @@ export default {
       stackCount: 0,
       lastUpdatedInboxCount: 0,
       lastUpdatedStacks: 0,
+      previouslyFocusedElement: null,
     }
   },
   components: {
@@ -166,6 +167,14 @@ export default {
     collection.events.removeListener('stacksItemAdd', this.updateRecentlyChangedStacks)
     collection.events.removeListener('stacksItemChange', this.updateRecentlyChangedStacks)
     collection.events.removeListener('stacksItemDelete', this.updateRecentlyChangedStacks)
+  },
+  activated() {
+    if (this.previouslyFocusedElement) {
+      this.previouslyFocusedElement.focus()
+    }
+  },
+  deactivated() {
+    this.previouslyFocusedElement = document.activeElement
   },
 }
 </script>

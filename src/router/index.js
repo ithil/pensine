@@ -4,6 +4,7 @@ import Home from '../views/Home.vue'
 import Stack from '../views/Stack.vue'
 import FleetingNotePage from '../views/FleetingNotePage.vue'
 import NodeExplorer from '../views/NodeExplorer.vue'
+import Search from '../views/Search.vue'
 
 Vue.use(VueRouter)
 
@@ -37,7 +38,7 @@ const routes = [
   {
     path: '/search',
     name: 'Search',
-    component: () => import(/* webpackChunkName: "search" */ '../views/Search.vue'),
+    component: Search,
     meta: {
       title: 'Search', // tab title
       icon: 'Search',

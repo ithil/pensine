@@ -67,6 +67,7 @@ export default {
     return {
       stack: this.$store.state.currentNoteCollection.stacks.getStackByPath(this.$route.params.name),
       fleetingNotes: [],
+      lastUpdated: 0,
       substacks: [],
       newFleetingNoteContent: '',
       sortOrder: 'newestFirst',
@@ -86,9 +87,15 @@ export default {
   },
   methods: {
     updateFleetingNotes() {
-      var content = this.stack.getContent()
-      this.fleetingNotes = content.filter(i => !i.isStack)
-      this.substacks = content.filter(i => i.isStack)
+      if ((new Date() - this.lastUpdated) > 1000 ) {
+        var content = this.stack.getContent()
+        this.fleetingNotes = content.filter(i => !i.isStack)
+        this.substacks = content.filter(i => i.isStack)
+        this.lastUpdated = new Date()
+        if (this.$refs.fleetingNoteList?.focusedNotePath === '') {
+          this.$refs.fleetingNoteList.setFocusToFirstNote()
+        }
+      }
     },
     sendNewNote() {
       this.stack.sendText(this.newFleetingNoteContent)

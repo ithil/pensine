@@ -44,15 +44,20 @@ export default {
       ),
       decodedPath: this.$route.params.name.split('/').map(c => decodeURIComponent(c)).join('/'),
       sortOrder: 'newestFirst',
+      lastUpdated: 0,
       filterTerm: '',
       previouslyFocusedElement: null,
     }
   },
   methods: {
     updateFleetingNotes() {
-      this.fn = this.$store.state.currentNoteCollection.getFleetingNoteByPath(
-        this.decodedPath
-      )
+      if ((new Date() - this.lastUpdated) > 1000 ) {
+        this.fn = this.$store.state.currentNoteCollection.getFleetingNoteByPath(
+          this.decodedPath
+        )
+        this.lastUpdated = new Date()
+      }
+    },
     },
     focusSendBox() {
       // Not implemented
@@ -105,18 +110,12 @@ export default {
     collection.events.on('stacksItemAdd', this.updateFleetingNotes)
     collection.events.on('stacksItemChange', this.updateFleetingNotes)
     collection.events.on('stacksItemDelete', this.updateFleetingNotes)
-    collection.events.on('inboxItemAdd', this.updateFleetingNotes)
-    collection.events.on('inboxItemChange', this.updateFleetingNotes)
-    collection.events.on('inboxItemDelete', this.updateFleetingNotes)
   },
   unmounted() {
     var collection = this.$store.state.currentNoteCollection
     collection.events.removeListener('stacksItemAdd', this.updateFleetingNotes)
     collection.events.removeListener('stacksItemChange', this.updateFleetingNotes)
     collection.events.removeListener('stacksItemDelete', this.updateFleetingNotes)
-    collection.events.removeListener('inboxItemAdd', this.updateFleetingNotes)
-    collection.events.removeListener('inboxItemChange', this.updateFleetingNotes)
-    collection.events.removeListener('inboxItemDelete', this.updateFleetingNotes)
   },
   activated() {
     if (this.previouslyFocusedElement) {

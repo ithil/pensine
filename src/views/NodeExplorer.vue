@@ -52,6 +52,7 @@ export default {
       ),
       decodedPath: this.$route.params.name.split('/').map(c => decodeURIComponent(c)).join('/'),
       sortOrder: 'newestFirst',
+      lastUpdated: 0,
       filterTerm: '',
       tree: [],
       focused: '',
@@ -61,9 +62,12 @@ export default {
   },
   methods: {
     updateFleetingNotes() {
-      this.fn = this.$store.state.currentNoteCollection.getFleetingNoteByPath(
-        this.decodedPath
-      )
+      if ((new Date() - this.lastUpdated) > 1000 ) {
+        this.fn = this.$store.state.currentNoteCollection.getFleetingNoteByPath(
+          this.decodedPath
+        )
+        this.lastUpdated = new Date()
+      }
     },
     updateChildren() {
       this.tree.children = this.tree.getChildren()

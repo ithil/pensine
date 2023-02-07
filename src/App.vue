@@ -1,70 +1,56 @@
 <template>
   <div id="app" :data-collection="$store.state.currentNoteCollection.collectionJson.name">
-    <splitpanes style="height: calc(100vh - 0px)" @resize="paneSize = $event[0].size">
-      <pane :size="paneSize" id="navbar">
-        <nav-bar></nav-bar>
-      </pane>
-      <pane :size="100-paneSize" style="overflow:hidden;">
-        <router-tab
-        lang="en"
-        :tab-transition="{
-          name: 'router-tab-slide',
-          enterActiveClass: 'animate__animated animate__slideInLeft animate__faster',
-          }"
-        :page-transition="{
-          name: 'router-page-slide',
-          enterActiveClass: 'animate__animated animate__fadeIn animate__fast',
-          }"
-        append="next"
-        :tabs="tabs"
-        >
-            <template #start>
-              <span class="router-tab__tabbar-left-space"></span>
-            </template>
-            <template #default="tab">
-              <Popper
-              :append-to-body="true"
-              :options="{
-                placement: 'bottom',
-                modifiers: { offset: { offset: '0,10px' } }
-                }">
-                <div class="popper tabtip">
-                  {{tab.tips}}
-                </div>
-                <span class="router-tab__item-wrapper" slot="reference" :class="tab.tabClass">
-                  <Icon v-if="tab.icon" :name="tab.icon" class="router-tab__item-icon"
-                  :style="{color: tab.data.iconColor || 'inherit', background: tab.data.iconBackground || 'none'}"
-                  />
+    <router-tab
+    lang="en"
+    append="next"
+    :tabs="tabs"
+    page-scroller=".router-alive"
+    >
+      <template #start>
+        <span class="router-tab__tabbar-left-space"></span>
+      </template>
+      <template #default="tab">
+        <Popper
+        :append-to-body="true"
+        :options="{
+          placement: 'bottom',
+          modifiers: { offset: { offset: '0,10px' } }
+          }">
+          <div class="popper tabtip">
+            {{tab.tips}}
+          </div>
+          <span class="router-tab__item-wrapper" slot="reference" :class="tab.tabClass">
+            <Icon v-if="tab.icon" :name="tab.icon" class="router-tab__item-icon"
+            :style="{color: tab.data.iconColor || 'inherit', background: tab.data.iconBackground || 'none', '--iconBackground': tab.data.iconBackground || 'none'}"
+            />
 
-                  <span class="router-tab__item-title">
-                    {{tab.title}}
-                  </span>
-                  <i
-                  v-if="tab.closable"
-                  class="router-tab__item-close"
-                  @click.prevent="tab.close"
-                  />
-                </span>
-              </Popper>
-            </template>
-            <template #end>
-              <div class="router-tab__tabbar-right-space">
-                <div class="currentNoteCollection" @click="collectionModal">
-                  <Icon name="BookOpen" />
-                  <span>{{$store.state.currentNoteCollection.collectionJson.name}}</span>
-                </div>
-              </div>
-            </template>
-          </router-tab>
-        <div id="statusBar">
-          <portal-target name="statusBarLeft" class="statusBarLeft" multiple />
-          <portal-target name="statusBarRight" class="statusBarRight" multiple />
+            <span class="router-tab__item-title">
+              {{tab.title}}
+            </span>
+            <i
+            v-if="tab.closable"
+            class="router-tab__item-close"
+            @click.prevent="tab.close"
+            />
+          </span>
+        </Popper>
+      </template>
+      <template #end>
+        <div class="router-tab__tabbar-right-space">
+          <div class="currentNoteCollection" @click="collectionModal">
+            <Icon name="BookOpen" />
+            <span>{{$store.state.currentNoteCollection.collectionJson.name}}</span>
+          </div>
         </div>
-        <portal to="statusBarLeft" :order="1">
-          <span class="statusBarItem">{{$route.path}}</span>
-        </portal>
-      </pane>
-    </splitpanes>
+      </template>
+     </router-tab>
+     <div id="statusBar">
+       <portal-target name="statusBarLeft" class="statusBarLeft" multiple />
+       <portal-target name="statusBarRight" class="statusBarRight" multiple />
+     </div>
+     <portal to="statusBarLeft" :order="1">
+       <span class="statusBarItem" @click="writeToClipboard($route.path)">{{decodeURIComponent($route.path)}}</span>
+     </portal>
 
     <div id="modals">
       <select-list :items="cmdsToListItems(commands)" ref="commandPalette">
@@ -108,9 +94,7 @@
 </template>
 
 <script>
-import { Splitpanes, Pane } from 'splitpanes'
 import 'splitpanes/dist/splitpanes.css'
-import NavBar from './components/NavBar.vue'
 import Modal from './components/Modal.vue'
 import SelectList from '@/components/SelectList.vue'
 import TextPrompt from '@/components/TextPrompt.vue'
@@ -125,9 +109,6 @@ import 'vue-popperjs/dist/vue-popper.css';
 
 export default {
   components: {
-    Splitpanes,
-    Pane,
-    NavBar,
     Modal,
     SelectList,
     TextPrompt,
@@ -136,7 +117,6 @@ export default {
   },
   data() {
     return {
-      paneSize: 0,
       allStacks: [],
       tabs: [
         '/',
@@ -339,11 +319,6 @@ export default {
         })
       }
     })
-    ipcRenderer.on('toggleNavBar' , (event, data) => {
-      this.toggleNavBar()
-    })
-    bus.$on('newNote', (content) => {
-      this.newNote(content)
     ipcRenderer.on('openInbox', (event, data) => {
       var inbox = this.$store.state.currentNoteCollection.stacks.getSpecialStack('inbox')
       this.$router.push(`/stacks/${inbox.relativePath}`).catch(err => {
@@ -657,14 +632,6 @@ export default {
         this.uncommitedChanges = status.length > 0
       })
     },
-    toggleNavBar() {
-      if (this.paneSize < 1) {
-        this.paneSize = 20
-      }
-      else {
-        this.paneSize = 0
-      }
-    },
     minimizeWindow() {
       console.log('Minimize!')
       ipcRenderer.send('minimizeWindow')
@@ -679,6 +646,11 @@ $status-bar-height: 24px;
 body {
   overflow: hidden;
   margin: 0;
+}
+
+#app {
+  height: 100vh;
+  overflow: clip; // To avoid page being "loose" and scrolling a little bit on programmatical scroll actions
 }
 
 #statusBar {
@@ -827,82 +799,6 @@ body {
       }
     }
 }
-}
-
-.splitpanes__pane {
-  overflow: hidden;
-}
-.splitpanes__splitter{
-  -ms-touch-action:none;
-  touch-action:none
-}
-.splitpanes--vertical>.splitpanes__splitter{
-  min-width:1px;
-  cursor:col-resize
-}
-.splitpanes--horizontal>.splitpanes__splitter{
-  min-height:1px;
-  cursor:row-resize
-}
-.splitpanes__splitter{
-  background-color: rgba(42, 42, 42, 0.5);
-  -webkit-box-sizing:border-box;
-  box-sizing:border-box;
-  position:relative;
-  -ms-flex-negative:0;
-  flex-shrink:0
-}
-.splitpanes__splitter:after,.splitpanes.default-theme .splitpanes__splitter:before{
-  content:"";
-  position:absolute;
-  top:50%;
-  left:50%;
-  background-color:rgba(0,0,0,.15);
-  -webkit-transition:background-color .3s;
-  transition:background-color .3s
-}
-.splitpanes__splitter:hover:after,.splitpanes.default-theme .splitpanes__splitter:hover:before{
-  background-color:rgba(0,0,0,.25)
-}
-.splitpanes__splitter:first-child{
-  cursor:auto
-}
-.splitpanes .splitpanes__splitter{
-  z-index:1
-}
-.splitpanes--vertical>.splitpanes__splitter,.splitpanes--vertical>.splitpanes__splitter{
-  width:7px;
-  margin-left:-1px
-}
-.splitpanes--vertical>.splitpanes__splitter:after,.default-theme .splitpanes--vertical>.splitpanes__splitter:after,.splitpanes--vertical>.splitpanes__splitter:before,.splitpanes--vertical>.splitpanes__splitter:before{
-  -webkit-transform:translateY(-50%);
-  transform:translateY(-50%);
-  width:1px;
-  height:30px
-}
-.splitpanes--vertical>.splitpanes__splitter:before,.splitpanes--vertical>.splitpanes__splitter:before{
-  margin-left:-2px
-}
-.splitpanes--vertical>.splitpanes__splitter:after,.splitpanes--vertical>.splitpanes__splitter:after{
-  margin-left:1px
-}
-.splitpanes--horizontal>.splitpanes__splitter,.splitpanes--horizontal>.splitpanes__splitter{
-  height:7px;
-  margin-top:-1px
-}
-.splitpanes--horizontal>.splitpanes__splitter:after,.default-theme .splitpanes--horizontal>.splitpanes__splitter:after,.default-theme.splitpanes--horizontal>.splitpanes__splitter:before,.default-theme .splitpanes--horizontal>.splitpanes__splitter:before{
-  -webkit-transform:translateX(-50%);
-  transform:translateX(-50%);
-  width:30px;
-  height:1px
-}
-.splitpanes--horizontal>.splitpanes__splitter:before,.splitpanes--horizontal>.splitpanes__splitter:before{
-  margin-top:-2px
-}
-.splitpanes--horizontal>.splitpanes__splitter:after,.splitpanes--horizontal>.splitpanes__splitter:after{
-  margin-top:1px
-}
-
 
 ::-webkit-scrollbar {
   background-color: #2a2a2a24;

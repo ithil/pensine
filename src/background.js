@@ -183,10 +183,7 @@ async function createWindow() {
             }
           },
           {
-            label: 'Toggle Nav Bar',
-            accelerator: 'CommandOrControl+J',
             click: async () => {
-              win.webContents.send('toggleNavBar')
             }
           },
           { type: 'separator' },

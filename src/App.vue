@@ -59,6 +59,18 @@
       <select-list :items="openItems" :filter="openModalFilter" ref="openNote">
       </select-list>
 
+      <popover-list ref="popoverList" :items="popoverListItems" message="Jump to" :options="{hintMode: false}">
+      </popover-list>
+
+      <popover-list
+      ref="customPopoverList"
+      :items="$store.state.customPopoverListItems"
+      :message="$store.state.customPopoverListMessage"
+      :options="$store.state.customPopoverListOptions"
+      @close="$store.commit('closeCustomPopoverList')"
+      >
+      </popover-list>
+
       <select-list
       :items="$store.state.customSelectListItems"
       :filter="customSelectListFilter"
@@ -94,10 +106,10 @@
 </template>
 
 <script>
-import 'splitpanes/dist/splitpanes.css'
 import Modal from './components/Modal.vue'
 import SelectList from '@/components/SelectList.vue'
 import TextPrompt from '@/components/TextPrompt.vue'
+import PopoverList from '@/components/PopoverList.vue'
 import "animate.css"
 import Fuse from 'fuse.js'
 import moment from 'moment'
@@ -112,6 +124,7 @@ export default {
     Modal,
     SelectList,
     TextPrompt,
+    PopoverList,
     Icon,
     Popper,
   },
@@ -132,6 +145,12 @@ export default {
     showCustomTextPrompt: function (val) {
       if (val) {
         this.$refs.customTextPrompt.open()
+    showCustomPopoverList: function (val) {
+      if (val) {
+        var $this = this
+        setTimeout(function () {
+          $this.$refs.customPopoverList.open()
+        }, 5)
       }
     },
     '$store.state.currentNoteCollection': function(oldCollection, newCollection) {
@@ -157,6 +176,9 @@ export default {
     showCustomTextPrompt() {
       return this.$store.state.showCustomTextPrompt
     },
+    showCustomPopoverList() {
+      return this.$store.state.showCustomPopoverList
+    },
     customTextPromptProps() {
       return this.$store.state.customTextPromptProps
     },
@@ -166,6 +188,444 @@ export default {
     openItems() {
       return this.allStacks
     },
+    popoverListItems() {
+      return [
+        {
+          label: 'Inbox',
+          lucideIcon: 'Inbox',
+          key: 'I',
+          action: () => {
+            var inbox = this.$store.state.currentNoteCollection.stacks.getSpecialStack('inbox')
+            this.$router.push(`/stacks/${inbox.relativePath}`).catch(err => {
+              // Ignore the vuex err regarding  navigating to the page they are already on.
+              if (
+                err.name !== 'NavigationDuplicated' &&
+                !err.message.includes('Avoided redundant navigation to current location')
+              ) {
+                // But print any other errors to the console
+                console.error(err)
+              }
+            })
+          }
+        },
+        {
+          label: 'Stacks',
+          lucideIcon: 'Layers',
+          key: 'S',
+          action: () => {
+            var $this = this
+            setTimeout(() => {
+              var items = this.allStacks.filter(s => !s.label.startsWith('calendar'))
+              this.$store.commit('triggerCustomPopoverList', {
+                message: 'Stacks',
+                items: items,
+                options: {hintMode: true},
+              })
+            }, 50)
+          },
+        },
+        {
+          label: 'Bookmarks',
+          lucideIcon: 'Bookmark',
+          key: 'M',
+          action: () => {
+            var $this = this
+            setTimeout(() => {
+              var stacksPath = this.$store.state.currentNoteCollection.paths.stacks
+              var bookmarksNote = this.$store.state.currentNoteCollection.getFleetingNoteByPath(`${stacksPath}/.internal/bookmarks.md`)
+              var items = []
+              if (bookmarksNote) {
+                var notes = bookmarksNote.relations.map(r => r.fn)
+                for (let n of notes) {
+                  items.push({
+                    label: `${n.abstract}`,
+                    lucideIcon: 'Bookmark',
+                    action: () => {
+                      var encodedPath = n.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
+                      $this.$router.push(`/fleetingNote/${encodedPath}`).catch(err => {
+                        // Ignore the vuex err regarding  navigating to the page they are already on.
+                        if (
+                          err.name !== 'NavigationDuplicated' &&
+                          !err.message.includes('Avoided redundant navigation to current location')
+                        ) {
+                          // But print any other errors to the console
+                          console.error(err)
+                        }
+                      })
+                    },
+                  })
+                }
+              }
+              items = items.concat([
+                { role: 'separator' },
+                {
+                  label: 'Manage Bookmakrs',
+                  action: () => {
+                    var encodedPath = bookmarksNote.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
+                    $this.$router.push(`/nodeexplorer/${encodedPath}`).catch(err => {
+                      // Ignore the vuex err regarding  navigating to the page they are already on.
+                      if (
+                        err.name !== 'NavigationDuplicated' &&
+                        !err.message.includes('Avoided redundant navigation to current location')
+                      ) {
+                        // But print any other errors to the console
+                        console.error(err)
+                      }
+                    })
+                  },
+                },
+              ])
+              this.$store.commit('triggerCustomPopoverList', {
+                message: `Bookmarks`,
+                items: items,
+                options: {hintMode: true},
+              })
+            }, 50)
+          },
+        },
+        {
+          label: 'Calendar',
+          lucideIcon: 'Calendar',
+          key: 'C',
+          action: () => {
+            var $this = this
+            setTimeout(() => {
+              var stack = this.$store.state.currentNoteCollection.stacks.getStackByPath('calendar')
+              var content = stack.getContent()
+              var substacks = content.filter(i => i.isStack)
+              var items = []
+              if (stack) {
+                for (let s of substacks) {
+                  items.push({
+                    label: `${s.name}`,
+                    lucideIcon: 'Calendar',
+                    action: () => {
+                      setTimeout(() => {
+                        var yearContent = s.getContent()
+                        var monthStacks = yearContent.filter(i => i.isStack)
+                        var monthItems = []
+                        for (let m of monthStacks) {
+                          let months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+                          monthItems.push({
+                            label: isNaN(m.name) ? m.name : months[m.name-1],
+                            lucideIcon: 'CalendarDays',
+                            action: () => {
+                              setTimeout(() => {
+                                var monthContent = m.getContent()
+                                var dayNotes = monthContent.filter(i => !i.isStack)
+                                var dayItems = []
+                                for (let n of dayNotes) {
+                                  dayItems.push({
+                                    label: `${n.abstract}`,
+                                    action: () => {
+                                      var encodedPath = n.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
+                                      $this.$router.push(`/fleetingNote/${encodedPath}`).catch(err => {
+                                        // Ignore the vuex err regarding  navigating to the page they are already on.
+                                        if (
+                                          err.name !== 'NavigationDuplicated' &&
+                                          !err.message.includes('Avoided redundant navigation to current location')
+                                        ) {
+                                          // But print any other errors to the console
+                                          console.error(err)
+                                        }
+                                      })
+                                    },
+                                  })
+                                  $this.$store.commit('triggerCustomPopoverList', {
+                                    message: `${isNaN(m.name) ? m.name : months[m.name-1]} ${s.name}`,
+                                    items: dayItems,
+                                    options: {hintMode: true},
+                                  })
+                                }
+                              }, 50)
+                            },
+                          })
+                        }
+                        $this.$store.commit('triggerCustomPopoverList', {
+                          message: `${s.name}`,
+                          items: monthItems,
+                          options: {hintMode: true},
+                        })
+                      }, 50)
+                    },
+                  })
+                }
+              }
+              this.$store.commit('triggerCustomPopoverList', {
+                message: `Years`,
+                items: items,
+                options: {hintMode: true},
+              })
+            }, 50)
+          },
+        },
+        {
+          label: 'Tags',
+          lucideIcon: 'Tags',
+          key: 'T',
+          action: () => {
+            var $this = this
+            setTimeout(() => {
+              var stack = this.$store.state.currentNoteCollection.stacks.getStackByPath('tags')
+              var items = []
+              if (stack) {
+                var notes = stack.getContent().filter(i => !i.isStack).sort((a,b) => b.numberOfRelations - a.numberOfRelations)
+                for (let n of notes) {
+                  items.push({
+                    label: `${n.abstract} (${n.numberOfRelations})`,
+                    lucideIcon: 'Tag',
+                    action: () => {
+                      var encodedPath = n.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
+                      $this.$router.push(`/fleetingNote/${encodedPath}`).catch(err => {
+                        // Ignore the vuex err regarding  navigating to the page they are already on.
+                        if (
+                          err.name !== 'NavigationDuplicated' &&
+                          !err.message.includes('Avoided redundant navigation to current location')
+                        ) {
+                          // But print any other errors to the console
+                          console.error(err)
+                        }
+                      })
+                    },
+                  })
+                }
+              }
+              this.$store.commit('triggerCustomPopoverList', {
+                message: `Tags`,
+                items: items,
+                options: {hintMode: true},
+              })
+            }, 50)
+          },
+        },
+        {
+          label: 'Find',
+          lucideIcon: 'Search',
+          key: 'F',
+          action: () => {
+            this.$router.push(`/search/`).catch(err => {
+              // Ignore the vuex err regarding  navigating to the page they are already on.
+              if (
+                err.name !== 'NavigationDuplicated' &&
+                !err.message.includes('Avoided redundant navigation to current location')
+              ) {
+                // But print any other errors to the console
+                console.error(err)
+              }
+            })
+          },
+        },
+        {
+          label: 'Bag',
+          lucideIcon: 'ShoppingBag',
+          key: 'B',
+          action: () => {
+            var $this = this
+            var bag = this.$store.state.bag
+            setTimeout(() => {
+              var endowItemsWithAction = function (callback) {
+                return $this.$store.state.bag.map(fnPath => {
+                  var fn = $this.$store.state.currentNoteCollection.getFleetingNoteByPath(fnPath)
+                  if (fn) {
+                    return {
+                      label: fn.abstract,
+                      lucideIcon: 'File',
+                      description: fn.stack,
+                      action:() => {
+                        callback(fn)
+                      }
+                    }
+                  }
+                })
+              }
+              // this.$store.commit('removeFromBag', fn.path)
+              var items = endowItemsWithAction((n) => {
+                var encodedPath = n.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
+                $this.$router.push(`/fleetingNote/${encodedPath}`).catch(err => {
+                  // Ignore the vuex err regarding  navigating to the page they are already on.
+                  if (
+                    err.name !== 'NavigationDuplicated' &&
+                    !err.message.includes('Avoided redundant navigation to current location')
+                  ) {
+                    // But print any other errors to the console
+                    console.error(err)
+                  }
+                })
+              })
+              items = items.concat([
+                { role: 'separator' },
+                {
+                  label: 'Remove from Bag',
+                  action: () => {
+                    var removeFromBag = function() {
+                      setTimeout(() => {
+                        var newItems = endowItemsWithAction((n) => {
+                          $this.$store.commit('removeFromBag', n.path)
+                          removeFromBag()
+                        })
+                        $this.$store.commit('triggerCustomPopoverList', {
+                          message: `Remove from Bag`,
+                          items: newItems,
+                          options: {hintMode: true},
+                        })
+                      }, 50)
+                    }
+                    removeFromBag()
+                  },
+                },
+                {
+                  label: 'Empty Bag',
+                  action: () => {
+                    $this.$store.commit('emptyBag')
+                  },
+                },
+              ])
+              this.$store.commit('triggerCustomPopoverList', {
+                message: `Bag`,
+                items: items,
+                options: {hintMode: true},
+              })
+            }, 50)
+          },
+        },
+        {
+          label: 'All Stacks',
+          lucideIcon: 'Layers',
+          key: 'Shift+S',
+          action: () => {
+            this.$router.push(`/stacks/`).catch(err => {
+              // Ignore the vuex err regarding  navigating to the page they are already on.
+              if (
+                err.name !== 'NavigationDuplicated' &&
+                !err.message.includes('Avoided redundant navigation to current location')
+              ) {
+                // But print any other errors to the console
+                console.error(err)
+              }
+            })
+          },
+        },
+        {
+          role: 'separator',
+        },
+        {
+          label: 'Recently changed notes',
+          lucideIcon: 'History',
+          key: 'R',
+          action: () => {
+            var $this = this
+            setTimeout(() => {
+              var collection = this.$store.state.currentNoteCollection
+              var items = []
+              collection.getMostRecentlyChangedNotes(20).then(notes => {
+                for (let n of notes) {
+                  items.push({
+                    label: `${n.abstract}`,
+                    action: () => {
+                      var encodedPath = n.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
+                      $this.$router.push(`/fleetingNote/${encodedPath}`).catch(err => {
+                        // Ignore the vuex err regarding  navigating to the page they are already on.
+                        if (
+                          err.name !== 'NavigationDuplicated' &&
+                          !err.message.includes('Avoided redundant navigation to current location')
+                        ) {
+                          // But print any other errors to the console
+                          console.error(err)
+                        }
+                      })
+                    },
+                  })
+                }
+                this.$store.commit('triggerCustomPopoverList', {
+                  message: 'Recently changed notes',
+                  items: items,
+                  options: {hintMode: true},
+                })
+              })
+            }, 50)
+          },
+        },
+        {
+          role: 'separator',
+        },
+        {
+          label: "Restore last session's tabs",
+          lucideIcon: 'Undo',
+          key: 'Shift+T',
+          action: () => {
+            var $this = this
+            setTimeout(() => {
+              var tabsCachePath = path.join($this.$store.state.currentNoteCollection.path, '.tabsCache.json')
+              if (fs.existsSync(tabsCachePath)) {
+                var content = fs.readFileSync(tabsCachePath, 'utf8')
+                try {
+                  var lastSessionsTabs = JSON.parse(content)
+                  for (let t of lastSessionsTabs) {
+                    setTimeout(() => {
+                      // $this.$tabs.open(t.to)
+                      $this.$router.push(t.to).catch(err => {
+                        // Ignore the vuex err regarding  navigating to the page they are already on.
+                        if (
+                          err.name !== 'NavigationDuplicated' &&
+                          !err.message.includes('Avoided redundant navigation to current location')
+                        ) {
+                          // But print any other errors to the console
+                          console.error(err)
+                        }
+                      })
+                    }, 50)
+                  }
+                  setTimeout(() => {
+                    $this.$router.push(lastSessionsTabs.find(t => t.active).to).catch(err => {
+                      // Ignore the vuex err regarding  navigating to the page they are already on.
+                      if (
+                        err.name !== 'NavigationDuplicated' &&
+                        !err.message.includes('Avoided redundant navigation to current location')
+                      ) {
+                        // But print any other errors to the console
+                        console.error(err)
+                      }
+                    })
+                  }, 50)
+                }
+                catch (e) {
+                  if (!(e instanceof SyntaxError)) {
+                    console.error(e.name);
+                  }
+                }
+              }
+            }, 50)
+          },
+        },
+        // {
+        //   role: 'separator',
+        // },
+        // {
+        //   label: 'New Popover',
+        //   lucideIcon: 'PlusCircle',
+        //   key: 'Ctrl+N',
+        //   action: () => {
+        //     setTimeout(() => {
+        //       var items = []
+        //       for (let i = 1; i <= 30; i++) {
+        //         items.push({
+        //           label: `Items ${i}`,
+        //           action: () => {
+        //             console.log(`This is item ${i}`)
+        //           },
+        //         })
+        //       }
+        //       this.$store.commit('triggerCustomPopoverList', {
+        //         message: `Mooore`,
+        //         items: items,
+        //         options: {hintMode: true},
+        //       })
+        //     }, 50)
+        //   },
+        // },
+      ]
+    },
+  },
   mounted() {
     document.title = this.title
     this.$store.commit('registerCommand', {
@@ -243,6 +703,9 @@ export default {
     })
     ipcRenderer.on('collectionModal' , (event, data) => {
       this.collectionModal()
+    })
+    ipcRenderer.on('popoverList' , (event, data) => {
+      this.$refs.popoverList.open()
     })
     ipcRenderer.on('closeTab' , (event, data) => {
       this.$tabs.close()

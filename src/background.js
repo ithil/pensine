@@ -183,7 +183,10 @@ async function createWindow() {
             }
           },
           {
+            label: 'Toggle Popover List',
+            accelerator: 'CommandOrControl+D',
             click: async () => {
+              win.webContents.send('popoverList')
             }
           },
           { type: 'separator' },

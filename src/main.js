@@ -67,6 +67,7 @@ const store = new Vuex.Store({
     },
     showCustomSelectList: false,
     showCustomTextPrompt: false,
+    showCustomPopoverList: false,
     customTextPromptProps: {
       message: '',
       placeholder: '',
@@ -76,7 +77,11 @@ const store = new Vuex.Store({
       selectAll: false,
       password: false,
     },
-    fleetingNoteForInsertion: null,
+    customPopoverListItems: [{label: 'Something is not working!'}],
+    customPopoverListMessage: 'Message N/A',
+    customPopoverListOptions: {
+      hintMode: false,
+    },
     bag: [],
   },
   mutations: {
@@ -134,13 +139,25 @@ const store = new Vuex.Store({
       }
       state.showCustomTextPrompt = true
     },
+    triggerCustomPopoverList(state, {items, message, options}) {
+      state.customPopoverListItems = items
+      state.customPopoverListMessage = message || ''
+      state.customPopoverListOptions = options || {}
+      state.showCustomPopoverList = true
+    },
+    closeCustomPopoverList(state) {
+      state.showCustomPopoverList = false
+    },
     closeCustomTextPrompt(state) {
       state.showCustomTextPrompt = false
     },
-    setFleetingNoteForInsertion(state, fleetingNote) {
-      state.fleetingNoteForInsertion = fleetingNote
+    closeCustomSelectList(state) {
+      state.showCustomSelectList = false
     },
-  }
+  },
+  action: {
+
+  },
 })
 
 
@@ -164,6 +181,11 @@ $(document).on('click', 'a[href^="special"]', function(event) {
    if (parsedPath.dir == '//tag') {
      bus.$emit('filterTag', { tag: parsedPath.base })
    }
+ })
+
+$(document).on('mousemove', function(event) {
+  globalThis.lastMousePosX = event.pageX
+  globalThis.lastMousePosY = event.pageY
  })
 
 export { bus }

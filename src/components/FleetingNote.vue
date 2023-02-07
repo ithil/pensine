@@ -35,7 +35,7 @@
     <header class="header">
       <span class="ago" @click="$router.push(`/fleetingnote/${encodedPath}`)">
         <Icon name="Clock" />
-        {{ moment(fleetingNoteObj.date).fromNow() }}
+        {{ headerDate }}
         <span class="timestamp">{{ moment(fleetingNoteObj.date).format('ddd DD.MM.YYYY HH:mm:ss') }}</span>
       </span>
       <span class="links" v-if="hasAnyLinks">
@@ -186,6 +186,15 @@
         }
         else {
           return this.renderedContent
+        }
+      },
+      headerDate() {
+        let date = moment(this.fleetingNoteObj.date)
+        if (moment().diff(date, 'hours') < 24) {
+          return moment(date).fromNow()
+        }
+        else {
+          return moment(date).format('DD. MMMM YYYY')
         }
       },
       encodedPath() {

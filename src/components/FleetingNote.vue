@@ -12,9 +12,6 @@
       <span v-if="fleetingNoteObj.stack" @click="$router.push(`/stacks/${fleetingNoteObj.stack}`)">
         <Icon name="Layers" /> {{fleetingNoteObj.stack}}
       </span>
-      <span v-else @click="$router.push(`/inbox/`)">
-        <Icon name="Inbox" /> Inbox
-      </span>
     </div>
     <transition name="fade">
       <div class="rightHandRelations" v-if="computedOptions.showRightHandRelations && hasAnyLinks && isFocused">
@@ -369,9 +366,6 @@
           event.stopPropagation()
         }
       },
-      intoNewNote(event) {
-        this.bus.$emit('newNote', this.fleetingNoteObj.content)
-      },
       addToStack(event) {
         var $this = this
         var stacks = this.$store.state.currentNoteCollection.stacks.getListOfStacks()
@@ -584,7 +578,7 @@
               badges: (edgeProperties && edgeProperties.length > 0) ? edgeProperties : [],
               action:() => {
                 console.log(fn.path)
-                if ((fn.inInbox && $this.fleetingNoteObj.inInbox) || (fn.stack == $this.fleetingNoteObj.stack)) {
+                if (fn.stack == $this.fleetingNoteObj.stack) {
                   console.log('Yay! I let my partner shine! :)')
                   $this.$emit('focusNote', fn)
                   $this.$emit('scrollFocusedIntoView')
@@ -735,10 +729,6 @@
       }
     },
     mounted() {
-      this.md.use(require('markdown-it-hashtag'))
-      this.md.renderer.rules.hashtag_open  = function(tokens, idx) {
-        var tagName = tokens[idx].content.toLowerCase();
-        return '<a href="special://tag/' + tagName + '" class="tag">';
       }
       this.md.use( require('markdown-it-bracketed-spans') )
       this.md.use( require('markdown-it-attrs'), {
@@ -747,12 +737,6 @@
         rightDelimiter: '}}',
         allowedAttributes: []  // empty array = all attributes are allowed
       })
-      this.md.renderer.rules.fence = function (tokens, idx, options, env, slf) {
-        const token = tokens[idx]
-        return  '<pre' + slf.renderAttrs(token) + '>'
-        + '<code>' + token.content + '</code>'
-        + '</pre>'
-      }
       this.editorContent = this.content
       if (this.options) {
         for (let o of Object.keys(this.options)) {
@@ -1334,11 +1318,11 @@
       font-size: 15px;
       font-family: 'Code New Roman', monospace;
       border: 3px solid #a5a5a5;
-      height: 60vh;
       &.CodeMirror-focused {
         border-color: cornflowerblue;
         border-style: dashed;
       }
+      &.cm-s-seti {
     }
   }
   button {
@@ -1523,14 +1507,5 @@
 }
 .fade-enter, .fade-leave-to {
   opacity: 0;
-}
-.fold, .fold-leave-active {
-  transition: all .1s ease-in;
-  position: absolute;
-}
-.fold-enter, .fold-leave-to {
-  position: absolute;
-  opacity: 0;
-  transform: translateY(-100%);
 }
 </style>

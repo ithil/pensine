@@ -106,6 +106,7 @@
   import moment from 'moment'
   import 'moment/locale/de'
   import MarkdownIt from 'markdown-it'
+  import hljs from 'highlight.js'
   import { codemirror } from 'vue-codemirror'
   import 'codemirror/lib/codemirror.css'
   import 'codemirror/mode/markdown/markdown.js'
@@ -134,7 +135,19 @@
     data: function () {
       return {
         moment: moment,
-        md: new MarkdownIt({linkify: true}),
+        md: new MarkdownIt({
+          linkify: true,
+          html: true,
+          highlight: function (str, lang) {
+            if (lang && hljs.getLanguage(lang)) {
+              try {
+                return hljs.highlight(str, { language: lang }).value;
+              } catch (__) {}
+            }
+
+            return ''; // use external default escaping
+          },
+        }),
         editing: false,
         selected: false,
         focused: false,
@@ -165,6 +178,7 @@
           lineNumbers: true,
           line: true,
           showTrailingSpace: true,
+          highlightFormatting: true,
           // more CodeMirror options...
         },
       }

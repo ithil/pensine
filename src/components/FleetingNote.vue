@@ -114,6 +114,7 @@
 <script>
   import moment from 'moment'
   import 'moment/locale/de'
+  import fuzzysort from 'fuzzysort'
   import MarkdownIt from 'markdown-it'
   import hljs from 'highlight.js'
   import { codemirror } from 'vue-codemirror'
@@ -443,6 +444,124 @@
       },
       linkNote() {
         var $this = this
+        var stacks = this.$store.state.currentNoteCollection.stacks.getListOfStacks()
+        var items = []
+        var getSubItemsOfStack = function (stack) {
+          var fleetingNotes = stack.getContent().filter(i => !i.isStack)
+          var fnList = []
+          for (let fn of fleetingNotes) {
+            let numberOfLinks = fn.relations.length
+            fnList.push({
+              label: fn.abstract,
+              lucideIcon: 'FileText',
+              description: `${numberOfLinks} relations`,
+              description: `${numberOfLinks > 0 ? numberOfLinks+' relations – ' : ''}${moment(fn.date).format('DD.MM.YYYY')}`,
+              type: 'fleetingNote',
+              action: () => {
+                setTimeout(() => {
+                  $this.$store.commit('triggerCustomTextPrompt', {
+                    message: `Edge Properties (comma-separated)`,
+                    action: (edgeProperties) => {
+                      edgeProperties = edgeProperties.split(',').map(i => i.trim()).filter(i => i)
+                      $this.fleetingNoteObj.addLink(fn.relativePath, edgeProperties)
+                      $this.$refs.fleetingNote.focus()
+                    }
+                  })
+                }, 50)
+              },
+              getSubItems: () => {
+                return {
+                  newItems: getSubItemsOfFleetingNote(fn),
+                  newMessage: fn.abstract,
+                }
+              },
+            })
+          }
+          return fnList
+        }
+        var getSubItemsOfFleetingNote = function (parentFn) {
+          var relations = parentFn.relations
+          if (relations.length < 1) {
+            return false
+          }
+          var fnList = []
+          for (let relation of relations) {
+            let fn = relation.fn
+            let numberOfLinks = fn.relations.length
+            fnList.push({
+              label: fn.abstract,
+              lucideIcon: 'FileText',
+              description: `${fn.stack || 'Inbox'} –${numberOfLinks > 0 ? ' '+numberOfLinks+' relations –' : ''}  ${moment(fn.date).format('DD.MM.YYYY')}`,
+              type: 'fleetingNote',
+              action: () => {
+                setTimeout(() => {
+                  $this.$store.commit('triggerCustomTextPrompt', {
+                    message: `Edge Properties (comma-separated)`,
+                    action: (edgeProperties) => {
+                      edgeProperties = edgeProperties.split(',').map(i => i.trim()).filter(i => i)
+                      $this.fleetingNoteObj.addLink(fn.relativePath, edgeProperties)
+                      $this.$refs.fleetingNote.focus()
+                    }
+                  })
+                }, 50)
+              },
+              getSubItems: () => {
+                return {
+                  newItems: getSubItemsOfFleetingNote(fn),
+                  newMessage: fn.abstract,
+                }
+              },
+            })
+          }
+          var myStack = parentFn.collection.stacks.getStackByPath(parentFn.stack)
+          fnList.push({
+            label: myStack.relativePath,
+            lucideIcon: 'Layers',
+            description: 'Stack',
+            type: 'stack',
+            getSubItems: () => {
+              return {
+                newItems: getSubItemsOfStack(myStack),
+                newMessage: myStack.relativePath,
+              }
+            },
+          })
+          return fnList
+        }
+        for (let s of stacks) {
+          items.push({
+            label: s.relativePath,
+            lucideIcon: 'Layers',
+            description: 'Stack',
+            type: 'stack',
+            getSubItems: () => {
+              return {
+                newItems: getSubItemsOfStack(s),
+                newMessage: s.relativePath,
+              }
+            },
+          })
+        }
+        var filter = function (context) {
+          var $items = context.itemsWithIds
+          var searchString = context.searchString.toLowerCase()
+          if (searchString.length == 0) {
+            return $items
+          }
+          var fuzzyResults = fuzzysort.go(searchString, $items, {key: 'label'}, {threshold: -10000})
+          var itemsFiltered = fuzzyResults.map(i => {
+            return {...i.obj, highlight: fuzzysort.highlight(i, '<span class="highlight">', '</span>')}
+          })
+          return itemsFiltered
+        }
+        this.$store.commit('triggerCustomSelectList', {items, filter})
+        if (event) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+      },
+      linkNoteChoosingFromBag() {
+        var $this = this
         var bag = this.$store.state.bag
         var items = bag.map(fnPath => {
           var fn = $this.fleetingNoteObj.collection.getFleetingNoteByPath(fnPath)
@@ -477,20 +596,23 @@
               registerPath = r.path
               registerName = r.name
               searchString = searchString.slice(r.prefix.length)
+              var searchStringNotLowercase = context.searchString.slice(r.prefix.length)
             }
           }
           if (registerPath) {
             var stack = $this.fleetingNoteObj.collection.stacks.getStackByPath(registerPath)
             var stackContent = stack.getContent()
+            stackContent.sort((a,b) => b.numberOfRelations - a.numberOfRelations)
             var items = []
             var id = 1
             for (let i of stackContent) {
-              if (!i.isStack && i.content.toLowerCase().indexOf(searchString) > -1) {
+              if (!i.isStack) {
                 items.push({
                   id: id,
                   lucideIcon: 'AtSign',
                   label: i.abstract,
                   description: registerName,
+                  numberOfRelations: i.numberOfRelations,
                   action: () => {
                     setTimeout(() => {
                       this.$store.commit('triggerCustomTextPrompt', {
@@ -506,23 +628,176 @@
                 id++
               }
             }
-            return items
+            if (searchString.length < 1) {
+              return items
+            }
+            var fuzzyResults = fuzzysort.go(searchString, items || [], {key: 'label'}, {threshold: -10000})
+            fuzzyResults.sort((a, b) => {
+              if (Math.abs(a.score - b.score) > 10) return 0
+              return b.obj.numberOfRelations - a.obj.numberOfRelations
+            })
+            var itemsFiltered = fuzzyResults.map(i => {
+              return {...i.obj, highlight: fuzzysort.highlight(i, '<span class="highlight">', '</span>')}
+            })
+            var newEntry = searchStringNotLowercase.trim()
+            itemsFiltered.push({
+              id: id + 1,
+              lucideIcon: 'FilePlus',
+              label: newEntry,
+              description: 'Create new registry entry',
+              action: () => {
+                var newFnPath = stack.sendText(`# ${newEntry}`)
+                var newFn = $this.$store.state.currentNoteCollection.getFleetingNoteByPath(newFnPath)
+                var edgeProperties = []
+                let n = $this.fleetingNoteObj
+                if (n) {
+                  n.addLink(newFn.relativePath, edgeProperties)
+                }
+              },
+            })
+            return itemsFiltered
           }
-          var itemsFiltered = $items.filter(item => {
-            return item.label.toLowerCase().indexOf(context.searchString.toLowerCase()) > -1
+          var itemsFiltered = []
+          if (searchString.length > 0) {
+            var fuzzyResults = fuzzysort.go(searchString, $items, {key: 'label'}, {threshold: -10000})
+            var itemsFiltered = fuzzyResults.map(i => {
+              return {...i.obj, highlight: fuzzysort.highlight(i, '<span class="highlight">', '</span>')}
+            })
+          }
+          else {
+            itemsFiltered = [...$items]
+            itemsFiltered.push({
+              id: context.getHighestId() + 1,
+              lucideIcon: 'Plus',
+              label: 'Link all bagged notes',
+              action: () => {
+                for (let fnPath of bag) {
+                  // this fnPath is absolute but needs to be relative!!!
+                  $this.fleetingNoteObj.addLink(fnPath)
+                }
+              },
+            })
+          }
+          return itemsFiltered
+          }
+        this.$store.commit('triggerCustomSelectList', {items, filter})
+        if (event) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+      },
+      linkNoteChoosingFromStack() {
+        var $this = this
+        var stacks = this.$store.state.currentNoteCollection.stacks.getListOfStacks()
+        var items = []
+        var filter = function (context) {
+          var $items = context.itemsWithIds
+          var searchString = context.searchString.toLowerCase()
+          if (searchString.length == 0) {
+            return $items
+          }
+          var fuzzyResults = fuzzysort.go(searchString, $items, {key: 'label'}, {threshold: -10000})
+          fuzzyResults.sort((a, b) => {
+            if (b.obj.type != 'fleetingNote') return 0
+            if (Math.abs(a.score - b.score) > 10) return 0
+            return b.obj.numberOfRelations - a.obj.numberOfRelations
           })
-          itemsFiltered.push({
-            id: context.getHighestId() + 1,
-            lucideIcon: 'Plus',
-            label: 'Link all bagged notes',
-            action: () => {
-              for (let fnPath of bag) {
-                // this fnPath is absolute but needs to be relative!!!
-                $this.fleetingNoteObj.addLink(fnPath)
+          var itemsFiltered = fuzzyResults.map(i => {
+            return {...i.obj, highlight: fuzzysort.highlight(i, '<span class="highlight">', '</span>')}
+          })
+          return itemsFiltered
+        }
+        var getSubItemsOfStack = function (stack) {
+          var fleetingNotes = stack.getContent().filter(i => !i.isStack)
+          var fnList = []
+          for (let fn of fleetingNotes) {
+            let numberOfLinks = fn.relations.length
+            fnList.push({
+              label: fn.abstract,
+              lucideIcon: 'FileText',
+              description: `${numberOfLinks} relations`,
+              description: `${numberOfLinks > 0 ? numberOfLinks+' relations – ' : ''}${moment(fn.date).format('DD.MM.YYYY')}`,
+              numberOfRelations: fn.numberOfRelations,
+              type: 'fleetingNote',
+              action: () => {
+                $this.fleetingNoteObj.addLink(fn.relativePath, [])
+                setTimeout(() => {
+                  $this.$store.commit('triggerCustomSelectList', {items: getSubItemsOfStack($this.$store.state.currentNoteCollection.stacks.getStackByPath(fn.stack)), filter})
+                }, 50)
+              },
+              getSubItems: () => {
+                return {
+                  newItems: getSubItemsOfFleetingNote(fn),
+                  newMessage: fn.abstract,
+                }
+              },
+            })
+          }
+          return fnList
+        }
+        var getSubItemsOfFleetingNote = function (parentFn) {
+          var relations = parentFn.relations
+          if (relations.length < 1) {
+            return false
+          }
+          var fnList = []
+          for (let relation of relations) {
+            let fn = relation.fn
+            let numberOfLinks = fn.relations.length
+            fnList.push({
+              label: fn.abstract,
+              lucideIcon: 'FileText',
+              description: `${fn.stack || 'Inbox'} –${numberOfLinks > 0 ? ' '+numberOfLinks+' relations –' : ''}  ${moment(fn.date).format('DD.MM.YYYY')}`,
+              numberOfRelations: fn.numberOfRelations,
+              type: 'fleetingNote',
+              action: () => {
+                setTimeout(() => {
+                  $this.$store.commit('triggerCustomTextPrompt', {
+                    message: `Edge Properties (comma-separated)`,
+                    action: (edgeProperties) => {
+                      edgeProperties = edgeProperties.split(',').map(i => i.trim()).filter(i => i)
+                      $this.fleetingNoteObj.addLink(fn.relativePath, edgeProperties)
+                      $this.$refs.fleetingNote.focus()
+                    }
+                  })
+                }, 50)
+              },
+              getSubItems: () => {
+                return {
+                  newItems: getSubItemsOfFleetingNote(fn),
+                  newMessage: fn.abstract,
+                }
+              },
+            })
+          }
+          var myStack = parentFn.collection.stacks.getStackByPath(parentFn.stack)
+          fnList.push({
+            label: myStack.relativePath,
+            lucideIcon: 'Layers',
+            description: 'Stack',
+            type: 'stack',
+            getSubItems: () => {
+              return {
+                newItems: getSubItemsOfStack(myStack),
+                newMessage: myStack.relativePath,
               }
             },
           })
-          return itemsFiltered
+          return fnList
+        }
+        for (let s of stacks) {
+          items.push({
+            label: s.relativePath,
+            lucideIcon: 'Layers',
+            description: 'Stack',
+            type: 'stack',
+            getSubItems: () => {
+              return {
+                newItems: getSubItemsOfStack(s),
+                newMessage: s.relativePath,
+              }
+            },
+          })
         }
         this.$store.commit('triggerCustomSelectList', {items, filter})
         if (event) {

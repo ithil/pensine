@@ -1910,6 +1910,92 @@
         border-style: dashed;
       }
       &.cm-s-seti {
+        background: #ededed !important;
+        color: #000 !important;
+        .CodeMirror-gutters {
+          background-color: #dddddd;
+        }
+        .CodeMirror-linenumber {
+          color: #8d8d8d;
+        }
+        .CodeMirror-lines {
+          margin-bottom: 20px;
+        }
+        .CodeMirror-cursor {
+          border-left: solid thin #000000;
+        }
+        .CodeMirror-matchingbracket {
+          color: #fff !important;
+          background: #000;
+        }
+        .CodeMirror-selected {
+          background: rgba(106, 163, 231, 0.32) !important;
+        }
+        span.cm-comment {
+          background: #c9c9c99c;
+          border-radius: 4px;
+          padding: 1px 3px;
+        }
+        span.cm-variable-2 {
+          color: #56039b;
+        }
+        span.cm-variable-3 {
+          color: #5b8d09;
+        }
+        span.cm-keyword {
+          color: #af9b36;
+        }
+        span.cm-quote {
+          &.cm-quote-1 {
+            color: #cb4646;
+          }
+          &.cm-quote-2 {
+            color: #ab3f3f;
+          }
+          &.cm-quote-3 {
+            color: #976464;
+          }
+          &.cm-quote-4 {
+            color: #7e5e5e;
+          }
+          &.cm-quote-5 {
+            color: #7e5e5e;
+          }
+        }
+        span.cm-link {
+          color: #3069d1 !important;
+        }
+        span.cm-string.cm-url {
+          color: #4899b9;
+        }
+        span.cm-hr {
+          background: linear-gradient(
+          180deg, rgba(0,0,0,0) calc(50% - 1px), rgb(0,0,0) calc(50%), rgba(0,0,0,0) 50%);
+          padding-right: 45%;
+          padding-left: 45%;
+          color: #000;
+          font-weight: bold;
+          margin-left: 3%;
+        }
+        span.cm-tab {
+          width: 15px;
+          &:before {
+            content: '⇥';
+            color: grey;
+            font-size: 13px;
+            font-family: 'Helvetica';
+          }
+        }
+      }
+      .CodeMirror-dialog.CodeMirror-dialog-bottom {
+        z-index: 4;
+        position: relative;
+        background: #d7d7d7b5;
+        backdrop-filter: blur(2px);
+        padding: 4px;
+        padding-left: 30px;
+        top: -30px;
+      }
     }
   }
   button {
@@ -1933,7 +2019,7 @@
 }
 
 .CodeMirror-activeline-background {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: #ffffff73 !important;
   border-bottom: 1px solid;
   border-bottom-color: #E3CB51;
 }

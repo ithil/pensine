@@ -360,6 +360,12 @@ async function createWindow() {
     return icon.toDataURL()
     // win.webContents.send('')
   })
+  ipcMain.handle('dialog', (event, method, params) => {
+    dialog[method](params)
+  })
+  ipcMain.handle('saveDialog', (event, options) => {
+    return dialog.showSaveDialogSync(options)
+  })
 }
 
 // Quit when all windows are closed.

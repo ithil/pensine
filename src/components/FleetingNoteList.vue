@@ -944,6 +944,32 @@ export default {
             this.$emit('focusSendBox')
             this.fullKeybuffer = ''
           }
+          else if (this.keybuffer == "gx")
+          {
+            // Export note as html
+            let items = [
+              {
+                label: '...only note',
+                key: 'N',
+                action: () => {
+                  this.getFocusedNoteItem().exportAsHtml({ includeRelations: false })
+                },
+              },
+              {
+                label: '...with relations',
+                key: 'R',
+                action: () => {
+                  this.getFocusedNoteItem().exportAsHtml({ includeRelations: true })
+                },
+              },
+            ]
+            this.$store.commit('triggerCustomPopoverList', {
+              message: `Export as HTML`,
+              items: items,
+              options: {hintMode: false},
+            })
+            this.fullKeybuffer = ''
+          }
           else if (this.keybuffer == ",yp")
           {
             // Copy note's metadata path (.json) to clipboard

@@ -126,6 +126,7 @@
   import { bus } from '@/main'
   import { ipcRenderer } from 'electron'
   import Icon from '@/components/Icon.vue'
+  import fs from 'fs'
   import Collapse from '@/components/Collapse.vue'
 
   moment.locale('de')
@@ -713,6 +714,177 @@
           event.preventDefault()
           event.stopPropagation()
         }
+      },
+      exportAsHtml({ includeRelations = true } = {}) {
+        var renderedContent = this.renderedContent
+        var renderedRelations = ""
+        if (includeRelations) {
+          for (let r of this.relations) {
+            if (['calendar', 'tags', 'courses'].some(str => r.fn.stack.includes(str))) continue
+            let renderedRelation = this.md.render(r.fn.content)
+            renderedRelations += `<div class="note relation">${renderedRelation}</div>\n`
+          }
+        }
+        var css = `
+          body {
+            width: 210mm;
+            margin: auto;
+          }
+          h1 {
+            margin-top: 0;
+          }
+          .note {
+            border: 2px solid #6495ed;
+            padding: 20px;
+            margin-bottom: 10px;
+          }
+          .note.relation {
+            border-color: #97ca97;
+          }
+          body.relationsExcluded .note {
+            border: none;
+          }
+          a {
+            color: cornflowerblue;
+          }
+          .hl {
+            background-color: #ffd97da1;
+            padding: 1px;
+            border-radius: 2px;
+          }
+          .hl.green {
+            background-color: #0080005e;
+          }
+          .hl.red {
+            background-color: #ff000061;
+          }
+          .hl.blue {
+            background-color: #0000ff4f;
+          }
+          blockquote {
+            border-left: 3px solid #cfdae6;
+            padding-left: 5px;
+            text-align: justify;
+          }
+          :not(pre) > code {
+            background: #d7d5d5;
+            border-radius: 4px;
+            padding: 1px 3px;
+            font-family: 'Monaco', monospace;
+            font-size: 75%;
+          }
+          pre {
+            white-space: pre-wrap;
+            background: #000 e3;
+            padding: 10px;
+            border-radius: 5px;
+            color: white;
+            font-family: 'Code New Roman', monospace;
+            font-size: 15px;
+          }
+          pre.prose {
+            background: none;
+            color: inherit;
+            font-family: 'Georgia';
+            font-size: 16px;
+          }
+          pre.prose code {
+            font-family: 'Georgia';
+          }
+          table {
+            font-size: 13px;
+            border-collapse: collapse;
+          }
+          table td, table th {
+            border: 1px solid #e5e3da;
+            padding: 5px 3px;
+          }
+          table th {
+            background-color: #e6e6e6;
+            --border-color: #cbcbcb;
+            border-right-color: var(--border-color);
+            border-left-color: var(--border-color);
+            border-top-color: var(--border-color);
+            text-align: center !important;
+          }
+          table tr:nth-child(2n+1) td {
+            background-color: #f2f2f2;
+          }
+          ul.infobox {
+            background: #f1f1f1;
+            border: 1px solid #a2a9b1;
+            padding: 0.6em;
+            list-style: none;
+            width: 400px;
+            font-size: 80%;
+            font-family: "Helvetica";
+            border-radius: 5px;
+          }
+          ul.infobox.right {
+            width: 200px;
+            float: right;
+          }
+          ul.infobox.left {
+            width: 200px;
+            float: left;
+          }
+          ul.infobox > li {
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+          }
+          ul.infobox > li > img {
+            max-height: 200px;
+            margin: auto;
+          }
+          ul.infobox > li:not(:first-child) {
+            margin-top: 4px;
+          }
+          ul.infobox > li.center {
+            justify-content: center;
+          }
+          ul.infobox > li ul {
+            list-style: none;
+            padding-left: 0;
+            flex-basis: 70%;
+          }
+          ul.infobox > li ul li {
+            font-weight: normal;
+          }
+          `
+        var dateString = moment(this.fleetingNoteObj.relatedDates[0] || this.fleetingNoteObj.date).format('YYYY-MM-DD')
+        var title = `${dateString} ${this.fleetingNoteObj.title}`.replaceAll(':', '')
+        var html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <title>${title}</title>
+        <style>
+        ${css}
+        </style>
+        </head>
+        <body class="${includeRelations ? 'relationsIncluded' : 'relationsExcluded'}">
+        <div id="mainContent">
+        <div class="note">
+        ${renderedContent}
+        </div>
+        </div>
+        <div id="relatedContent">
+        ${renderedRelations}
+        </div>
+        </body>
+        </html>
+        `;
+        (async () => {
+          var filePath = await ipcRenderer.invoke('saveDialog', {
+            title: 'Export note and relations',
+            defaultPath: `${title}.html`,
+            properties: ['createDirectory', 'showOverwriteConfirmation'],
+          })
+          if (filePath) {
+            fs.writeFileSync(filePath, html)
+          }
+        })()
       },
       toggleSelectNote(event) {
         this.selected = !this.selected

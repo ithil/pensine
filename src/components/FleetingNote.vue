@@ -16,16 +16,25 @@
     <transition name="fade">
       <div class="rightHandRelations" v-if="computedOptions.showRightHandRelations && hasAnyLinks && isFocused">
         <ul>
-          <li v-for="r in relations" :key="r.fn.relativePath"
-          class="relation"
-          :class="{ title: r.fn.title ? true : false }"
-          :data-stack="r.fn.stack"
-          @click="$router.push(`/fleetingnote/${encodeURIComponent(r.fn.relativePath)}`)"
-          >
-          <Icon v-if="customRelationIcons[r.fn.stack.split('/')[0]]" :name="customRelationIcons[r.fn.stack.split('/')[0]]" />
-          <Icon v-else name="FileText" />
-          {{r.fn.abstract}}
-        </li>
+          <collapse v-for="r in relations" :key="r.fn.relativePath">
+            <template v-slot:header="slotProps">
+              <li
+              class="relation"
+              :class="{ title: r.fn.title ? true : false }"
+              :data-stack="r.fn.stack"
+              @click="handleRelationClick(r, slotProps, $event)"
+              >
+              <Icon v-if="r.fn.stack && customRelationIcons[r.fn.stack.split('/')[0]]" :name="customRelationIcons[r.fn.stack.split('/')[0]]" />
+              <Icon v-else-if="getCustomIcon(r.fn.stack)" :name="getCustomIcon(r.fn.stack)" />
+              <Icon v-else name="FileText" />
+              {{r.fn.abstract}}
+            </li>
+            </template>
+            <template v-slot:body>
+              <div class="miniview" v-html="r.fn.contentRendered">
+              </div>
+            </template>
+          </collapse>
       </ul>
     </div>
   </transition>
@@ -117,6 +126,7 @@
   import { bus } from '@/main'
   import { ipcRenderer } from 'electron'
   import Icon from '@/components/Icon.vue'
+  import Collapse from '@/components/Collapse.vue'
 
   moment.locale('de')
 
@@ -131,6 +141,7 @@
     components: {
       codemirror,
       Icon,
+      Collapse,
     },
     data: function () {
       return {
@@ -306,6 +317,19 @@
       },
       showAllActions() {
 
+      },
+      getCustomIcon(stackRelativePath) {
+        var stackStyleProps = this.$store.state.currentNoteCollection.getStackStyleProps(stackRelativePath)
+        return stackStyleProps['icon'] || null
+      },
+      handleRelationClick(relation, slotProps, event) {
+        if (event.metaKey) {
+          slotProps.toggle()
+          event.preventDefault()
+        }
+        else {
+          this.$router.push(`/fleetingnote/${encodeURIComponent(relation.fn.relativePath)}`)
+        }
       },
       toggleCompactMode(state) {
         if (state != null) {
@@ -845,6 +869,83 @@
           border: 1.5px solid rgb(197, 166, 112);
           .svg-icon {
             color: #428547;
+          }
+        }
+      .miniview {
+        border: 1px solid #bbbbbb;
+        background: #e1e1e1;
+        margin-top: 2px;
+        padding: 2px;
+        border-radius: 5px;
+        word-break: break-all;
+        font-family: 'Helvetica Neue';
+        overflow-x: auto;
+        overflow-y: auto;
+        max-height: 200px;
+        left: 10px;
+        position: relative;
+        width: 220px;
+        h1:first-child {
+          display: none;
+        }
+        h2, h3, h4 {
+          font-size: 12px;
+          font-family: 'Futura';
+          text-align: center;
+        }
+        ul {
+          list-style-type: disc;
+          list-style-position: inside;
+          padding-inline-start: 5px;
+        }
+        blockquote {
+          margin-inline-start: 0px;
+          border-left: 1px solid black;
+          padding-inline-start: 10px;
+          margin-inline-end: 0px;
+        }
+        hr {
+          border: 1px solid black;
+        }
+        a {
+          color: #175bd5;
+        }
+        img {
+          max-width: 200px;
+        }
+        table {
+          font-size: 10px;
+          border-collapse: collapse;
+          td, th {
+            border: 1px solid #e5e3da;
+            padding: 5px 3px;
+          }
+          th {
+            min-width: 100px;
+            background-color: #e6e6e6;
+            --border-color: #cbcbcb;
+            border-right-color: var(--border-color);
+            border-left-color: var(--border-color);
+            border-top-color: var(--border-color);
+            text-align: center !important;
+          }
+          tr:nth-child(2n+1) td {
+            background-color: #f2f2f2;
+          }
+        }
+        .hl {
+          --highlight-color: #ffd97da1;
+          background-color: var(--highlight-color);
+          padding: 1px;
+          border-radius: 2px;
+          &.green {
+            --highlight-color: #0080005e;
+          }
+          &.red {
+            --highlight-color: #ff000061;
+          }
+          &.blue {
+            --highlight-color: #0000ff4f;
           }
         }
       }
@@ -1490,21 +1591,28 @@
 }
 
 
-.fleetingNote ul.actions {
-  padding-inline-start: 0;
-  padding: 5px 10px 10px 10px;
-  margin: 0;
+.fleetingNote footer {
   border-top: 1px solid #6495ed3b;
   background-color: #5082ce12;
-  li {
-    display: inline-block;
-    list-style: none;
+  display: inline-flex;
+  width: 100%;
+  & > * {
+    padding: 5px 10px 10px 10px;
+  }
+  a {
+    color: #888;
+    text-decoration: none;
+    font-size: 12px;
+  }
+  ul.actions {
+    flex-basis: 100%;
     padding-inline-start: 0;
-    padding-right: 6px;
-    a {
-      color: #888;
-      text-decoration: none;
-      font-size: 12px;
+    padding-left: 10px;
+    margin: 0;
+    li {
+      display: inline-block;
+      list-style: none;
+      padding-right: 6px;
     }
   }
 }

@@ -1207,10 +1207,26 @@
         }
       },
       onCmReady(cm) {
-        // console.log(cm)
+        cm.setSize(null, '60vh')
       }
     },
     mounted() {
+      var defaultLinkRender = this.md.renderer.rules.link_open || function(tokens, idx, options, env, self) {
+        return self.renderToken(tokens, idx, options);
+      }
+      this.md.renderer.rules.link_open = function (tokens, idx, options, env, self) {
+        var token = tokens[idx]
+        if (token.markup == 'linkify') {
+          var aIndex = tokens[idx].attrIndex('class')
+          if (aIndex < 0) {
+            tokens[idx].attrPush(['class', 'linkify']) // add new attribute
+          } else {
+            let classAttr = tokens[idx].attrs[aIndex][1]
+            tokens[idx].attrs[aIndex][1] = `${classAttr} linkify` // replace value of existing attr
+          }
+        }
+        // pass token to default renderer.
+        return defaultLinkRender(tokens, idx, options, env, self)
       }
       this.md.use( require('markdown-it-bracketed-spans') )
       this.md.use( require('markdown-it-attrs'), {
@@ -1218,6 +1234,18 @@
         leftDelimiter: '{{',
         rightDelimiter: '}}',
         allowedAttributes: []  // empty array = all attributes are allowed
+      })
+      var stacksPath = this.fleetingNoteObj.collection.collectionJson.paths.stacks.split('/')[1]
+      this.md.use( require('markdown-it-replace-link'), {
+        replaceLink: function (link, env) {
+          if (link.startsWith('/')) {
+            let clearlink = decodeURIComponent(link)
+            return `/n/${encodeURIComponent(stacksPath+clearlink+'.md')}`
+          }
+          else {
+            return link
+          }
+        }
       })
       this.editorContent = this.content
       if (this.options) {

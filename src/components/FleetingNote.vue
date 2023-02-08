@@ -81,20 +81,23 @@
       <button @click="saveNote">Save</button>
       <button @click="cancelEditing">Cancel</button>
     </div>
-    <ul class="actions">
-      <li><a href="#" @click="deleteNote">delete</a></li>
-      <li v-if="fleetingNoteObj.isText"><a href="#" @click="editNote">edit</a></li>
-      <li><a href="#" @click="addToBag">bag</a></li>
-      <li><a href="#" @click="linkNote">link</a></li>
-      <li><a href="#" @click="unlinkNote">unlink</a></li>
-      <li><a href="#" @click="showLinkToDatePrompt">date</a></li>
-      <li><a href="#"
-        @click="$router.push(`/nodeexplorer/${encodedPath}`)"
-        >explore</a></li>
-      <li><a href="#" @click="sendToPort">port</a></li>
-      <li><a href="#" @click="addToStack">stack</a></li>
-      <li><a href="#" @click="toggleSelectNote">select</a></li>
-    </ul>
+    <footer>
+      <ul class="actions">
+        <li><a href="#" @click="deleteNote">delete</a></li>
+        <li v-if="fleetingNoteObj.isText"><a href="#" @click="editNote">edit</a></li>
+        <li><a href="#" @click="addToBag">bag</a></li>
+        <li><a href="#" @click="linkNote">link</a></li>
+        <li><a href="#" @click="unlinkNote">unlink</a></li>
+        <li><a href="#" @click="showLinkToDatePrompt">date</a></li>
+        <li><a href="#"
+          @click="$router.push(`/nodeexplorer/${encodedPath}`)"
+          >explore</a></li>
+          <li><a href="#" @click="sendToPort">port</a></li>
+          <li><a href="#" @click="addToStack">stack</a></li>
+          <li><a href="#" @click="toggleSelectNote">select</a></li>
+        </ul>
+        <span class="moreActions"><a href="#" @click="showAllActions">...</a></span>
+      </footer>
   </article>
   </transition>
 </template>
@@ -300,6 +303,9 @@
       },
       getOption(opt) {
         return this.computedOptions[opt]
+      },
+      showAllActions() {
+
       },
       toggleCompactMode(state) {
         if (state != null) {

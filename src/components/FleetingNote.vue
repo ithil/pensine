@@ -855,7 +855,12 @@
           return itemsFiltered
         }
         if (items.length > 0) {
-          this.$store.commit('triggerCustomSelectList', {items, filter})
+          // this.$store.commit('triggerCustomSelectList', {items, filter})
+          this.$store.commit('triggerCustomPopoverList', {
+            message: `Unlink relation`,
+            items: items,
+            options: {hintMode: true},
+          })
         }
         else {
           console.log('There arent any here')

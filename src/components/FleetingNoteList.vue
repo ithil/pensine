@@ -1317,28 +1317,107 @@ export default {
               this.scrollFocusedIntoView()
             }
           }
-          else if (this.keybuffer == ",sn")
+          else if (this.keybuffer == ",s")
           {
-            // Change sort order: newest first
-            this.$emit('changeSortOrder', 'newestFirst')
+            // Change sort order
+            let items = [
+              {
+                label: 'Newest First',
+                key: 'N',
+                action: () => {
+                  this.$emit('changeSortOrder', 'newestFirst')
+                },
+              },
+              {
+                label: 'Oldest First',
+                key: 'O',
+                action: () => {
+                  this.$emit('changeSortOrder', 'oldestFirst')
+                },
+              },
+              {
+                label: 'Cal: Newest First',
+                key: 'Shift+N',
+                action: () => {
+                  this.$emit('changeSortOrder', 'relatedDateNewestFirst')
+                },
+              },
+              {
+                label: 'Cal: Oldest First',
+                key: 'Shift+O',
+                action: () => {
+                  this.$emit('changeSortOrder', 'relatedDateOldestFirst')
+                },
+              },
+              { role: 'separator' },
+              {
+                label: 'Most Relations',
+                key: 'L',
+                action: () => {
+                  this.$emit('changeSortOrder', 'mostRelationsFirst')
+                },
+              },
+              {
+                label: 'Fewest Relations',
+                key: 'Shift+L',
+                action: () => {
+                  this.$emit('changeSortOrder', 'fewestRelationsFirst')
+                },
+              },
+              { role: 'separator' },
+              {
+                label: 'Alphabetical',
+                key: 'A',
+                action: () => {
+                  this.$emit('changeSortOrder', 'alphabetical')
+                },
+              },
+              { role: 'separator' },
+              {
+                label: 'Longest First',
+                key: 'S',
+                action: () => {
+                  this.$emit('changeSortOrder', 'shortestFirst')
+                },
+              },
+              {
+                label: 'Shortest First',
+                key: 'Shift+S',
+                action: () => {
+                  this.$emit('changeSortOrder', 'shortestFirst')
+                },
+              },
+              { role: 'separator' },
+              {
+                label: 'Random',
+                key: 'R',
+                action: () => {
+                  this.$emit('changeSortOrder', 'random')
+                },
+              },
+              {
+                label: 'Inherit',
+                key: 'I',
+                action: () => {
+                  this.$emit('changeSortOrder', 'inherit')
+                },
+              },
+              { role: 'separator' },
+              {
+                label: 'Set as Default',
+                action: () => {
+                  this.stack.metadata.set('sortOrder', this.sortOrder)
+                  this.stack.metadata.save()
+                },
+              },
+            ]
+            this.$store.commit('triggerCustomPopoverList', {
+              message: `Sort`,
+              items: items,
+              options: {hintMode: false},
+            })
             this.fullKeybuffer = ''
           }
-          else if (this.keybuffer == ",so")
-          {
-            // Change sort order: oldest first
-            this.$emit('changeSortOrder', 'oldestFirst')
-            this.fullKeybuffer = ''
-          }
-          else if (this.keybuffer == ",sr")
-          {
-            // Change sort order: random
-            this.$emit('changeSortOrder', 'random')
-            this.fullKeybuffer = ''
-          }
-          else if (this.keybuffer == ",si")
-          {
-            // Change sort order: inherit
-            this.$emit('changeSortOrder', 'inherit')
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "dd")
@@ -1485,6 +1564,38 @@ export default {
       }
       else if (this.sortOrder == 'oldestFirst') {
         processedNotes = processedNotes.sort((a, b) => a.date - b.date)
+      }
+      else if (this.sortOrder == 'relatedDateNewestFirst') {
+        processedNotes = processedNotes.sort((a, b) => {
+          if (!a.relatedDates.length && !b.relatedDates.length) {
+            return 0
+          }
+          if (!a.relatedDates.length) {
+            return 1
+          }
+          if (!b.relatedDates.length) {
+            return -1
+          }
+          var newestDateA = new Date(Math.max(...a.relatedDates))
+          var newestDateB = new Date(Math.max(...b.relatedDates))
+          return newestDateB - newestDateA
+        })
+      }
+      else if (this.sortOrder == 'relatedDateOldestFirst') {
+        processedNotes = processedNotes.sort((a, b) => {
+          if (!a.relatedDates.length && !b.relatedDates.length) {
+            return 0
+          }
+          if (!a.relatedDates.length) {
+            return 1
+          }
+          if (!b.relatedDates.length) {
+            return -1
+          }
+          var newestDateA = new Date(Math.max(...a.relatedDates))
+          var newestDateB = new Date(Math.max(...b.relatedDates))
+          return newestDateA - newestDateB
+        })
       }
       else if (this.sortOrder == 'mostRelationsFirst') {
         processedNotes = processedNotes.sort((a, b) => b.numberOfRelations - a.numberOfRelations)

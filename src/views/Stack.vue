@@ -35,6 +35,7 @@
     @changeSortOrder="changeSortOrder"
     @changeFilterTerm="changeFilterTerm"
     @sendNewNote="_sendNewNote"
+    :stack="stack"
     :sortOrder="sortOrder"
     :filterTerm="filterTerm"
     :fleetingNoteOptions="{showRightHandRelations: true}"
@@ -75,6 +76,8 @@ export default {
       sortOptions: [
         { text: 'Oldest First', value: 'oldestFirst' },
         { text: 'Newest First', value: 'newestFirst' },
+        { text: 'Cal: Oldest First', value: 'relatedDateOldestFirst' },
+        { text: 'Cal: Newest First', value: 'relatedDateNewestFirst' },
         { text: 'Most Relations', value: 'mostRelationsFirst' },
         { text: 'Fewest Relations', value: 'fewestRelationsFirst' },
         { text: 'Alphabetical', value: 'alphabetical' },
@@ -160,6 +163,10 @@ export default {
     })
     if (this.$route.query.note) {
       console.log(this.$route.query.note)
+    }
+    var sortOrder = this.stack.metadata.get('sortOrder')
+    if(sortOrder) {
+      this.changeSortOrder(sortOrder)
     }
   },
   unmounted() {

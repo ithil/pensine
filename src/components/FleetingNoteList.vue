@@ -307,8 +307,18 @@ export default {
         if (searchString.length == 0) {
           return $items
         }
-        var fuse = new Fuse($items, {keys: ['label']})
-        var itemsFiltered = fuse.search(searchString).map(i => i.item)
+        var fuzzyResults = fuzzysort.go(searchString, $items, {key: 'label'}, {threshold: -10000})
+        var itemsFiltered = fuzzyResults.map(i => {
+          return {...i.obj, highlight: fuzzysort.highlight(i, '<span class="highlight">', '</span>')}
+        })
+        return itemsFiltered
+      }
+      this.$store.commit('triggerCustomSelectList', {items, filter})
+      if (event) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    },
     toggleOutline() {
       this.$refs.outline.toggle()
     },

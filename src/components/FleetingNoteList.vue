@@ -1,5 +1,20 @@
 <template>
   <div class="fleetingNoteList" tabindex="10" @keydown="keymonitor" ref="fleetingNoteList">
+    <div class="stackFilterBox" v-if="enableStackFilterBox && fleetingNotes.length > 0" >
+      <span class="clearStackFilter" @click="clearStackFilter"><Icon name="XOctagon" /></span>
+      <span
+      v-for="[stack, number] in stackDistribution"
+      :key="stack"
+      @click="handleStackFilter(stack, $event)"
+      :class="{ included: filter.includeStacks.includes(stack), excluded: filter.excludeStacks.includes(stack)}"
+      >
+        <span class="stack">
+          <Icon name="Layers" />
+          {{stack}}
+        </span>
+        <span class="number">{{number}}</span>
+      </span>
+    </div>
     <div class="fleetingNotes">
       <div v-for="f in processedFleetingNotes" :key="f.filename">
         <fleeting-note
@@ -138,6 +153,11 @@ export default {
       type: String,
       default: 'oldestFirst',
     },
+    'stack': Object,
+    'enableStackFilterBox': {
+      type: Boolean,
+      default: false,
+    },
   },
   components: {
     fleetingNote,
@@ -159,6 +179,10 @@ export default {
       searchBarVisible: false,
       foundItems: [],
       resultsIt: null,
+      filter: {
+        includeStacks: [],
+        excludeStacks: [],
+      },
       showOverviewModal: false,
       overviewMode: 'title',
       previouslyFocusedElement: null,
@@ -211,12 +235,70 @@ export default {
         }
         var fuse = new Fuse($items, {keys: ['label']})
         var itemsFiltered = fuse.search(searchString).map(i => i.item)
+    stackFilter(mode) {
+      var $this = this
+      var fleetingNotes = this.fleetingNotes
+      var stackList = [...new Set(fleetingNotes.map(fn => fn.stack || 'inbox'))]
+      var items = stackList.map(s => {
+        return {
+          label: s,
+          lucideIcon: 'Layers',
+          description: 'Stack',
+          action:() => {
+            if (!mode || (mode == 'include')) {
+              if (!Array.isArray(this.filter.includeStacks)) {
+                this.filter.includeStacks = []
+              }
+              this.filter.includeStacks.push(s)
+            }
+            else if (mode == 'exclude') {
+              if (!Array.isArray(this.filter.excludeStacks)) {
+                this.filter.excludeStacks = []
+              }
+              this.filter.excludeStacks.push(s)
+            }
+          }
+        }
+      })
+      var filter = function (context) {
+        var $items = context.itemsWithIds
+        var searchString = context.searchString.toLowerCase()
+        if (searchString.length == 0) {
+          return $items
+        }
+        var fuzzyResults = fuzzysort.go(searchString, $items, {key: 'label'}, {threshold: -10000})
+        var itemsFiltered = fuzzyResults.map(i => {
+          return {...i.obj, highlight: fuzzysort.highlight(i, '<span class="highlight">', '</span>')}
+        })
         return itemsFiltered
       }
       this.$store.commit('triggerCustomSelectList', {items, filter})
       if (event) {
         event.preventDefault()
         event.stopPropagation()
+      }
+    },
+    clearStackFilter() {
+      this.filter.includeStacks = []
+      this.filter.excludeStacks = []
+    },
+        return itemsFiltered
+      }
+      this.$store.commit('triggerCustomSelectList', {items, filter})
+      if (event) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    },
+    handleStackFilter(stack, event) {
+      if (event.shiftKey) {
+        if (!Array.isArray(this.filter.excludeStacks)) {
+          this.filter.excludeStacks = []
+        }
+        this.filter.excludeStacks.push(stack)
+      }
+      else {
+        this.filter.includeStacks = [stack]
       }
     },
     checkFocus(f) {
@@ -896,6 +978,24 @@ export default {
             this.gotoMark(mark)
             this.fullKeybuffer = ''
           }
+          else if (this.keybuffer == "fsi")
+          {
+            // Add to include stack filter
+            this.stackFilter('include')
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "fse")
+          {
+            // Add to exclude stack filter
+            this.stackFilter('exclude')
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "fsc")
+          {
+            // Clear stack filter
+            this.clearStackFilter()
+            this.fullKeybuffer = ''
+          }
           else if (this.keybuffer == "yr")
           {
             // Copy note as markdown (raw) to clipboard
@@ -1276,6 +1376,20 @@ export default {
       else {
         processedNotes = this.fleetingNotes
       }
+      if (this.filter.includeStacks.length > 0 || this.filter.excludeStacks.length > 0) {
+        processedNotes = processedNotes.filter(item => {
+          if ((this.filter.includeStacks.length > 0) && !(this.filter.excludeStacks.length > 0)) {
+            return (this.filter.includeStacks.indexOf(item.stack) > -1)
+          }
+          if ((this.filter.includeStacks.length > 0) && (this.filter.excludeStacks.length > 0)) {
+            return ((this.filter.includeStacks.indexOf(item.stack) > -1) && !(this.filter.excludeStacks.indexOf(item.stack) > -1))
+          }
+          if (this.filter.excludeStacks.length > 0) {
+            return !(this.filter.excludeStacks.indexOf(item.stack) > -1)
+          }
+          return true
+        })
+      }
       if (this.sortOrder == 'newestFirst') {
         processedNotes = processedNotes.sort((a, b) => b.date - a.date)
       }
@@ -1310,6 +1424,17 @@ export default {
       }
       return processedNotes
     },
+    stackDistribution() {
+      var stacks = this.fleetingNotes.map(n => n.stack)
+      stacks = stacks.filter(s => s !== undefined)
+      var distribution = stacks.reduce(function(prev, cur) {
+        prev[cur] = (prev[cur] || 0) + 1;
+        return prev;
+      }, {});
+      var distributionArr = Object.entries(distribution)
+      distributionArr.sort((a, b) => b[1] - a[1])
+      return distributionArr
+    },
   },
   mounted() {
     this.isMounted = true
@@ -1330,6 +1455,62 @@ export default {
 <style lang='scss'>
 .fleetingNoteList {
   outline: none;
+  .stackFilterBox {
+    &::-webkit-scrollbar {
+      display: none;
+    }
+    display: inline-flex;
+    user-select: none;
+    font-family: 'Helvetica';
+    font-size: 15px;
+    margin-bottom: 15px;
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    align-items: center;
+    .clearStackFilter {
+      cursor: pointer;
+      padding-top: 10px;
+    }
+    span {
+      padding: 3px;
+      padding-top: 5px;
+      padding-bottom: 5px;
+    }
+    .stack {
+      color: white;
+      background: black;
+      border-top-left-radius: 5px;
+      border-bottom-left-radius: 5px;
+    }
+    .number {
+      background: #6e6e6e;
+      color: white;
+      border-top-right-radius: 5px;
+      border-bottom-right-radius: 5px;
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+    .included {
+      .stack {
+        border: 2px solid #000;
+        border-right: none;
+        background: white;
+        color: black;
+      }
+      .number {
+        border: 2px solid #000;
+        border-left: none;
+        background: #d9d9d9;
+        color: black;
+      }
+    }
+    .excluded {
+      opacity: 0.4;
+    }
+  }
+}
+
 }
 
 .fleetingNotes {

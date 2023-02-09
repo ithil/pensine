@@ -29,7 +29,33 @@
         ></input>
     </span>
     </div>
-    <portal to="statusBarLeft" :order="1" v-if="portalActive">
+  <div class="overview_modal">
+    <div class="overview_modal_backdrop" @click="showOverviewModal=false" v-if="showOverviewModal"/>
+      <div class="overview_modal_dialog" ref="overviewModalDialog" tabindex="42" v-if="showOverviewModal" @keydown="overviewModalKeymonitor" @click="clickOnOverviewBackground($event)">
+        <div class="overview_grid">
+          <div
+          class="note"
+          :class="{ concise: overviewMode == 'concise' }"
+          v-for="f in processedFleetingNotes"
+          :key="f.filename"
+          @click="clickOnOverviewNote($event, f)"
+          :title="moment(f.date).format('ddd DD. MMMM YYYY HH:mm:ss')"
+          >
+            <div v-if="['title', 'date'].includes(overviewMode)">
+              <h1 v-if="f.title">{{f.title}}</h1>
+              <span v-else>{{f.abstract}}</span>
+              <div class="date" v-if="overviewMode=='date'">
+                <Icon name="Calendar" />
+                {{moment(f.date).format('ddd DD. MMM YYYY')}}
+              </div>
+            </div>
+            <div v-else v-html="f.contentRendered">
+            </div>
+          </div>
+        </div>
+      </div>
+  </div>
+    <portal to="statusBarLeft" :order="1" v-if="enableStatusBar && portalActive">
       <span v-if="selectedNotes.length > 0" class="statusBarSection">
         <span class="statusBarItem bold">{{selectedNotes.length}} selected</span>
         <span class="statusBarItem">➝</span>
@@ -133,6 +159,8 @@ export default {
       searchBarVisible: false,
       foundItems: [],
       resultsIt: null,
+      showOverviewModal: false,
+      overviewMode: 'title',
       previouslyFocusedElement: null,
     }
   },
@@ -562,6 +590,54 @@ export default {
           event.preventDefault()
         }
       }
+    },
+    enterOverview(mode) {
+      this.previouslyFocusedElement = document.activeElement
+      this.overviewMode = mode || 'full'
+      this.showOverviewModal = true
+      var $this = this
+      this.$nextTick(function () {
+        setTimeout(function () { // This is just a dirty hack so I can go to bed
+          $this.$refs.overviewModalDialog.focus()
+        }, 5)
+      })
+    },
+    overviewModalKeymonitor(event) {
+        if (event.key === "Escape") {
+          this.showOverviewModal = false
+          if (this.previouslyFocusedElement) {
+            this.previouslyFocusedElement.focus()
+          }
+        }
+        else if (event.key == 'j') {
+          this.$refs.overviewModalDialog.scrollBy(0, 200)
+        }
+        else if (event.key == 'k') {
+          this.$refs.overviewModalDialog.scrollBy(0, -200)
+        }
+        else if (event.key == 'g' && event.shiftKey) {
+          this.$refs.overviewModalDialog.scrollTop = this.$refs.overviewModalDialog.scrollHeight
+        }
+        else if (event.key == 'g') {
+          this.$refs.overviewModalDialog.scrollTop = 0
+        }
+        event.stopPropagation()
+        event.preventDefault()
+    },
+    clickOnOverviewBackground(event) {
+      if (event.target == event.currentTarget) {
+        this.showOverviewModal = false
+        if (this.previouslyFocusedElement) {
+          this.previouslyFocusedElement.focus()
+        }
+      }
+    },
+    clickOnOverviewNote(event, note) {
+      this.showOverviewModal = false
+      this.focusNote(note)
+      this.scrollFocusedIntoView()
+      event.stopPropagation()
+      event.preventDefault()
     },
     keymonitor(event) {
       var tagName = event.target.tagName
@@ -1123,6 +1199,26 @@ export default {
             this.getFocusedNoteItem().linkToDate(today.day(today.day() >= count ? count : count-7))
             this.fullKeybuffer = ''
           }
+          else if (this.keybuffer == "vt")
+          {
+            this.enterOverview('title')
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "vd")
+          {
+            this.enterOverview('date')
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "vf")
+          {
+            this.enterOverview('full')
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "vc")
+          {
+            this.enterOverview('concise')
+            this.fullKeybuffer = ''
+          }
         }
       }
     },
@@ -1231,7 +1327,7 @@ export default {
   },
 }
 </script>
-<style scoped lang='scss'>
+<style lang='scss'>
 .fleetingNoteList {
   outline: none;
 }
@@ -1261,6 +1357,165 @@ export default {
     outline: none;
     font-family: 'Lucida Grande';
     font-size: 12px;
+.overview_modal_backdrop {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  width: 100%;
+  height: 100%;
+  background: #000000cc;
+}
+.overview_modal_dialog {
+  overflow-y: overlay;
+  position: fixed;
+  top: 0px;
+  z-index: 100;
+  padding: 10px;
+  padding-left: 7%;
+  padding-right: 7%;
+  padding-top: 45px;
+  backdrop-filter: blur(5px);
+  color: #000;
+  left: 0;
+  width: 86%;
+  height: 93%;
+  margin: auto;
+  border-radius: 10px;
+  border-top: none;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  font-family: 'Lucida Grande', 'Segoe UI', 'Open Sans', sans-serif;
+  ::-webkit-scrollbar {
+    background-color: #0000002b;
+    width: 5px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-thumb:window-inactive,
+  ::-webkit-scrollbar-thumb {
+    background: #1a6cd29e;
+    box-shadow: none;
+    border-radius: 0px;
+  }
+
+  ::-webkit-scrollbar-corner {
+    background-color: rgba(42, 42, 42, 0.5);
+  }
+  outline: none;
+}
+.overview_grid {
+  font-size: 12px;
+  column-width: 200px;
+  // list-style-type: none;
+  .note {
+    // background: #cdd7e7;
+    background: #c9b9b9;
+    padding: 5px;
+    padding-top: 0;
+    margin-bottom: 7px;
+    word-break: break-all;
+    border-radius: 5px;
+    border: 1px solid white;
+    font-family: 'Helvetica Neue';
+    overflow-x: scroll;
+    &.concise {
+      max-height: 200px;
+      overflow-y: scroll;
+    }
+    h1 {
+      font-size: 14px;
+      font-family: 'Futura';
+      margin-block-start: 2px;
+      margin-block-end: 0px;
+      text-align: center;
+    }
+    div > :first-child {
+      padding-top: 2px;
+    }
+    h1:first-child {
+      background: #000000;
+      color: white;
+      padding-bottom: 3px;
+      padding-top: 2px;
+      margin-left: -5px;
+      margin-right: -5px;
+      margin-top: 0;
+      border-top-left-radius: 5px;
+      border-top-right-radius: 5px;
+      word-break: break-word;
+    }
+    .date {
+      border: 2px solid black;
+      border-radius: 4px;
+      padding: 1px;
+      font-family: 'PT Mono';
+      font-weight: bold;
+      margin-top: 4px;
+    }
+    h2, h3, h4 {
+      font-size: 12px;
+      font-family: 'Futura';
+      text-align: center;
+    }
+    ul {
+      padding-inline-start: 20px;
+    }
+    blockquote {
+      margin-inline-start: 0px;
+      border-left: 1px solid black;
+      padding-inline-start: 10px;
+      margin-inline-end: 0px;
+    }
+    hr {
+      border: 1px solid black;
+    }
+    a {
+      color: #175bd5;
+    }
+    img {
+      max-width: 200px;
+    }
+    table {
+      font-size: 10px;
+      border-collapse: collapse;
+      td, th {
+        border: 1px solid #e5e3da;
+        padding: 5px 3px;
+      }
+      th {
+        min-width: 100px;
+        background-color: #e6e6e6;
+        --border-color: #cbcbcb;
+        border-right-color: var(--border-color);
+        border-left-color: var(--border-color);
+        border-top-color: var(--border-color);
+        text-align: center !important;
+      }
+      tr:nth-child(2n+1) td {
+        background-color: #f2f2f2;
+      }
+    }
+    .hl {
+      --highlight-color: #ffd97da1;
+      background-color: var(--highlight-color);
+      padding: 1px;
+      border-radius: 2px;
+      &.green {
+        --highlight-color: #0080005e;
+      }
+      &.red {
+        --highlight-color: #ff000061;
+      }
+      &.blue {
+        --highlight-color: #0000ff4f;
+      }
+    }
+  }
+  h1 {
+    font-size: 13px;
   }
 }
 </style>

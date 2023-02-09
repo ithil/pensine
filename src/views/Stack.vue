@@ -39,6 +39,7 @@
     :sortOrder="sortOrder"
     :filterTerm="filterTerm"
     :fleetingNoteOptions="{showRightHandRelations: true}"
+    :showLeftHandBox="true"
     ref="fleetingNoteList"
     >
   </fleeting-note-list>

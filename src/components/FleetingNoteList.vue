@@ -15,6 +15,64 @@
         <span class="number">{{number}}</span>
       </span>
     </div>
+    <div class="leftHandBox" ref="leftHandBox" v-if="showLeftHandBox" >
+      <collapse v-if="starredNotes.length > 0" :collapsed="false">
+        <template v-slot:header="slotProps">
+          <h2 @click="slotProps.toggle()">Starred notes</h2>
+        </template>
+        <template v-slot:body>
+          <ul>
+            <li v-for="n in starredNotes" :key="n.relativePath"
+            class="relation"
+            :class="{ title: n.title ? true : false }"
+            :data-stack="n.stack"
+            @click="focusNote(n);scrollFocusedIntoView()"
+            >
+              <Icon name="Star" />
+              <span class="abstract">{{n.abstract}}</span>
+            </li>
+          </ul>
+        </template>
+      </collapse>
+      <collapse :collapsed="!outlineOpen" ref="outline">
+        <template v-slot:header="slotProps">
+          <h2 @click="slotProps.toggle()">Note list outline</h2>
+        </template>
+        <template v-slot:body>
+          <ul>
+            <li v-for="n in processedFleetingNotes" :key="n.relativePath"
+            class="relation"
+            :class="{ title: n.title ? true : false, focused: focusedNotePath == n.path, selected: selectedNotes.some(i => i.path == n.path) }"
+            :ref="focusedNotePath == n.path ? 'focusedInOutline' : undefined"
+            @click="focusNote(n);scrollFocusedIntoView()"
+            >
+              <span class="abstract">{{n.abstract}}</span>
+            </li>
+          </ul>
+        </template>
+      </collapse>
+      <collapse>
+        <template v-slot:header="slotProps">
+          <h2 @click="slotProps.toggle()">Filter by relations</h2>
+        </template>
+        <template v-slot:body>
+          <a class="clearRelationFilterButton" @click="clearRelationFilter">Clear filter</a>
+          <ul>
+            <li v-for="r in relationDistribution" :key="r.note.relativePath"
+            class="relation"
+            :class="{ title: r.note.title ? true : false, included: filter.includeRelations.map(n => n.relativePath).includes(r.note.relativePath), excluded: filter.excludeRelations.map(n => n.relativePath).includes(r.note.relativePath) }"
+            @click="handleRelationFilter(r.note, $event)"
+            :data-stack="r.note.stack"
+            >
+              <Icon v-if="getCustomIcon(r.note.stack)" :name="getCustomIcon(r.note.stack)" />
+              <Icon v-else name="FileText" />
+              <span class="abstract">{{r.note.abstract}}</span>
+              <span class="amount">{{r.amount}}</span>
+            </li>
+          </ul>
+        </template>
+      </collapse>
+    </div>
     <div class="fleetingNotes">
       <div v-for="f in processedFleetingNotes" :key="f.filename">
         <fleeting-note
@@ -117,6 +175,7 @@ import fleetingNote from '@/components/FleetingNote.vue'
 import MarkdownIt from 'markdown-it'
 import { clipboard, shell, nativeImage } from 'electron'
 import Icon from '@/components/Icon.vue'
+import Collapse from '@/components/Collapse.vue'
 
 function* arrIterator(arr) {
   var len = arr.length
@@ -158,10 +217,19 @@ export default {
       type: Boolean,
       default: false,
     },
+    'showLeftHandBox': {
+      type: Boolean,
+      default: false,
+    },
+    'outlineOpen': {
+      type: Boolean,
+      default: false,
+    },
   },
   components: {
     fleetingNote,
     Icon,
+    Collapse,
   },
   data() {
     return {
@@ -214,6 +282,10 @@ export default {
         this.scrollFocusedIntoView()
       }
     },
+    getCustomIcon(stackRelativePath) {
+      var stackStyleProps = this.$store.state.currentNoteCollection.getStackStyleProps(stackRelativePath)
+      return stackStyleProps['icon'] || null
+    },
     chooseNoteModal() {
       var $this = this
       var processedFleetingNotes = this.processedFleetingNotes
@@ -237,6 +309,9 @@ export default {
         }
         var fuse = new Fuse($items, {keys: ['label']})
         var itemsFiltered = fuse.search(searchString).map(i => i.item)
+    toggleOutline() {
+      this.$refs.outline.toggle()
+    },
     stackFilter(mode) {
       var $this = this
       var fleetingNotes = this.fleetingNotes
@@ -698,22 +773,29 @@ export default {
         this.scrollFocusedIntoView()
       }
     },
-    scrollFocusedIntoView() {
+    scrollFocusedIntoView(behavior='smooth') {
       this.$nextTick(function () {
         var $this = this
         setTimeout(function () { // This is just a dirty hack so I can go to bed
           var focusedItem = $this.getFocusedNoteItem()
           if (focusedItem) {
-            focusedItem.$el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            var focusedInOutline = $this.$refs.focusedInOutline
+            if (focusedInOutline && focusedInOutline.length > 0) {
+              focusedInOutline[0].scrollIntoView({ behavior: 'auto', block: 'center' })
+            }
+            focusedItem.$el.scrollIntoView({ behavior: behavior, block: 'start' })
           }
         }, 5)
       })
     },
+    setFocusedNotePath(notePath) {
+      this.focusedNotePath = notePath
+    },
     getFocusedNoteItem() {
-      return this.$refs.fleetingNoteItems.find(n => n.$el.classList.contains('focused'))
+      return this.$refs.fleetingNoteItems?.find(n => n.$el.classList.contains('focused'))
     },
     getSelectedNotesItems() {
-      return this.$refs.fleetingNoteItems.filter(n => n.$el.classList.contains('selected'))
+      return this.$refs.fleetingNoteItems?.filter(n => n.$el.classList.contains('selected')) || []
     },
     preventDefaultFix(event) {
       var tagName = event.target.tagName
@@ -1454,6 +1536,36 @@ export default {
             this.getFocusedNoteItem().linkToDate(today.day(today.day() >= count ? count : count-7))
             this.fullKeybuffer = ''
           }
+          else if (this.keybuffer == "gs")
+          {
+            if (this.stack) {
+              var starredNotes = this.stack.metadata.get('starredNotes') || []
+              if (this.selectedNotes.length > 0) {
+                for (let n of this.selectedNotes) {
+                  if (!starredNotes.includes(n.filename)) {
+                    starredNotes.push(n.filename)
+                  }
+                  else {
+                    starredNotes = starredNotes.filter(i => i != n.filename)
+                  }
+                }
+              }
+              else {
+                var focusedNote = this.getFocusedNoteItem()
+                if (focusedNote) {
+                  if (!starredNotes.includes(focusedNote.fleetingNoteObj.filename)) {
+                    starredNotes.push(focusedNote.fleetingNoteObj.filename)
+                  }
+                  else {
+                    starredNotes = starredNotes.filter(i => i != focusedNote.fleetingNoteObj.filename)
+                  }
+                }
+              }
+              this.stack.metadata.set('starredNotes', starredNotes)
+              this.stack.metadata.save()
+            }
+            this.fullKeybuffer = ''
+          }
           else if (this.keybuffer == "vt")
           {
             this.enterOverview('title')
@@ -1472,6 +1584,11 @@ export default {
           else if (this.keybuffer == "vc")
           {
             this.enterOverview('concise')
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == ",o")
+          {
+            this.toggleOutline()
             this.fullKeybuffer = ''
           }
         }
@@ -1658,6 +1775,22 @@ export default {
       distributionArr.sort((a, b) => b.amount - a.amount)
       return distributionArr
     },
+    starredNotes() {
+      if (this.stack) {
+        var starredNotes = this.stack.metadata.get('starredNotes')
+        if (starredNotes) {
+          var $this = this
+          var stackPath = this.stack.path
+          starredNotes = starredNotes.map(n => {
+            let notePath = `${stackPath}/${n}`
+            return $this.$store.state.currentNoteCollection.getFleetingNoteByPath(notePath)
+          })
+          return starredNotes
+        }
+      }
+      return []
+    },
+  },
   },
   mounted() {
     this.isMounted = true
@@ -1669,6 +1802,7 @@ export default {
   },
   activated() {
     this.portalActive = true
+    this.scrollFocusedIntoView('auto')
   },
   deactivated() {
     this.portalActive = false
@@ -1734,6 +1868,122 @@ export default {
   }
 }
 
+.leftHandBox {
+    position: fixed;
+    // left: 0;
+    width: 250px;
+    margin-left: 15px;
+    font-size: 12px;
+    color: black;
+    padding: 5px;
+    // opacity: 0.2;
+    transition: opacity 0.1s;
+    overflow-y: scroll;
+    height: 85.5vh;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+    &:hover {
+      opacity: 1;
+    }
+    h2 {
+      font-size: 14px;
+      text-align: center;
+      color: #696969;
+      font-variant: small-caps;
+      user-select: none;
+      cursor: pointer;
+    }
+    .clearRelationFilterButton {
+      cursor: pointer;
+      user-select: none;
+      font-size: 10px;
+      color: grey;
+    }
+    ul {
+      list-style: none;
+      padding-inline-start: 0;
+      .amount {
+        border-radius: 5px;
+        padding: 2px;
+        padding-right: 5px;
+        padding-left: 5px;
+        background: #646464;
+        color: #ffff;
+        font-size: 10px;
+        // height: 12px;
+        align-self: center;
+        font-family: sans-serif;
+      }
+      .relation {
+        border: 1px solid #bbbbbb;
+        background: #d3d3d3;
+        margin-top: 2px;
+        padding: 2px;
+        border-radius: 5px;
+        display: flex;
+        cursor: pointer;
+        user-select: none;
+        .svg-icon {
+          align-self: auto;
+        }
+        .abstract {
+          flex-grow: 1;
+          padding-left: 2px;
+        }
+        &.focused {
+          box-shadow: 0 0 0 3px cornflowerblue;
+        }
+        &.selected {
+          background: bisque;
+        }
+        &.included {
+          box-shadow: 0 0 0 3px cornflowerblue;
+        }
+        &.excluded {
+          opacity: 0.5;
+        }
+        &.title {
+          font-weight: bold;
+        }
+        &[data-stack="tags"] {
+          border-width: 2px;
+          border-color: #599584;
+        }
+        &[data-stack="bib"] {
+          border-width: 2px;
+          border-color: #956459;
+        }
+        &[data-stack^="calendar"] {
+        }
+        &[data-stack="places"] {
+          background: hsl(38, 97%, 76%);
+          color: hsla(19, 30%, 35%, 1);
+          border: 1.5px solid rgb(197, 166, 112);
+          .svg-icon {
+            color: #bf3516;
+          }
+        }
+        &[data-stack="people"] {
+          background: hsl(38, 97%, 76%);
+          color: hsla(19, 30%, 35%, 1);
+          border: 1.5px solid rgb(197, 166, 112);
+        }
+        &[data-stack="groups"] {
+          background: hsl(38, 97%, 76%);
+          color: hsla(19, 30%, 35%, 1);
+          border: 1.5px solid rgb(197, 166, 112);
+          .svg-icon {
+            color: #428547;
+          }
+        }
+        &[data-stack="journal"] {
+          background: #4f739e;
+          border-color: #1959a5;
+          color: white;
+        }
+      }
+    }
 }
 
 .fleetingNotes {

@@ -139,12 +139,20 @@ export default {
   watch: {
     showCustomSelectList: function (val) {
       if (val) {
-        this.$refs.customSelectList.open()
+        var $this = this
+        setTimeout(function () {
+          $this.$refs.customSelectList.open()
+        }, 5)
       }
     },
     showCustomTextPrompt: function (val) {
       if (val) {
-        this.$refs.customTextPrompt.open()
+        var $this = this
+        setTimeout(function () {
+          $this.$refs.customTextPrompt.open()
+        }, 5)
+      }
+    },
     showCustomPopoverList: function (val) {
       if (val) {
         var $this = this

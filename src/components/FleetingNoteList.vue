@@ -501,6 +501,136 @@ export default {
     },
     linkSelectedNotes() {
       var $this = this
+      var stacks = this.$store.state.currentNoteCollection.stacks.getListOfStacks()
+      var items = []
+      var getSubItemsOfStack = function (stack) {
+        var fleetingNotes = stack.getContent().filter(i => !i.isStack)
+        var fnList = []
+        for (let fn of fleetingNotes) {
+          let numberOfLinks = fn.relations.length
+          fnList.push({
+            label: fn.abstract,
+            lucideIcon: 'FileText',
+            description: `${numberOfLinks} relations`,
+            description: `${numberOfLinks > 0 ? numberOfLinks+' relations – ' : ''}${moment(fn.date).format('DD.MM.YYYY')}`,
+            type: 'fleetingNote',
+            action: () => {
+              setTimeout(() => {
+                $this.$store.commit('triggerCustomTextPrompt', {
+                  message: `Edge Properties (comma-separated)`,
+                  action: (edgeProperties) => {
+                    edgeProperties = edgeProperties.split(',').map(i => i.trim()).filter(i => i)
+                    for (let n of $this.selectedNotes) {
+                      n.addLink(fn.relativePath, edgeProperties)
+                    }
+                    $this.selectedNotes = []
+                    for (let n of $this.$refs.fleetingNoteItems) {
+                      n.selected = false
+                    }
+                    $this.$refs.fleetingNoteList.focus()
+                  }
+                })
+              }, 50)
+            },
+            getSubItems: () => {
+              return {
+                newItems: getSubItemsOfFleetingNote(fn),
+                newMessage: fn.abstract,
+              }
+            },
+          })
+        }
+        return fnList
+      }
+      var getSubItemsOfFleetingNote = function (parentFn) {
+        var relations = parentFn.relations
+        if (relations.length < 1) {
+          return false
+        }
+        var fnList = []
+        for (let relation of relations) {
+          let fn = relation.fn
+          let numberOfLinks = fn.relations.length
+          fnList.push({
+            label: fn.abstract,
+            lucideIcon: 'FileText',
+            description: `${fn.stack || 'Inbox'} –${numberOfLinks > 0 ? ' '+numberOfLinks+' relations –' : ''}  ${moment(fn.date).format('DD.MM.YYYY')}`,
+            type: 'fleetingNote',
+            action: () => {
+              setTimeout(() => {
+                $this.$store.commit('triggerCustomTextPrompt', {
+                  message: `Edge Properties (comma-separated)`,
+                  action: (edgeProperties) => {
+                    edgeProperties = edgeProperties.split(',').map(i => i.trim()).filter(i => i)
+                    for (let n of $this.selectedNotes) {
+                      n.addLink(fn.relativePath, edgeProperties)
+                    }
+                    $this.selectedNotes = []
+                    for (let n of $this.$refs.fleetingNoteItems) {
+                      n.selected = false
+                    }
+                    $this.$refs.fleetingNoteList.focus()
+                  }
+                })
+              }, 50)
+            },
+            getSubItems: () => {
+              return {
+                newItems: getSubItemsOfFleetingNote(fn),
+                newMessage: fn.abstract,
+              }
+            },
+          })
+        }
+        var myStack = parentFn.collection.stacks.getStackByPath(parentFn.stack)
+        fnList.push({
+          label: myStack.relativePath,
+          lucideIcon: 'Layers',
+          description: 'Stack',
+          type: 'stack',
+          getSubItems: () => {
+            return {
+              newItems: getSubItemsOfStack(myStack),
+              newMessage: myStack.relativePath,
+            }
+          },
+        })
+        return fnList
+      }
+      for (let s of stacks) {
+        items.push({
+          label: s.relativePath,
+          lucideIcon: 'Layers',
+          description: 'Stack',
+          type: 'stack',
+          getSubItems: () => {
+            return {
+              newItems: getSubItemsOfStack(s),
+              newMessage: s.relativePath,
+            }
+          },
+        })
+      }
+      var filter = function (context) {
+        var $items = context.itemsWithIds
+        var searchString = context.searchString.toLowerCase()
+        if (searchString.length == 0) {
+          return $items
+        }
+        var fuzzyResults = fuzzysort.go(searchString, $items, {key: 'label'}, {threshold: -10000})
+        var itemsFiltered = fuzzyResults.map(i => {
+          return {...i.obj, highlight: fuzzysort.highlight(i, '<span class="highlight">', '</span>')}
+        })
+        return itemsFiltered
+      }
+      this.$store.commit('triggerCustomSelectList', {items, filter})
+      if (event) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    },
+    linkSelectedNotesChoosingFromBag() {
+      var $this = this
       var bag = this.$store.state.bag
       var items = bag.map(fnPath => {
         var fn = $this.$store.state.currentNoteCollection.getFleetingNoteByPath(fnPath)
@@ -1080,6 +1210,27 @@ export default {
             }
             else {
               this.getFocusedNoteItem().linkNote()
+            }
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "lb")
+          {
+            // Add links to all selected notes OR focused note choosing from the bag
+            if (this.selectedNotes.length > 0) {
+              this.linkSelectedNotesChoosingFromBag()
+            }
+            else {
+              this.getFocusedNoteItem().linkNoteChoosingFromBag()
+            }
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "ls")
+          {
+            // Add multiple links to all selected notes OR focused note choosing from one stack
+            if (this.selectedNotes.length > 0) {
+            }
+            else {
+              this.getFocusedNoteItem().linkNoteChoosingFromStack()
             }
             this.fullKeybuffer = ''
           }

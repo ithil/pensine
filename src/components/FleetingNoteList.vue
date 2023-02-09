@@ -110,7 +110,7 @@
 import fs from 'fs'
 import path from 'path'
 import sanitizeFilename from 'sanitize-filename'
-import Fuse from 'fuse.js'
+import fuzzysort from 'fuzzysort'
 import moment from 'moment'
 import 'moment/locale/de'
 import fleetingNote from '@/components/FleetingNote.vue'
@@ -182,6 +182,8 @@ export default {
       filter: {
         includeStacks: [],
         excludeStacks: [],
+        includeRelations: [],
+        excludeRelations: [],
       },
       showOverviewModal: false,
       overviewMode: 'title',
@@ -282,6 +284,39 @@ export default {
       this.filter.includeStacks = []
       this.filter.excludeStacks = []
     },
+    relationFilter(mode) {
+      var $this = this
+      var items = this.relationDistribution.map(r => {
+        return {
+          label: r.note.abstract,
+          lucideIcon: 'FileText',
+          description: `${r.amount} notes`,
+          action:() => {
+            if (!mode || (mode == 'include')) {
+              if (!Array.isArray(this.filter.includeRelations)) {
+                this.filter.includeRelations = []
+              }
+              this.filter.includeRelations.push(r.note)
+            }
+            else if (mode == 'exclude') {
+              if (!Array.isArray(this.filter.excludeRelations)) {
+                this.filter.excludeRelations = []
+              }
+              this.filter.excludeRelations.push(r.note)
+            }
+          }
+        }
+      })
+      var filter = function (context) {
+        var $items = context.itemsWithIds
+        var searchString = context.searchString.toLowerCase()
+        if (searchString.length == 0) {
+          return $items
+        }
+        var fuzzyResults = fuzzysort.go(searchString, $items, {key: 'label'}, {threshold: -10000})
+        var itemsFiltered = fuzzyResults.map(i => {
+          return {...i.obj, highlight: fuzzysort.highlight(i, '<span class="highlight">', '</span>')}
+        })
         return itemsFiltered
       }
       this.$store.commit('triggerCustomSelectList', {items, filter})
@@ -289,6 +324,10 @@ export default {
         event.preventDefault()
         event.stopPropagation()
       }
+    },
+    clearRelationFilter() {
+      this.filter.includeRelations = []
+      this.filter.excludeRelations = []
     },
     handleStackFilter(stack, event) {
       if (event.shiftKey) {
@@ -300,6 +339,18 @@ export default {
       else {
         this.filter.includeStacks = [stack]
       }
+    },
+    handleRelationFilter(relation, event) {
+      if (event.shiftKey) {
+        if (!Array.isArray(this.filter.excludeRelations)) {
+          this.filter.excludeRelations = []
+        }
+        this.filter.excludeRelations.push(relation)
+      }
+      else {
+        this.filter.includeRelations = [relation]
+      }
+      event.preventDefault()
     },
     checkFocus(f) {
       if (f && f.path && this.focusedNotePath) {
@@ -996,6 +1047,31 @@ export default {
             this.clearStackFilter()
             this.fullKeybuffer = ''
           }
+          else if (this.keybuffer == "fri")
+          {
+            // Add to include relation filter
+            this.relationFilter('include')
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "fre")
+          {
+            // Add to exclude relation filter
+            this.relationFilter('exclude')
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "frc")
+          {
+            // Clear relation filter
+            this.clearRelationFilter()
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "fc")
+          {
+            // Clear relation filter
+            this.clearRelationFilter()
+            this.clearStackFilter()
+            this.fullKeybuffer = ''
+          }
           else if (this.keybuffer == "yr")
           {
             // Copy note as markdown (raw) to clipboard
@@ -1390,6 +1466,20 @@ export default {
           return true
         })
       }
+      if (this.filter.includeRelations.length > 0 || this.filter.excludeRelations.length > 0) {
+        processedNotes = processedNotes.filter(item => {
+          if ((this.filter.includeRelations.length > 0) && !(this.filter.excludeRelations.length > 0)) {
+            return (this.filter.includeRelations.some(rn => item.rawRelations.map(i => i.fn).includes(rn.relativePath)))
+          }
+          if ((this.filter.includeRelations.length > 0) && (this.filter.excludeRelations.length > 0)) {
+            return (this.filter.includeRelations.some(rn => item.rawRelations.map(i => i.fn).includes(rn.relativePath))) && !(this.filter.excludeRelations.some(rn => item.rawRelations.map(i => i.fn).includes(rn.relativePath)))
+          }
+          if (this.filter.excludeRelations.length > 0) {
+            return !(this.filter.excludeRelations.some(rn => item.rawRelations.map(i => i.fn).includes(rn.relativePath)))
+          }
+          return true
+        })
+      }
       if (this.sortOrder == 'newestFirst') {
         processedNotes = processedNotes.sort((a, b) => b.date - a.date)
       }
@@ -1433,6 +1523,28 @@ export default {
       }, {});
       var distributionArr = Object.entries(distribution)
       distributionArr.sort((a, b) => b[1] - a[1])
+      return distributionArr
+    },
+    relationDistribution() {
+      var allRelations = []
+      for (let n of this.fleetingNotes) {
+        for (let r of n.rawRelations) {
+          allRelations.push(r.fn)
+        }
+      }
+      var distribution = allRelations.reduce(function(prev, cur) {
+        prev[cur] = (prev[cur] || 0) + 1;
+        return prev;
+      }, {});
+      var distributionArr = []
+      for (const [noteRelativePath, amount] of Object.entries(distribution)) {
+        distributionArr.push({
+          noteRelativePath: noteRelativePath,
+          note: this.$store.state.currentNoteCollection.getFleetingNoteByPath(noteRelativePath),
+          amount: amount,
+        })
+      }
+      distributionArr.sort((a, b) => b.amount - a.amount)
       return distributionArr
     },
   },

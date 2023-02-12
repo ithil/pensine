@@ -51,6 +51,92 @@
           </ul>
         </template>
       </collapse>
+      <collapse class="filterByDate" v-if="Object.keys(calendarDistribution).length > 0">
+        <template v-slot:header="slotProps">
+          <h2 @click="slotProps.toggle()">Filter by date</h2>
+        </template>
+        <template v-slot:body>
+          <ul>
+            <collapse v-for="(yearItem, year) in calendarDistribution" :key="year">
+              <template v-slot:header="slotPropsYear">
+                <li class="tree-row">
+                  <span class="tree-toggle" @click.stop="slotPropsYear.toggle()">
+                    <span v-if="!slotPropsYear.isCollapsed">
+                      <Icon name="ChevronDown" />
+                    </span>
+                    <span v-else>
+                      <Icon name="ChevronRight" />
+                    </span>
+                  </span>
+                  <span class="tree-element year" @click="slotPropsYear.toggle()">
+                    <Icon name="Calendar" />
+                    <span class="label">{{year}}</span>
+                    <span class="amount">{{yearItem.amount}}</span>
+                  </span>
+              </li>
+            </template>
+            <template v-slot:body>
+              <div class="tree-child">
+              <collapse v-for="(monthItem, month) in yearItem" :key="`${year}_${month}`">
+                <template v-slot:header="slotPropsMonth">
+                  <li class="tree-row">
+                    <span class="tree-toggle" @click.stop="slotPropsMonth.toggle()">
+                      <span v-if="!slotPropsMonth.isCollapsed">
+                        <Icon name="ChevronDown" />
+                      </span>
+                      <span v-else>
+                        <Icon name="ChevronRight" />
+                      </span>
+                    </span>
+                    <span class="tree-element month" @click="slotPropsMonth.toggle()">
+                      <Icon name="CalendarDays" />
+                      <span class="label">{{['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month]}} {{year}}</span>
+                      <span class="amount">{{monthItem.amount}}</span>
+                    </span>
+                  </li>
+                </template>
+                <template v-slot:body>
+                  <div class="tree-child">
+                  <collapse v-for="(dayItem, day) in monthItem" :key="`${year}_${month}_${day}`">
+                    <template v-slot:header="slotPropsDay">
+                      <li class="tree-row">
+                        <span class="tree-toggle" @click.stop="slotPropsDay.toggle()">
+                          <span v-if="!slotPropsDay.isCollapsed">
+                            <Icon name="ChevronDown" />
+                          </span>
+                          <span v-else>
+                            <Icon name="ChevronRight" />
+                          </span>
+                        </span>
+                        <span class="tree-element day" @click="slotPropsDay.toggle()">
+                          <Icon name="CalendarX" />
+                          <span class="label">{{day}} {{['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month]}} {{year}}</span>
+                          <span class="amount">{{dayItem.length}}</span>
+                        </span>
+                      </li>
+                    </template>
+                    <template v-slot:body>
+                      <div class="tree-child">
+                      <li v-for="n in dayItem" key="n.relativePath"
+                      class="relation tree-row"
+                      :class="{ title: n.title ? true : false }"
+                      :data-stack="n.stack"
+                      @click="focusNote(n);scrollFocusedIntoView()"
+                      >
+                        {{n.abstract}}
+                      </li>
+                      </div>
+                    </template>
+                  </collapse>
+                  </div>
+                </template>
+              </collapse>
+              </div>
+            </template>
+          </collapse>
+        </ul>
+        </template>
+      </collapse>
       <collapse>
         <template v-slot:header="slotProps">
           <h2 @click="slotProps.toggle()">Filter by relations</h2>
@@ -1914,6 +2000,37 @@ export default {
       distributionArr.sort((a, b) => b[1] - a[1])
       return distributionArr
     },
+    calendarDistribution() {
+      var calendarDistribution = {}
+      for (let n of this.fleetingNotes) {
+        for (let rd of n.relatedDates) {
+          let year = rd.getFullYear()
+          let month = rd.getMonth()
+          let dayOfMonth = rd.getDate()
+          if (calendarDistribution[year] === undefined) {
+            calendarDistribution[year] = {}
+            Object.defineProperty(calendarDistribution[year], "amount", {
+              enumerable: false,
+              writable: true
+            })
+            calendarDistribution[year].amount = 0
+          }
+          if (calendarDistribution[year][month] === undefined) {
+            calendarDistribution[year][month] = {}
+            Object.defineProperty(calendarDistribution[year][month], "amount", {
+              enumerable: false,
+              writable: true
+            })
+            calendarDistribution[year][month].amount = 0
+          }
+          calendarDistribution[year][month][dayOfMonth] = calendarDistribution[year][month][dayOfMonth] || []
+          calendarDistribution[year].amount++
+          calendarDistribution[year][month].amount++
+          calendarDistribution[year][month][dayOfMonth].push(n)
+        }
+      }
+      return calendarDistribution
+    },
     relationDistribution() {
       var allRelations = []
       for (let n of this.fleetingNotes) {
@@ -2142,6 +2259,35 @@ export default {
           background: #4f739e;
           border-color: #1959a5;
           color: white;
+        }
+      }
+    }
+    .filterByDate {
+      .tree-row {
+        margin-bottom: 7px;
+      }
+      .tree-element {
+        border: 1px solid #7c7c7c;
+        background: #bbbbbb;
+        color: #3e3e3e;
+        font-family: 'Source Code Pro';
+        font-size: 13px;
+        padding: 2px;
+        border-radius: 5px;
+        cursor: pointer;
+        user-select: none;
+        font-weight: bold;
+        .label {
+          margin-left: 2px;
+        }
+        .amount {
+          margin-left: 10px;
+        }
+      }
+      .tree-child {
+        margin-left: 10px;
+        .relation {
+          margin-left: 10px;
         }
       }
     }

@@ -1235,6 +1235,7 @@
         rightDelimiter: '}}',
         allowedAttributes: []  // empty array = all attributes are allowed
       })
+      this.md.use( require('markdown-it-collapsible') )
       var stacksPath = this.fleetingNoteObj.collection.collectionJson.paths.stacks.split('/')[1]
       this.md.use( require('markdown-it-replace-link'), {
         replaceLink: function (link, env) {

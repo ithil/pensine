@@ -70,8 +70,8 @@ const routes = [
     meta: {
       title: 'Fleeting Note Page', // tab title
       icon: 'FileText',
-      iconColor: '#fff',
-      iconBackground: 'darkseagreen',
+      iconColor: '#000',
+      iconBackground: '#fbe1e1',
       key: 'path',
       tips: 'Fleeting Note Page', // tab tooltip, optional. defaults to `meta.title`
       closable: true // is tab closable, defaults to `true`

@@ -108,12 +108,24 @@ export default {
       }
       return notes
     },
+    stack() {
+      if (this.fn) {
+        return this.$store.state.currentNoteCollection.stacks.getStackByPath(this.fn.stack)
+      }
+    },
     routeTab() {
       if (this.fn) {
-        return {
+        var routeTabData = {
           title: this.fn.title || this.fn.content.slice(0, 20),
           tips: this.fn.abstract || this.fn.content.slice(0, 400),
         }
+        for (let p of ['icon', 'iconColor', 'iconBackground']) {
+          let v = this.stack.metadata.get(`style.${p}`)
+          if (v) {
+            routeTabData[p] = v
+          }
+        }
+        return routeTabData
       }
     },
   },

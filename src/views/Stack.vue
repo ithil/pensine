@@ -2,7 +2,7 @@
   <div class="stack">
     <div class="header">
       <div class="name">
-        <Icon name="Layers" />
+        <Icon :name="stackIcon ? stackIcon : 'Layers'" />
         {{stack.relativePath}}
       </div>
       <div class="filterOptions">
@@ -154,10 +154,18 @@ export default {
   computed: {
     routeTab() {
       if (this.stack) {
-        return {
+        var routeTabData = {
           title: this.stack.name || 'Stack',
           tips: `${this.stack.relativePath} – ${this.fleetingNotes.length} items`,
+          tabClass: 'stack',
         }
+        for (let p of ['icon', 'iconColor', 'iconBackground']) {
+          let v = this.stack.metadata.get(`style.${p}`)
+          if (v) {
+            routeTabData[p] = v
+          }
+        }
+        return routeTabData
       }
       else {
         return {
@@ -165,6 +173,12 @@ export default {
         }
       }
     },
+    stackIcon() {
+      let v = this.stack.metadata.get(`style.icon`)
+      if (v) {
+        return v
+      }
+    }
   },
   mounted() {
     var collection = this.$store.state.currentNoteCollection

@@ -1488,6 +1488,30 @@ export default {
             clipboard.writeText(fleetingNoteObj.abstract)
             this.fullKeybuffer = ''
           }
+          else if (this.keybuffer == "yuu")
+          {
+            // Copy note's last (ultimate) line as markdown
+            var fleetingNoteItem = this.getFocusedNoteItem()
+            var fleetingNoteObj = fleetingNoteItem.fleetingNoteObj
+            if (fleetingNoteObj.isText) {
+              var lines = fleetingNoteObj.content.split('\n')
+              var lastLine = lines[lines.length -1]
+              clipboard.writeText(lastLine)
+            }
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "yf")
+          {
+            // Copy note's first line as markdown
+            var fleetingNoteItem = this.getFocusedNoteItem()
+            var fleetingNoteObj = fleetingNoteItem.fleetingNoteObj
+            if (fleetingNoteObj.isText) {
+              var lines = fleetingNoteObj.content.split('\n')
+              var firstLine = lines[0]
+              clipboard.writeText(firstLine)
+            }
+            this.fullKeybuffer = ''
+          }
           else if (this.keybuffer == "pp")
           {
             // Create new note from clipboard content

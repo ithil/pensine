@@ -102,12 +102,16 @@ export default {
       }
     },
     sendNewNote() {
-      this.stack.sendText(this.newFleetingNoteContent)
+      var notePath = this.stack.sendText(this.newFleetingNoteContent)
+      if (notePath) {
+        this.$refs.fleetingNoteList.scrollToFocusedNoteOnNextUpdate = true
+        this.$refs.fleetingNoteList.setFocusedNotePath(notePath)
+      }
       this.newFleetingNoteContent = ''
       this.$refs.fleetingNoteList.$el.focus()
     },
     _sendNewNote(text) {
-      this.stack.sendText(text)
+      return this.stack.sendText(text)
     },
     sendKeymonitor(event) {
       if ((event.shiftKey && event.key == 'Enter') || (event.metaKey && event.key == 's')) {
@@ -117,6 +121,19 @@ export default {
       }
       else if (event.key == 'Escape') {
         this.$refs.fleetingNoteList.$el.focus()
+      }
+    },
+    filterInputKeymonitor(event) {
+      if (event.key == 'Enter') {
+        this.$refs.fleetingNoteList.$el.focus()
+        this.$refs.fleetingNoteList.setFocusToFirstNote()
+        event.stopPropagation()
+        event.preventDefault()
+      }
+      else if (event.key == 'Escape') {
+        this.filterTerm = ''
+        this.$refs.fleetingNoteList.$el.focus()
+        this.$refs.fleetingNoteList.scrollFocusedIntoView()
       }
     },
     focusSendBox() {

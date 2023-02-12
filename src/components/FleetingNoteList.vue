@@ -339,6 +339,7 @@ export default {
         includeRelations: [],
         excludeRelations: [],
       },
+      scrollToFocusedNoteOnNextUpdate: false,
       showOverviewModal: false,
       overviewMode: 'title',
       previouslyFocusedElement: null,
@@ -2069,6 +2070,16 @@ export default {
       return []
     },
   },
+  watch: {
+    fleetingNotes: {
+      handler: function (val, oldVal) {
+        if (this.scrollToFocusedNoteOnNextUpdate) {
+          this.scrollFocusedIntoView()
+          this.scrollToFocusedNoteOnNextUpdate = false
+        }
+      },
+      deep: false
+    }
   },
   mounted() {
     this.isMounted = true

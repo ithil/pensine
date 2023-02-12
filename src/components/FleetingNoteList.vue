@@ -1652,6 +1652,65 @@ export default {
             }
             this.fullKeybuffer = ''
           }
+          else if (this.keybuffer == "sg")
+          {
+            // Select all notes above and including the focused one
+            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
+            for (let n of this.$refs.fleetingNoteItems) {
+              n.selected = true
+              this.selectedNotes.push(n.fleetingNoteObj)
+              if (n.fleetingNoteObj.relativePath == fleetingNoteObj.relativePath) break
+            }
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "sG")
+          {
+            // Select all notes below and including the focused one
+            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
+            var beyondFocusedNote = false
+            for (let n of this.$refs.fleetingNoteItems) {
+              if (n.fleetingNoteObj.relativePath == fleetingNoteObj.relativePath) beyondFocusedNote = true
+              if (!beyondFocusedNote) continue
+              n.selected = true
+              this.selectedNotes.push(n.fleetingNoteObj)
+            }
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "sj")
+          {
+            // Select given number of notes below and including focused one
+            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
+            var beyondFocusedNote = false
+            var count = this.keybufferCount || 1
+            var counter = 0
+            for (let n of this.$refs.fleetingNoteItems) {
+              if (n.fleetingNoteObj.relativePath == fleetingNoteObj.relativePath) beyondFocusedNote = true
+              if (!beyondFocusedNote) continue
+              if (counter > count) break
+              n.selected = true
+              this.selectedNotes.push(n.fleetingNoteObj)
+              counter++
+            }
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "sk")
+          {
+            // Select given number of notes above and including focused one
+            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
+            var fleetingNoteItems = [...this.$refs.fleetingNoteItems].reverse()
+            var beyondFocusedNote = false
+            var count = this.keybufferCount || 1
+            var counter = 0
+            for (let n of fleetingNoteItems) {
+              if (n.fleetingNoteObj.relativePath == fleetingNoteObj.relativePath) beyondFocusedNote = true
+              if (!beyondFocusedNote) continue
+              if (counter > count) break
+              n.selected = true
+              this.selectedNotes.push(n.fleetingNoteObj)
+              counter++
+            }
+            this.fullKeybuffer = ''
+          }
           else if (this.keybuffer == "/")
           {
             // Search for string in notes

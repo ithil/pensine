@@ -12,6 +12,9 @@
           <Icon name="ChevronRight" />
         </span>
       </span>
+      <span class="position" v-if="parentItem">
+        <input :placeholder="initialPosition + 1" v-model="newPosition" type="text" @keyup.enter="changePosition">
+      </span>
       <span
       class="tree-element"
       :class="{focused: focusedId == item.id}"
@@ -85,9 +88,19 @@ import Icon from '@/components/Icon.vue'
       return {
         isOpen: false,
         children: [],
+        newPosition: '',
+        initialPosition: 0,
       }
     },
     computed: {
+    },
+    watch: {
+      passedKey(val) {
+        var initialPosition = val.split(' ').slice(-1)
+        if (initialPosition) {
+          this.initialPosition = Number(initialPosition)
+        }
+      },
     },
     methods: {
       toggle: function () {
@@ -134,8 +147,26 @@ import Icon from '@/components/Icon.vue'
             $this.$emit('updateParentsChildren')
           }, 200)
         }
+      },
+      changePosition() {
+        var newPosition = this.newPosition - 1
+        var initialPosition = this.initialPosition
+        this.newPosition = ''
+        if (newPosition != initialPosition) {
+          let delta = newPosition - initialPosition
+          this.moveRelation(delta)
+        }
+      },
+    },
+    mounted() {
+      var initialPosition = this.passedKey.split(' ').slice(-1)
+      if (initialPosition) {
+        this.initialPosition = Number(initialPosition)
       }
-    }
+      if (!this.parentItem) {
+        this.toggle()
+      }
+    },
   }
 </script>
 

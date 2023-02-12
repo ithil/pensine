@@ -1,9 +1,10 @@
 'use strict'
 
-import { app, protocol, BrowserWindow, Menu, ipcMain, globalShortcut, Notification, shell } from 'electron'
+import { app, protocol, BrowserWindow, Menu, ipcMain, globalShortcut, Notification, shell, dialog } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import contextMenu from 'electron-context-menu'
+import path from 'path'
 // import { bus } from './main'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const isMac = process.platform === 'darwin'

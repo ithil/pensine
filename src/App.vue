@@ -111,13 +111,15 @@ import SelectList from '@/components/SelectList.vue'
 import TextPrompt from '@/components/TextPrompt.vue'
 import PopoverList from '@/components/PopoverList.vue'
 import "animate.css"
-import Fuse from 'fuse.js'
+import fuzzysort from 'fuzzysort'
 import moment from 'moment'
-import { ipcRenderer, shell } from 'electron'
+import { ipcRenderer, shell, clipboard } from 'electron'
 import { bus } from './main'
 import Icon from '@/components/Icon.vue'
 import Popper from 'vue-popperjs';
 import 'vue-popperjs/dist/vue-popper.css';
+import fs from 'fs'
+import path from 'path'
 
 export default {
   components: {

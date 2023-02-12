@@ -77,8 +77,13 @@ async function createWindow() {
 
   // Set a variable when the app is quitting.
   var isAppQuitting = false
+  var beforeQuitDone = false
   app.on('before-quit', function (evt) {
       isAppQuitting = true
+      if (!beforeQuitDone) {
+        evt.preventDefault()
+        win.webContents.send('beforeQuit')
+      }
   });
 
   win.on('close', function (evt) {
@@ -354,6 +359,10 @@ async function createWindow() {
     win.minimize()
   })
   ipcMain.on('quit', (event, arg) => {
+    app.quit()
+  })
+  ipcMain.on('beforeQuitDone', (event, arg) => {
+    beforeQuitDone = true
     app.quit()
   })
   ipcMain.handle('getFileIcon', async (event, myPath, callback) => {

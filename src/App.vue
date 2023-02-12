@@ -689,6 +689,15 @@ export default {
       },
     })
 
+    var $this = this
+    ipcRenderer.on('beforeQuit' , (event, data) => {
+      console.log('Running beforeQuit')
+      var openTabs = $this.$tabs.items.map(t => ({ to: t.to }))
+      openTabs[$this.$tabs.activeTabIndex].active = true
+      var tabsCachePath = path.join($this.$store.state.currentNoteCollection.path, '.tabsCache.json')
+      fs.writeFileSync(tabsCachePath, JSON.stringify(openTabs), 'utf8')
+      ipcRenderer.send('beforeQuitDone')
+    })
     ipcRenderer.on('addExistingCollection' , (event, data) => {
       this.$refs.addExistingCollection.open()
     })
@@ -696,7 +705,6 @@ export default {
       this.$global.config.set('defaultNoteCollection', this.$global.config.get('currentNoteCollection'))
     })
     ipcRenderer.send('updateColMenuItems', this.$global.config.get('collections', {}))
-    var $this = this
     ipcRenderer.on('changeCurrentNoteCollection' , (event, data) => {
       this.openNoteCollection((collection) => {
         $this.$tabs.reset()
@@ -1087,6 +1095,10 @@ export default {
             $this.$nextTick(function () {
               setTimeout(function () { // This is just a dirty hack so I can go to bed
                 $this.openNoteCollection((collection) => {
+                  var openTabs = $this.$tabs.items.map(t => ({ to: t.to }))
+                  openTabs[$this.$tabs.activeTabIndex].active = true
+                  var tabsCachePath = path.join($this.$store.state.currentNoteCollection.path, '.tabsCache.json')
+                  fs.writeFileSync(tabsCachePath, JSON.stringify(openTabs), 'utf8')
                   $this.$tabs.reset()
                   $this.$store.commit('changeCurrentNoteCollection', collection)
                   $this.$global.config.set('currentNoteCollection', collections[c].path)

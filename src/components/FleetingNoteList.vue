@@ -242,12 +242,15 @@
         </span>
       </span>
     </portal>
-    <portal to="statusBarRight" :order="1" v-if="portalActive">
+    <portal to="statusBarRight" :order="1" v-if="enableStatusBar && portalActive">
       <span class="keybuffer">{{fullKeybuffer}}</span>
-      <span v-if="$store.state.bag.length > 0" @click="showBag">
+      <span v-if="$store.state.bag.length > 0" @click="showBag" class="statusBarItem clickable">
         <Icon name="Pocket" /> {{$store.state.bag.length}}
       </span>
-      <span><span v-if="filterTerm.length > 0">{{processedFleetingNotes.length}}/</span>{{fleetingNotes.length}} items</span>
+      <span class="statusBarItem">
+        <Icon name="FileText" />
+        <span v-if="processedFleetingNotes.length != fleetingNotes.length" class="filteredItemCount"> {{processedFleetingNotes.length}} /</span> {{fleetingNotes.length}}
+      </span>
     </portal>
   </div>
 </template>
@@ -301,6 +304,10 @@ export default {
       default: 'oldestFirst',
     },
     'stack': Object,
+    'enableStatusBar': {
+      type: Boolean,
+      default: true,
+    },
     'enableStackFilterBox': {
       type: Boolean,
       default: false,
@@ -344,28 +351,31 @@ export default {
       scrollToFocusedNoteOnNextUpdate: false,
       showOverviewModal: false,
       overviewMode: 'title',
+      relationsFilterTagsOnly: false,
       previouslyFocusedElement: null,
+      moment: moment,
     }
   },
   methods: {
     updateFleetingNotes() {
       this.$emit('updateFleetingNotes')
     },
+    setFocusToFirstNote() {
+      this.$nextTick(() => {
+        this.focusedNotePath = this.processedFleetingNotes[0] ? this.processedFleetingNotes[0].path : ''
+      })
+    },
     selectNote(fleetingNoteObj) {
-      console.log(`Selected: ${fleetingNoteObj.filename}`)
       this.selectedNotes.push(fleetingNoteObj)
     },
     unselectNote(fleetingNoteObj) {
-      console.log(`Unselected: ${fleetingNoteObj.filename}`)
       var index = this.selectedNotes.findIndex(n => n.path == fleetingNoteObj.path)
       this.selectedNotes.splice(index, 1)
     },
     markNote(fleetingNoteObj, mark) {
-      console.log(`Marked as ${mark}: ${fleetingNoteObj.filename}`)
       this.markedNotes[mark] = fleetingNoteObj
     },
     gotoMark(mark) {
-      console.log(`Goto mark ${mark}`)
       if (this.markedNotes[mark]) {
         this.focusNote(this.markedNotes[mark])
         this.scrollFocusedIntoView()
@@ -764,6 +774,7 @@ export default {
         if (registerPath) {
           var stack = $this.$store.state.currentNoteCollection.stacks.getStackByPath(registerPath)
           var stackContent = stack.getContent()
+          stackContent.sort((a,b) => b.numberOfRelations - a.numberOfRelations)
           var items = []
           var id = 1
           for (let i of stackContent) {
@@ -991,10 +1002,12 @@ export default {
       var len = this.processedFleetingNotes.length
       if (index > -1) {
         if (index + c >= len) {
-          this.focusedNotePath = this.processedFleetingNotes[0].path
+          let diff = (index + c) - len
+          this.focusedNotePath = this.processedFleetingNotes[0 + diff].path
         }
         else if (index + c < 0) {
-          this.focusedNotePath = this.processedFleetingNotes[len - 1].path
+          let diff = Math.abs(index + c)
+          this.focusedNotePath = this.processedFleetingNotes[len - diff].path
         }
         else {
           this.focusedNotePath = this.processedFleetingNotes[index + c].path
@@ -1793,7 +1806,7 @@ export default {
           }
           else if (this.keybuffer == "dw")
           {
-            // Link note to calendar date of last weekday X 
+            // Link note to calendar date of last weekday X
             let today = moment()
             let count = this.keybufferCount
             count = count > 6 ? 0 : count
@@ -2334,23 +2347,38 @@ export default {
 
 .searchBar {
   display: flex;
-  bottom: 23px;
+  bottom: 43px;
   z-index: 3;
   font-family: 'Lucida Grande';
-  font-size: 12px;
-  background-color: #222527;
-  color: white;
-  width: 100%;
-  padding: 2px;
-  height: 24px;
+  font-size: 13px;
+  background-color: #e9e9e9;
+  color: #000;
+  width: 600px;
+  padding: 3px;
+  padding-left: 20px;
+  height: 28px;
   position: fixed;
+  margin-left: 10px;
+  align-items: center;
+  box-shadow: 0px 0px 7px #207a52;
   input {
-    background: #444444;
-    color: white;
-    border: none;
+    background: #ffffff;
+    color: black;
+    border: 1px solid grey;
+    border-radius: 3px;
     outline: none;
     font-family: 'Lucida Grande';
-    font-size: 12px;
+    font-size: 13px;
+  }
+}
+
+.statusBarItem {
+  .filteredItemCount {
+    font-weight: bold;
+    color: #ffbf00;
+  }
+}
+
 .overview_modal_backdrop {
   position: fixed;
   top: 0;

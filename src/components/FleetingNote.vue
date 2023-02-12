@@ -819,7 +819,7 @@
             return {
               label: fn.abstract,
               description: 'Link',
-              lucideIcon: 'File',
+              lucideIcon: 'Link',
               badges: (edgeProperties && edgeProperties.length > 0) ? edgeProperties : [],
               action:() => {
                 console.log(fn.path)

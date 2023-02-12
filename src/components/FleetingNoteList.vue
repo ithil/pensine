@@ -143,6 +143,8 @@
         </template>
         <template v-slot:body>
           <a class="clearRelationFilterButton" @click="clearRelationFilter">Clear filter</a>
+          <input type="checkbox" id="relationsFilterTagsOnly" v-model="relationsFilterTagsOnly">
+          <label for="relationsFilterTagsOnly">Tags only</label>
           <ul>
             <li v-for="r in relationDistribution" :key="r.note.relativePath"
             class="relation"
@@ -2045,6 +2047,7 @@ export default {
       }, {});
       var distributionArr = []
       for (const [noteRelativePath, amount] of Object.entries(distribution)) {
+        if (this.relationsFilterTagsOnly && !noteRelativePath.split('/')[1].startsWith('tags')) continue
         distributionArr.push({
           noteRelativePath: noteRelativePath,
           note: this.$store.state.currentNoteCollection.getFleetingNoteByPath(noteRelativePath),
@@ -2188,6 +2191,11 @@ export default {
       user-select: none;
       font-size: 10px;
       color: grey;
+    }
+    label[for=relationsFilterTagsOnly] {
+      font-size: 10px;
+      color: grey;
+      user-select: none;
     }
     ul {
       list-style: none;

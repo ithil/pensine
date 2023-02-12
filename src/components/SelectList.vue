@@ -28,7 +28,8 @@
           >
             <div class="primary-line" :title="i.hover ? i.hover : ''">
               <Icon v-if="i.lucideIcon" :name="i.lucideIcon" />
-              {{ i.label }}
+              <span class="label" v-if="i.highlight" v-html="i.highlight"></span>
+              <span class="label" v-else>{{ i.label }}</span>
             </div>
             <div class="secondary-line">
               {{ i.description }}
@@ -267,6 +268,15 @@ ol.list-group {
   list-style: none;
   cursor: default;
   font-size: 12px;
+  .primary-line {
+    .label {
+      margin-left: 5px;
+      .highlight {
+        background: #ffd700;
+        border-radius: 1px;
+      }
+    }
+  }
   .secondary-line {
     margin-top: 4px;
     color: #626262;

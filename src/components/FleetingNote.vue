@@ -1264,6 +1264,11 @@
 </script>
 
 <style lang="scss">
+.fleetingNoteList:focus {
+  .fleetingNote.focused {
+    box-shadow: 0 0 0 3px cornflowerblue;
+  }
+}
 .fleetingNote {
   min-width: 100px;
   height: min-content;
@@ -1276,7 +1281,7 @@
   box-shadow: 0 0 15px rgba(181, 181, 181, 0.67);
   font-family: 'Lucida Grande', 'Segoe UI', 'Open Sans', sans-serif;
   &.focused {
-    box-shadow: 0 0 0 3px cornflowerblue;
+    box-shadow: 0 0 0 3px #aabee3;
   }
   &.selected {
     background-color: #c9d6e0;

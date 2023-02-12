@@ -1097,11 +1097,25 @@ export default {
         if (event.key === "Escape") {
           this.fullKeybuffer = ''
         }
+        else if (event.key === 'Enter') {
+          let fn = this.getFocusedNoteItem().fleetingNoteObj
+          this.$router.push(`/fleetingnote/${encodeURIComponent(fn.relativePath)}`)
+        }
         else if (event.metaKey && event.key=='f') {
           this.$emit('focusFilterInput')
         }
         else if (event.metaKey && event.key=='r') {
           this.chooseNoteModal()
+        }
+        else if (!event.ctrlKey && event.key === 'Tab' && event.shiftKey) {
+          this.$emit('tabLeft')
+          event.preventDefault()
+          event.stopPropagation()
+        }
+        else if (!event.ctrlKey && event.key === 'Tab') {
+          this.$emit('tabRight')
+          event.preventDefault()
+          event.stopPropagation()
         }
         else if (event.key.length == 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
           this.fullKeybuffer += event.key

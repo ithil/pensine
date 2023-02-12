@@ -1,17 +1,23 @@
 <template>
   <div class="fleetingNotePage" v-if="fn">
     <div class="parentNote column">
-      <fleeting-note
-      :fleetingNoteObj="fn"
-      :options="{showStackBadge: true}"
-      ref="fleetingNoteItem"
-      >
-    </fleeting-note>
+    <fleeting-note-list
+    :fleetingNotes="[fn]"
+    @updateFleetingNotes="updateFleetingNotes"
+    @tabRight="focusLinkedNotes"
+    @tabLeft="focusLinkedNotes"
+    :fleetingNoteOptions="{showStackBadge: true}"
+    :enableStatusBar="false"
+    ref="parentNote"
+    >
+  </fleeting-note-list>
     </div>
     <div class="linkedNotes column">
     <fleeting-note-list
     :fleetingNotes="linkedNotes.map(f => f.fnObj)"
     @updateFleetingNotes="updateFleetingNotes"
+    @tabRight="focusParentNote"
+    @tabLeft="focusParentNote"
     @focusSendBox="focusSendBox"
     @focusFilterInput="focusFilterInput"
     @changeSortOrder="changeSortOrder"
@@ -19,7 +25,8 @@
     :sortOrder="sortOrder"
     :filterTerm="filterTerm"
     :fleetingNoteOptions="{showStackBadge: true}"
-    ref="fleetingNoteList"
+    :enableStackFilterBox="true"
+    ref="linkedNotes"
     >
   </fleeting-note-list>
     </div>
@@ -43,8 +50,8 @@ export default {
         this.$route.params.name.split('/').map(c => decodeURIComponent(c)).join('/')
       ),
       decodedPath: this.$route.params.name.split('/').map(c => decodeURIComponent(c)).join('/'),
-      sortOrder: 'newestFirst',
       lastUpdated: 0,
+      sortOrder: 'inherit',
       filterTerm: '',
       previouslyFocusedElement: null,
     }
@@ -58,6 +65,11 @@ export default {
         this.lastUpdated = new Date()
       }
     },
+    focusLinkedNotes() {
+      this.$refs.linkedNotes.$el.focus()
+    },
+    focusParentNote() {
+      this.$refs.parentNote.$el.focus()
     },
     focusSendBox() {
       // Not implemented
@@ -127,66 +139,73 @@ export default {
   },
 }
 </script>
-<style scoped lang='scss'>
+<style lang='scss'>
 .fleetingNotePage {
   background: rgba(0, 0, 0, 0.05);
   min-height: -webkit-fill-available;
   overflow: hidden;
-}
-.column {
-  float: left;
-  width: 45%;
-  padding: 30px 30px 0px 30px;
-  overflow-x: hidden;
-  overflow-y: auto;
-  height: 89.1vh;
-  &::-webkit-scrollbar {
-    display: none;
-  }
-}
-@media screen and (max-width: 1215px) {
   .column {
-    margin: 0 auto;
-    width: 630px;
-    float: none;
-  }
-}
-.parentNote > .fleetingNote {
-  border-color: #81c181;
-}
-.linkedNote {
-  display: flex;
-  .relation {
-    width: 100px;
-    padding: 15px;
-    .type {
-      text-transform: capitalize;
-      font-family: 'Cambria';
-      background: #2d2d2d;
-      color: white;
-      padding: 7px;
-      border-radius: 10px;
+    float: left;
+    // width: 45%;
+    width: calc(45vw + 4.9px);
+    padding: 30px 30px 0px 30px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    height: 89.1vh;
+    &::-webkit-scrollbar {
+      display: none;
     }
-    .badge {
-      padding: 5px;
-      background: #cacaca;
-      border-radius: 5px;
-      font-size: 10px;
-      width: fit-content;
-      color: black;
-      margin-top: 4px;
-      margin-left: 10px;
-      border: 1px solid #6d6d6d;
-      font-family: 'Lucida Grande';
-      &.badge-conflicts {
-        color: #b50f0f;
-        background: #d29b9b;
-        border-color: #b50f0f;
+  }
+  @media screen and (max-width: 1215px) {
+    .column {
+      margin: 0 auto;
+      width: 630px;
+      float: none;
+    }
+  }
+  .parentNote:focus-within {
+    background: linear-gradient(90deg, #0090f71a, transparent);
+  }
+  .linkedNotes:focus-within {
+    background: linear-gradient(90deg, transparent, #0090f71a);
+  }
+  .parentNote .fleetingNote {
+    border-color: #81c181;
+  }
+  .linkedNote {
+    display: flex;
+    .relation {
+      width: 100px;
+      padding: 15px;
+      .type {
+        text-transform: capitalize;
+        font-family: 'Cambria';
+        background: #2d2d2d;
+        color: white;
+        padding: 7px;
+        border-radius: 10px;
       }
-      &.badge-agrees {
-        color: #0d3e0d;
-        background: #a9c3a9;
-        border-color: #0d3e0d;
+      .badge {
+        padding: 5px;
+        background: #cacaca;
+        border-radius: 5px;
+        font-size: 10px;
+        width: fit-content;
+        color: black;
+        margin-top: 4px;
+        margin-left: 10px;
+        border: 1px solid #6d6d6d;
+        font-family: 'Lucida Grande';
+        &.badge-conflicts {
+          color: #b50f0f;
+          background: #d29b9b;
+          border-color: #b50f0f;
+        }
+        &.badge-agrees {
+          color: #0d3e0d;
+          background: #a9c3a9;
+          border-color: #0d3e0d;
+        }
       }
     }
   }

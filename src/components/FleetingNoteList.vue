@@ -1389,6 +1389,34 @@ export default {
             this.gotoMark(mark)
             this.fullKeybuffer = ''
           }
+          else if (this.keybuffer == "''")
+          {
+            var items = []
+            var marks = this.markedNotes
+            if (Object.keys(marks).length == 0) {
+              items.push({
+                label: 'No marks yet',
+              })
+            }
+            else {
+              for (let [mark, note] of Object.entries(marks)) {
+                items.push({
+                  label: note.abstract,
+                  key: mark,
+                  lucideIcon: 'Pin',
+                  action: () => {
+                    this.gotoMark(mark)
+                  },
+                })
+              }
+            }
+            this.$store.commit('triggerCustomPopoverList', {
+              message: `Marks`,
+              items: items,
+              options: {hintMode: false},
+            })
+            this.fullKeybuffer = ''
+          }
           else if (this.keybuffer == "fsi")
           {
             // Add to include stack filter

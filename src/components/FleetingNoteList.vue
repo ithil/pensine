@@ -1792,6 +1792,20 @@ export default {
                   this.$emit('changeSortOrder', 'relatedDateOldestFirst')
                 },
               },
+              {
+                label: 'Mod: Newest First',
+                key: 'M',
+                action: () => {
+                  this.$emit('changeSortOrder', 'modificationNewestFirst')
+                },
+              },
+              {
+                label: 'Mod: Oldest First',
+                key: 'Shift+M',
+                action: () => {
+                  this.$emit('changeSortOrder', 'modificationOldestFirst')
+                },
+              },
               { role: 'separator' },
               {
                 label: 'Most Relations',
@@ -2042,6 +2056,12 @@ export default {
       }
       else if (this.sortOrder == 'oldestFirst') {
         processedNotes = processedNotes.sort((a, b) => a.date - b.date)
+      }
+      if (this.sortOrder == 'modificationNewestFirst') {
+        processedNotes = processedNotes.sort((a, b) => b.mtime - a.mtime)
+      }
+      else if (this.sortOrder == 'modificationOldestFirst') {
+        processedNotes = processedNotes.sort((a, b) => a.date - b.mtime)
       }
       else if (this.sortOrder == 'relatedDateNewestFirst') {
         processedNotes = processedNotes.sort((a, b) => {

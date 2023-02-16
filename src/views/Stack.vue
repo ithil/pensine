@@ -1,5 +1,6 @@
 <template>
-  <div class="stack">
+  <div class="stack" :style="customBackground">
+    <div class="blur"></div>
     <div class="header">
       <div class="name">
         <Icon :name="stackIcon ? stackIcon : 'Layers'" />
@@ -178,6 +179,12 @@ export default {
         }
       }
     },
+    customBackground() {
+      var backgroundCss = this.stack.metadata.get('style.background')
+      if (backgroundCss) {
+        return `background: ${backgroundCss};`
+      }
+    },
     stackIcon() {
       let v = this.stack.metadata.get(`style.icon`)
       if (v) {
@@ -229,6 +236,14 @@ export default {
 .stack {
   background: radial-gradient(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.1));
   min-height: -webkit-fill-available;
+  position: relative;
+  .blur {
+    background: rgba(255, 255, 255, 0.2);
+    // backdrop-filter: blur(8px);
+    min-height: 100%;
+    width: 100%;
+    position: absolute;
+  }
   .header {
     position: sticky;
     padding: 10px 10px 10px 0px;
@@ -326,10 +341,12 @@ export default {
     }
   }
   .fleetingNoteList {
-    padding-top: 30px;
-    padding-bottom: 30px;
-    margin: 0 auto;
-    width: 630px;
+    /deep/ .fleetingNotes {
+      margin: 0 auto;
+      width: 630px;
+      padding-top: 30px;
+      padding-bottom: 30px;
+    }
     /deep/ .fleetingNote {
       scroll-margin-top: 55px;
       scroll-margin-bottom: 55px;
@@ -338,14 +355,14 @@ export default {
 }
 .sendFleetingNote {
   margin: auto auto;
-  width: 38em;
+  width: fit-content;
   position: sticky;
   bottom: 10px;
   textarea {
     border-radius: 10px;
     border: 2px solid #bfbfbf;
     padding: 10px;
-    width: 38em;
+    width: 43em;
     height: 1.1em;
     box-shadow: 0px 0px 15px #9e9e9ed9;
     font-family: 'Code New Roman';

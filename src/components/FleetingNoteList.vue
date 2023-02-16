@@ -1969,6 +1969,20 @@ export default {
             }
             this.fullKeybuffer = ''
           }
+          else if (this.keybuffer == ",bg")
+          {
+            if (this.stack) {
+              var $this = this
+              this.$store.commit('triggerCustomTextPrompt', {
+                message: `Enter custom background css for this stack`,
+                action: (text) => {
+                  this.stack.metadata.set('style.background', text.trim())
+                  this.stack.metadata.save()
+                }
+              })
+            }
+            this.fullKeybuffer = ''
+          }
           else if (this.keybuffer == "vt")
           {
             this.enterOverview('title')

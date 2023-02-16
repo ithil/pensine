@@ -110,8 +110,13 @@ export default {
       this.newFleetingNoteContent = ''
       this.$refs.fleetingNoteList.$el.focus()
     },
-    _sendNewNote(text) {
-      return this.stack.sendText(text)
+    _sendNewNote(text, {scrollIntoView = false} = {}) {
+      var notePath = this.stack.sendText(text)
+      if (notePath) {
+        this.$refs.fleetingNoteList.scrollToFocusedNoteOnNextUpdate = true
+        this.$refs.fleetingNoteList.setFocusedNotePath(notePath)
+      }
+      return notePath
     },
     sendKeymonitor(event) {
       if ((event.shiftKey && event.key == 'Enter') || (event.metaKey && event.key == 's')) {

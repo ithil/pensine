@@ -1545,7 +1545,7 @@ export default {
           {
             // Create new note from clipboard content
             var text = clipboard.readText() || ''
-            this.$emit('sendNewNote', text)
+            this.$emit('sendNewNote', text, {scrollIntoView: true})
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "pq")
@@ -1553,9 +1553,9 @@ export default {
             // Create new note from clipboard content wrapped in blockquote
             var text = clipboard.readText() || ''
             var lines = text.split('\n')
-            lines = lines.map(l => `> ${l}`)
+            lines = lines.map(l => l.length > 0 ? `> ${l}` : '>')
             text = lines.join('\n')
-            this.$emit('sendNewNote', text)
+            this.$emit('sendNewNote', text, {scrollIntoView: true})
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "pl")
@@ -1565,7 +1565,7 @@ export default {
             var lines = text.split('\n')
             lines = lines.map(l => `* ${l}`)
             text = lines.join('\n')
-            this.$emit('sendNewNote', text)
+            this.$emit('sendNewNote', text, {scrollIntoView: true})
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "ph")
@@ -1575,7 +1575,7 @@ export default {
             var lines = text.split('\n')
             lines[0] = `# ${lines[0]}`
             text = lines.join('\n')
-            this.$emit('sendNewNote', text)
+            this.$emit('sendNewNote', text, {scrollIntoView: true})
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "gf")

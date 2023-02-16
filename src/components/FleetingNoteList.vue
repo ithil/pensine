@@ -247,6 +247,7 @@
       <span v-if="$store.state.bag.length > 0" @click="showBag" class="statusBarItem clickable">
         <Icon name="Pocket" /> {{$store.state.bag.length}}
       </span>
+      <span v-if="focusedNoteIndex != null" class="statusBarItem focusedNoteIndex">{{focusedNoteIndex + 1}}</span>
       <span class="statusBarItem">
         <Icon name="FileText" />
         <span v-if="processedFleetingNotes.length != fleetingNotes.length" class="filteredItemCount"> {{processedFleetingNotes.length}} /</span> {{fleetingNotes.length}}
@@ -2182,6 +2183,11 @@ export default {
       }
       return []
     },
+    focusedNoteIndex() {
+      var index = this.processedFleetingNotes.findIndex(i => i.path == this.focusedNotePath)
+      if (index == -1) return null
+      return index
+    },
   },
   watch: {
     fleetingNotes: {
@@ -2459,6 +2465,19 @@ export default {
   .filteredItemCount {
     font-weight: bold;
     color: #ffbf00;
+  }
+  &.focusedNoteIndex {
+    background: white;
+    color: black;
+    padding: 2px;
+    font-weight: bold;
+    border-radius: 5px;
+    font-size: 13px;
+    padding-left: 5px;
+    padding-right: 5px;
+    &:before {
+      content: '#';
+    }
   }
 }
 

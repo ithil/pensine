@@ -1,5 +1,6 @@
 <template>
   <div class="search">
+    <div class="blur"></div>
     <div class="header">
       <div class="name">
         <Icon name="Search" />
@@ -30,6 +31,9 @@
     @focusFilterInput="$refs.searchInput.focus()"
     :sortOrder="sortOrder"
     :fleetingNoteOptions="{showRightHandRelations: true, showStackBadge: true}"
+    :showLeftHandBox="true"
+    :enableStackFilterBox="true"
+    :outlineOpen="true"
     ref="fleetingNoteList"
     >
   </fleeting-note-list>
@@ -69,6 +73,10 @@ export default {
       sortOptions: [
         { text: 'Oldest First', value: 'oldestFirst' },
         { text: 'Newest First', value: 'newestFirst' },
+        { text: 'Cal: Oldest First', value: 'relatedDateOldestFirst' },
+        { text: 'Cal: Newest First', value: 'relatedDateNewestFirst' },
+        { text: 'Mod: Oldest First', value: 'modificationOldestFirst' },
+        { text: 'Mod: Newest First', value: 'modificationNewestFirst' },
         { text: 'Most Relations', value: 'mostRelationsFirst' },
         { text: 'Fewest Relations', value: 'fewestRelationsFirst' },
         { text: 'Alphabetical', value: 'alphabetical' },
@@ -107,12 +115,19 @@ export default {
         collection.searchFleetingNotes(searchTerm, useRegex).then(notes => {
           this.searchInProgess = false
           this.fleetingNotes = notes
+          this.$refs.fleetingNoteList.clearRelationFilter()
+          this.$refs.fleetingNoteList.clearStackFilter()
           if (notes.length < 1) {
             this.noResults = true
           }
           else {
             this.noResults = false
             this.$refs.fleetingNoteList.$el.focus()
+            var $this = this
+            setTimeout(function () { // This is just a dirty hack so I can go to bed
+              $this.$refs.fleetingNoteList.setFocusToFirstNote()
+              $this.$refs.fleetingNoteList.scrollFocusedIntoView()
+            }, 50)
           }
         })
       }
@@ -156,8 +171,18 @@ export default {
 </script>
 <style scoped lang='scss'>
 .search {
+  --header-background: #7373731c;
   background: radial-gradient(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.1));
   min-height: -webkit-fill-available;
+  position: relative;
+  .blur {
+    background: rgba(255, 255, 255, 0.2);
+    // backdrop-filter: blur(8px);
+    min-height: 100%;
+    width: 100%;
+    position: absolute;
+    z-index: -10;
+  }
   .header {
     position: sticky;
     padding: 10px 10px 10px 0px;
@@ -165,9 +190,8 @@ export default {
     justify-content: space-between;
     top: 0px;
     left: 60px;
-    background: linear-gradient(#9e9e9ec9, #7373731c);
+    background: var(--header-background);
     backdrop-filter: blur(4px);
-    border-bottom: 1px solid #e8e8e8ab;
     z-index: 20;
     font-size: 20px;
     .name {
@@ -212,13 +236,31 @@ export default {
     }
   }
   .fleetingNoteList {
-    padding-top: 30px;
-    padding-bottom: 30px;
-    margin: 0 auto;
-    width: 630px;
+    /deep/ .fleetingNotes {
+      margin: 0 auto;
+      width: 630px;
+      padding-top: 30px;
+      padding-bottom: 30px;
+    }
     /deep/ .fleetingNote {
-      scroll-margin-top: 55px;
-      scroll-margin-bottom: 55px;
+      scroll-margin-top: 101px;
+      scroll-margin-bottom: 5px;
+      .rightHandRelations {
+        right: -240px;
+      }
+    }
+    /deep/ .stackFilterBox {
+      position: sticky;
+      top: 49px;
+      z-index: 1;
+      background: var(--header-background);
+      backdrop-filter: blur(4px);
+      padding: 5px;
+      border-bottom: 1px solid #e8e8e8ab;
+      margin-bottom: 0;
+    }
+    /deep/ .leftHandBox {
+      height: 79.4vh;
     }
   }
   button.optionsButton {

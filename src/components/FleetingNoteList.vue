@@ -1909,6 +1909,7 @@ export default {
           {
             // Link note to a calendar date
             this.getFocusedNoteItem().showLinkToDatePrompt()
+            this.scrollToFocusedNoteOnNextUpdate = true
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "dn")
@@ -1916,18 +1917,21 @@ export default {
             // Link note to calendar date that equals creation date
             let note = this.getFocusedNoteItem()
             note.linkToDate(note.fleetingNoteObj.date)
+            this.scrollToFocusedNoteOnNextUpdate = true
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "dt")
           {
-            // Link note to today's calendar date
-            this.getFocusedNoteItem().linkToDate(moment())
+            // Link note to today's or nth day after today's calendar date
+            this.getFocusedNoteItem().linkToDate(moment().add(this.keybufferCount || 0, 'day'))
+            this.scrollToFocusedNoteOnNextUpdate = true
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "dy")
           {
             // Link note to yesterday's calendar date
             this.getFocusedNoteItem().linkToDate(moment().subtract(this.keybufferCount || 1, 'day'))
+            this.scrollToFocusedNoteOnNextUpdate = true
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "dw")
@@ -1937,6 +1941,7 @@ export default {
             let count = this.keybufferCount
             count = count > 6 ? 0 : count
             this.getFocusedNoteItem().linkToDate(today.day(today.day() >= count ? count : count-7))
+            this.scrollToFocusedNoteOnNextUpdate = true
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "gs")

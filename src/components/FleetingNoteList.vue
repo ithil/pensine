@@ -1153,8 +1153,17 @@ export default {
           }
           else if (this.keybuffer == "gg")
           {
-            // Focus first item in list
-            this.focusedNotePath = this.processedFleetingNotes[0].path
+            if (this.keybufferCount) {
+              // Focus nth item in list
+              let index = this.keybufferCount - 1
+              if (0 <= index && index < this.processedFleetingNotes.length) {
+                this.focusedNotePath = this.processedFleetingNotes[index].path
+              }
+            }
+            else {
+              // Focus first item in list
+              this.focusedNotePath = this.processedFleetingNotes[0].path
+            }
             this.scrollFocusedIntoView()
             this.fullKeybuffer = ''
           }

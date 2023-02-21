@@ -44,6 +44,10 @@
     ref="fleetingNoteList"
     >
   </fleeting-note-list>
+  <div class="no-notes message-box" v-if="fleetingNotes.length == 0">
+    <Icon name="Ghost" />
+    This stack does not have any notes.
+  </div>
   <div class="sendFleetingNote">
     <textarea
     v-model="newFleetingNoteContent"
@@ -352,6 +356,15 @@ export default {
       scroll-margin-bottom: 55px;
     }
   }
+}
+.message-box {
+  margin: 0 auto;
+  width: 630px;
+  background: #c7c7c7;
+  padding: 15px;
+  border-radius: 10px;
+  border: 2px solid #b7b7b7;
+  font-style: italic;
 }
 .sendFleetingNote {
   margin: auto auto;

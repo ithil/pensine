@@ -654,6 +654,11 @@ export default {
           })
       },
     })
+    this.$store.commit('registerCommand', {
+      name: 'collection:stacks',
+      label: 'Show all stacks',
+      action: () => {
+          this.$router.push(`/stacks/`).catch(err => {
             // Ignore the vuex err regarding  navigating to the page they are already on.
             if (
               err.name !== 'NavigationDuplicated' &&
@@ -878,13 +883,13 @@ export default {
       var stacksList = []
       var getSubItemsOfStack = function (stack) {
         var fleetingNotes = stack.getContent().filter(i => !i.isStack)
+        fleetingNotes.sort((a, b) => b.date - a.date)
         var fnList = []
         for (let fn of fleetingNotes) {
           let numberOfLinks = fn.relations.length
           fnList.push({
             label: fn.abstract,
             lucideIcon: 'FileText',
-            description: `${numberOfLinks} relations`,
             description: `${numberOfLinks > 0 ? numberOfLinks+' relations – ' : ''}${moment(fn.date).format('DD.MM.YYYY')}`,
             type: 'fleetingNote',
             action: () => {
@@ -1081,6 +1086,9 @@ export default {
       else if (err.name == 'existantCollectionJson') {
         logger(err.message)
       }
+      else {
+        logger(err.message)
+      }
     },
     collectionModal() {
       var collections = this.$global.config.get('collections', {})
@@ -1120,6 +1128,9 @@ export default {
     minimizeWindow() {
       console.log('Minimize!')
       ipcRenderer.send('minimizeWindow')
+    },
+    writeToClipboard(text) {
+      clipboard.writeText(text)
     },
   },
 }

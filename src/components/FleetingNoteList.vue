@@ -1643,6 +1643,17 @@ export default {
             })
             this.fullKeybuffer = ''
           }
+          else if (this.keybuffer == "ap")
+          {
+            // Add appendix note
+            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
+            var filepath = fleetingNoteObj.addAppendixNote()
+            var col = this.$store.state.currentNoteCollection
+            var fn = col.getFleetingNoteByPath(filepath)
+            var encodedPath = fn.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
+            this.$router.push(`/fleetingnote/${encodedPath}`)
+            this.fullKeybuffer = ''
+          }
           else if (this.keybuffer == ",yp")
           {
             // Copy note's metadata path (.json) to clipboard

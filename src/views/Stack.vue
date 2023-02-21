@@ -7,7 +7,7 @@
         {{stack.relativePath}}
       </div>
       <div class="filterOptions">
-        <input v-model="filterTerm" type="search" placeholder="Filter ..." ref="filterInput">
+        <input v-model="filterTerm" type="search" placeholder="Filter ..." ref="filterInput" @keydown="filterInputKeymonitor">
         <select v-model="sortOrder" class="sortOrder">
           <option disabled value="">Sort Order</option>
           <option v-for="option in sortOptions" v-bind:value="option.value">
@@ -84,6 +84,8 @@ export default {
         { text: 'Newest First', value: 'newestFirst' },
         { text: 'Cal: Oldest First', value: 'relatedDateOldestFirst' },
         { text: 'Cal: Newest First', value: 'relatedDateNewestFirst' },
+        { text: 'Mod: Oldest First', value: 'modificationOldestFirst' },
+        { text: 'Mod: Newest First', value: 'modificationNewestFirst' },
         { text: 'Most Relations', value: 'mostRelationsFirst' },
         { text: 'Fewest Relations', value: 'fewestRelationsFirst' },
         { text: 'Alphabetical', value: 'alphabetical' },

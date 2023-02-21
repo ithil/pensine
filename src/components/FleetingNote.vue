@@ -20,14 +20,21 @@
             <template v-slot:header="slotProps">
               <li
               class="relation"
-              :class="{ title: r.fn.title ? true : false }"
               :data-stack="r.fn.stack"
               @click="handleRelationClick(r, slotProps, $event)"
               >
               <Icon v-if="r.fn.stack && customRelationIcons[r.fn.stack.split('/')[0]]" :name="customRelationIcons[r.fn.stack.split('/')[0]]" />
               <Icon v-else-if="getCustomIcon(r.fn.stack)" :name="getCustomIcon(r.fn.stack)" />
               <Icon v-else name="FileText" />
-              {{r.fn.abstract}}
+              <span
+              class="name"
+              :class="{ title: r.fn.title ? true : false }"
+              >
+                {{r.fn.abstract}}
+              </span>
+              <span class="stack">
+                <Icon name="Layers" /> {{r.fn.stack}}
+              </span>
             </li>
             </template>
             <template v-slot:body>

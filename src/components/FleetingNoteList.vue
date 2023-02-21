@@ -2008,6 +2008,48 @@ export default {
             }
             this.fullKeybuffer = ''
           }
+          else if (this.keybuffer == ",ii")
+          {
+            if (this.stack) {
+              var $this = this
+              this.$store.commit('triggerCustomTextPrompt', {
+                message: `Enter Lucide Icon Name for this stack`,
+                action: (text) => {
+                  this.stack.metadata.set('style.icon', text.trim())
+                  this.stack.metadata.save()
+                }
+              })
+            }
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == ",ic")
+          {
+            if (this.stack) {
+              var $this = this
+              this.$store.commit('triggerCustomTextPrompt', {
+                message: `Enter icon color for this stack`,
+                action: (text) => {
+                  this.stack.metadata.set('style.iconColor', text.trim())
+                  this.stack.metadata.save()
+                }
+              })
+            }
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == ",ib")
+          {
+            if (this.stack) {
+              var $this = this
+              this.$store.commit('triggerCustomTextPrompt', {
+                message: `Enter icon background color for this stack`,
+                action: (text) => {
+                  this.stack.metadata.set('style.iconBackground', text.trim())
+                  this.stack.metadata.save()
+                }
+              })
+            }
+            this.fullKeybuffer = ''
+          }
           else if (this.keybuffer == "vt")
           {
             this.enterOverview('title')

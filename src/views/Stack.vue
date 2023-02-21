@@ -257,7 +257,7 @@ export default {
     left: 60px;
     background: linear-gradient(#9e9e9ec9, #7373731c);
     backdrop-filter: blur(4px);
-    border-bottom: 1px solid #e8e8e8ab;
+    border-bottom: 1px solid #e8e8e863;
     z-index: 20;
     font-size: 20px;
     .name {
@@ -289,6 +289,7 @@ export default {
         color: #444;
         padding: .6em 1.4em .5em .8em;
         max-width: 100%;
+        text-align: center;
         box-sizing: border-box;
         margin: 0;
         border: 1px solid #aaa;

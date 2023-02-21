@@ -1157,7 +1157,7 @@ body {
 }
 
 .statusBarRight {
-  margin-right: 10px;
+  margin-right: 15px;
 }
 
 .statusBarLeft > * {
@@ -1170,6 +1170,7 @@ body {
 
 .statusBarItem {
   margin-left: 5px;
+  vertical-align: middle;
   &.bold {
     font-weight: bold;
   }
@@ -1209,6 +1210,14 @@ body {
 
 .router-tab__item {
   color: #949494;
+  .router-tab__item-title {
+    display: block;
+    max-width: 200px;
+    min-width: 5px;
+  }
+  &:hover .router-tab__item-title {
+    max-width: none;
+  }
 }
 
 .router-tab__item-title {
@@ -1226,11 +1235,11 @@ body {
 }
 
 .router-tab__tabbar-left-space {
-  margin-left: 70px;
+  margin-left: 80px;
 }
 
 .router-tab__tabbar-right-space {
-  margin: 6px;
+  margin: 4px;
   margin-right: 14px;
   font-size: 13px;
   .currentNoteCollection {
@@ -1242,6 +1251,7 @@ body {
     padding: 3px 4px;
     color: #ecebeb;
     cursor: pointer;
+    user-select: none;
   }
 }
 
@@ -1283,6 +1293,20 @@ body {
         background-color: black;
       }
     }
+  }
+  &.stack {
+    .router-tab__item-icon::after {
+      content: '';
+      border-top: 2px solid;
+      border-bottom: 1px solid;
+      width: 24px;
+      position: absolute;
+      bottom: 1px;
+      left: 8px;
+      border-color: var(--iconBackground);
+      height: 1px
+    }
+  }
 }
 
 ::-webkit-scrollbar {

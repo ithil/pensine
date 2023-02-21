@@ -181,7 +181,7 @@ export default {
 
 <style lang="scss">
 .container {
-  background: radial-gradient(#b7b6ad, #bbb8b2);
+  background: radial-gradient(#b7b7b5,#b19a6f);
   min-height: -webkit-fill-available;
   width: 100%;
   font-size: 104%;
@@ -197,13 +197,16 @@ export default {
     margin-left: 10px;
     margin-right: 10px;
     font-size: 30px;
-    color: #706343;
+    color: #f5c654;
+    user-select: none;
+  }
+  blockquote:first-child, h1:first-child, h2:first-child, h3:first-child, ol:first-child, p:first-child, pre:first-child, ul:first-child {
+    margin-top: 0;
   }
   h1 {
     text-align: center;
   }
   .item {
-    background: #b7b6b79e;
     backdrop-filter: blur(2px);
     margin: auto auto 10px auto;
     width: 400px;
@@ -232,7 +235,7 @@ export default {
     &.shortcuts {
       background: none;
       border: none;
-      width: 500px;
+      width: 600px;
       ul {
         display: flex;
         flex-wrap: wrap;
@@ -261,7 +264,7 @@ export default {
           width: 80px;
           height: 80px;
           text-align: center;
-          box-shadow: 0px 0px 0px 2px #70634345;
+          box-shadow: 0 0 0 2px #fdd36a45;
           font-size: 5vw;
           text-align: center;
           img {
@@ -289,7 +292,7 @@ export default {
       border-radius: 10px;
       border: 2px solid #706343;
       padding: 10px;
-      width: 90%;
+      width: -webkit-fill-available;
       height: 1.1em;
       transition: height 0.1s linear;
       resize: none;
@@ -307,6 +310,11 @@ export default {
 }
 .stackLink {
   cursor: pointer;
+  &.showAll {
+    width: max-content;
+    margin: 0 auto;
+  }
+}
 }
 #app[data-collection='Personal'] {
   --titlebar-bg-color: #7e4e974f;
@@ -316,14 +324,19 @@ export default {
   .router-tab__header {
     background: var(--titlebar-bg-color);
   }
+  .router-tab__tabbar-right-space {
+    .currentNoteCollection {
+      border: 2px solid #9a66bb85;
+    }
+  }
   .container {
-    background: radial-gradient(#9172a1, #a16f8d);
+    background: radial-gradient(#91796e, #b886b9);
     .home {
       .flourish {
-        color: #ffffff;
+        color: #bfa3cd;
       }
       .item {
-        background-color: #02020263;
+        background-color: #02020226;
         border: 2px solid #9a66bb85;
         color: white;
         &.shortcuts {
@@ -331,6 +344,18 @@ export default {
           border: none;
           .shortcut {
             .icon {
+              box-shadow: 0px 0px 0px 2px #70634345;
+              span, img {
+                filter: contrast(0.8);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
               span, img {
                 filter: contrast(0.8);
               }

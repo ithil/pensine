@@ -855,26 +855,77 @@ export default {
     },
     openModalFilter(context) {
         var $items = context.itemsWithIds
-        var typeFilter = null
         var searchString = context.searchString.toLowerCase()
-        if (searchString.startsWith('.')) {
-          typeFilter = 'note'
-          searchString = searchString.slice(1)
+        var registers = this.$store.state.currentNoteCollection.registers
+        var registerPath = null
+        var registerName = null
+        var registerCache = {}
+        var getRegisterContent = (rPath) => {
+          if (registerCache[rPath]) return registerCache[rPath]
+          let stack = this.$store.state.currentNoteCollection.stacks.getStackByPath(rPath)
+          let stackContent = stack.getContent()
+          stackContent.sort((a,b) => b.numberOfRelations - a.numberOfRelations)
+          registerCache[rPath] = stackContent
+          return stackContent
         }
-        else if (searchString.startsWith('-')) {
-          typeFilter = 'stack'
-          searchString = searchString.slice(1)
+        for (let r of registers) {
+          if (searchString.startsWith(r.prefix)) {
+            registerPath = r.path
+            registerName = r.name
+            searchString = searchString.slice(r.prefix.length)
+            var searchStringNotLowercase = context.searchString.slice(r.prefix.length)
+          }
         }
-        else if (searchString.startsWith('#')) {
-          typeFilter = 'tag'
-          searchString = searchString.slice(1)
+        if (registerPath) {
+          var stackContent = getRegisterContent(registerPath)
+          var items = []
+          var id = 1
+          for (let i of stackContent) {
+            if (!i.isStack) {
+              items.push({
+                id: id,
+                lucideIcon: 'AtSign',
+                label: i.abstract,
+                description: registerName,
+                numberOfRelations: i.numberOfRelations,
+                action: () => {
+                  var encodedPath = i.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
+                  this.$router.push(`/fleetingNote/${encodedPath}`).catch(err => {
+                    // Ignore the vuex err regarding  navigating to the page they are already on.
+                    if (
+                      err.name !== 'NavigationDuplicated' &&
+                      !err.message.includes('Avoided redundant navigation to current location')
+                    ) {
+                      // But print any other errors to the console
+                      console.error(err)
+                    }
+                  })
+                },
+              })
+              id++
+            }
+          }
+          if (searchString.length < 1) {
+            return items
+          }
+          var fuzzyResults = fuzzysort.go(searchString, items || [], {key: 'label'}, {threshold: -10000})
+          fuzzyResults.sort((a, b) => {
+            if (Math.abs(a.score - b.score) > 10) return 0
+            return b.obj.numberOfRelations - a.obj.numberOfRelations
+          })
+          var itemsFiltered = fuzzyResults.map(i => {
+            return {...i.obj, highlight: fuzzysort.highlight(i, '<span class="highlight">', '</span>')}
+          })
+          return itemsFiltered
         }
-        var itemsFiltered = $items.filter(item => (typeFilter && item.type != typeFilter) ? false : true)
+        var itemsFiltered = $items
         if (searchString.length == 0) {
           return itemsFiltered
         }
-        var fuse = new Fuse(itemsFiltered, {keys: ['label']})
-        itemsFiltered = fuse.search(searchString).map(i => i.item)
+        var fuzzyResults = fuzzysort.go(searchString, itemsFiltered, {key: 'label'}, {threshold: -10000})
+        itemsFiltered = fuzzyResults.map(i => {
+          return {...i.obj, highlight: fuzzysort.highlight(i, '<span class="highlight">', '</span>')}
+        })
         return itemsFiltered
     },
     updateAllStacks() {

@@ -1323,8 +1323,38 @@
         padding: 2px;
         border-radius: 5px;
         cursor: pointer;
-        &.title {
-          font-weight: bold;
+        position: relative;
+        .name {
+          flex-grow: 1;
+          &.title {
+            font-weight: bold;
+          }
+        }
+        .stack {
+          visibility: hidden;
+          opacity: 0;
+          background: black;
+          color: white;
+          font-size: 12px;
+          padding: 3px;
+          border-radius: 6px;
+          flex-shrink: 0;
+          align-self: center;
+          height: auto;
+          width: fit-content;
+          transition: visibility 0.1s linear, opacity 0.1s linear;
+          height: auto;
+          width: fit-content;
+          font-size: 12px;
+          position: absolute;
+          left: 200px;
+          top: 0;
+        }
+        &:hover {
+          .stack {
+            visibility: visible;
+            opacity: 1;
+          }
         }
         &[data-stack="tags"] {
           border-width: 2px;
@@ -1357,6 +1387,12 @@
             color: #428547;
           }
         }
+        &[data-stack="journal"] {
+          background: #4f739e;
+          border-color: #1959a5;
+          color: white;
+        }
+      }
       .miniview {
         border: 1px solid #bbbbbb;
         background: #e1e1e1;
@@ -1450,14 +1486,14 @@
 
 .fleetingNote.compactFleetingNote {
   padding: 10px;
-  background: #49499b;
-  border: none;
-  color: white;
+  background: #d3d3d3;
+  border: 1px solid #bbbbbb;
+  color: black;
   &.selected {
     background: #684b8f;
   }
   &.focused {
-    box-shadow: 0 0 0 3px #dbb91b;
+    // box-shadow: 0 0 0 3px #dbb91b;
   }
   .content {
     margin: 0;
@@ -1466,10 +1502,9 @@
       font-size: 14px;
       font-family: 'Georgia';
       margin-block-end: 0;
-      color: #c3c3c3;
       &.title {
         font-size: 18px;
-        color: white;
+        font-weight: bold;
       }
     }
   }
@@ -1515,7 +1550,7 @@
     border-radius: 4px;
     padding: 1px 3px;
     font-family: 'Monaco', monospace;
-    font-size: 13px;
+    font-size: 75%;
   }
   pre {
     white-space: pre-wrap;
@@ -1533,6 +1568,15 @@
       code {
         font-family: 'Georgia';
       }
+    }
+  }
+  details.collapsible {
+    border: 2px solid #80808038;
+    padding: 10px;
+    margin-bottom: 3px;
+    border-radius: 10px;
+    summary {
+      cursor: pointer;
     }
   }
   h1 {
@@ -1625,7 +1669,7 @@
         line-height: 100%;
         padding: 2px;
         border-radius: 10px;
-        background: #0090f729;
+        text-shadow: 0px 0px 10px #0090f787;
         font-size: larger;
         top: -1px;
       }
@@ -1708,42 +1752,52 @@
         content: '💡';
       }
     }
-    &[data-gloss] {
-      position: relative;
-      &:after {
-        visibility: hidden;
-        opacity: 0;
+    &[data-emoji] {
+      @include emoji-highlight;
+      &:before {
+        content: attr(data-emoji);
       }
-      &:hover:after {
-        content: attr(data-gloss);
-        visibility: visible;
-        opacity: 1;
-        position: absolute;
-        background: black;
-        color: white;
-        max-width: 400px;
-        width: max-content;
-        display: inline-block;
-        font-family: 'Code New Roman';
-        font-size: 13px;
-        border-radius: 6px;
-        padding: 5px;
-        transition: visibility 0.2s linear,opacity 0.2s linear;
-        bottom: 120%;
-        left: 0%;
-      }
+    }
+  }
+  [data-gloss] {
+    position: relative;
+    border-bottom: 1px dashed grey;
+    &:after {
+      visibility: hidden;
+      opacity: 0;
+    }
+    &:hover:after {
+      content: attr(data-gloss);
+      visibility: visible;
+      opacity: 1;
+      position: absolute;
+      background: black;
+      color: white;
+      max-width: 400px;
+      width: max-content;
+      display: inline-block;
+      font-family: 'Code New Roman';
+      font-size: 13px;
+      border-radius: 6px;
+      padding: 5px;
+      transition: visibility 0.2s linear,opacity 0.2s linear;
+      bottom: 120%;
+      left: 0%;
     }
   }
   a {
     color: royalblue;
     word-break: break-all;
     position: relative;
+    &[href^="/"] {
+      text-decoration-color: burlywood;
+    }
   }
   a:after {
     visibility: hidden;
     opacity: 0;
   }
-  a:hover:after {
+  a[href^=http]:not(.linkify):hover:after {
     content: attr(href);
     visibility: visible;
     opacity: 1;
@@ -1754,7 +1808,8 @@
     font-family: 'Code New Roman';
     font-size: 13px;
     border-radius: 6px;
-    padding: 5px 1px;
+    border: 2px solid #c5c5c5;
+    padding: 5px;
     transition: visibility 0.2s linear,opacity 0.2s linear;
     bottom: 120%;
     left: 0%;
@@ -1805,6 +1860,10 @@
   }
   a[href*="imdb.com/"]:before {
     background-image: url('https://www.imdb.com/favicon.ico');
+    @include favicon;
+  }
+  a[href*="stackoverflow.com"]:before {
+    background-image: url('https://cdn.sstatic.net/Sites/stackoverflow/Img/favicon.ico');
     @include favicon;
   }
   a[href*="/n/Stacks%2Fpeople%"] {

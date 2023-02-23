@@ -11,9 +11,9 @@
       </h1>
     </div>
     <div class="item inbox">
-      <div class="sendFleetingNote">
+      <div class="sendNote">
         <textarea
-        v-model="newFleetingNoteContent"
+        v-model="newNoteContent"
         @keydown="sendKeymonitor"
         @focus="$redrawVueMasonry('homeScreen')"
         @blur="$redrawVueMasonry('homeScreen')"
@@ -68,7 +68,7 @@ export default {
   data() {
     return {
       masonryId: 'homeScreen',
-      newFleetingNoteContent: '',
+      newNoteContent: '',
       inboxCount: 0,
       recentlyChangedStacks: [],
       stackCount: 0,
@@ -82,8 +82,8 @@ export default {
   },
   methods: {
     sendNewNote() {
-      this.inbox.sendText(this.newFleetingNoteContent)
-      this.newFleetingNoteContent = ''
+      this.inbox.sendText(this.newNoteContent)
+      this.newNoteContent = ''
       this.$refs.sendBox.blur()
     },
     sendKeymonitor(event) {
@@ -287,7 +287,7 @@ export default {
       }
     }
   }
-  .sendFleetingNote {
+  .sendNote {
     textarea {
       border-radius: 10px;
       border: 2px solid #706343;

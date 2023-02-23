@@ -18,17 +18,17 @@
       <span
       class="tree-element"
       :class="{focused: focusedId == item.id}"
-      :data-stack="item.fnObj.stack"
+      :data-stack="item.noteObj.stack"
       @click="triggerClick"
       >
       <span
       class="name"
-      :class="{ title: item.fnObj.title ? true : false }"
+      :class="{ title: item.noteObj.title ? true : false }"
       >
         {{item.name}}
       </span>
       <span class="stack">
-        <Icon name="Layers" /> {{item.fnObj.stack}}
+        <Icon name="Layers" /> {{item.noteObj.stack}}
       </span>
       <span class="deleteHandle handle" v-if="parentItem" @click="removeRelation">
         <Icon name="X" />
@@ -117,19 +117,19 @@ import Icon from '@/components/Icon.vue'
       updateChildren() {
         this.children = this.item.getChildren()
         if (this.parentItem && this.hideCircularParent) {
-          this.children = this.children.filter(c => c.fnObj.path != this.parentItem.fnObj.path)
+          this.children = this.children.filter(c => c.noteObj.path != this.parentItem.noteObj.path)
         }
       },
       removeRelation() {
-        var parentAbstract = this.parentItem.fnObj.abstract
-        var relationAbtract = this.item.fnObj.abstract
+        var parentAbstract = this.parentItem.noteObj.abstract
+        var relationAbtract = this.item.noteObj.abstract
         var $this = this
         this.$store.commit('triggerCustomTextPrompt', {
           message: `Remove relation "${relationAbtract}" from "${parentAbstract}"?`,
           action: (text) => {
             if (['y', 'yes'].includes(text.trim())) {
-              this.parentItem.fnObj.removeLink(this.item.fnObj.relativePath)
-              this.parentItem.fnObj.removeBacklink(this.item.fnObj.relativePath)
+              this.parentItem.noteObj.removeLink(this.item.noteObj.relativePath)
+              this.parentItem.noteObj.removeBacklink(this.item.noteObj.relativePath)
               setTimeout(() => {
                 $this.$emit('updateParentsChildren')
               }, 200)
@@ -138,10 +138,10 @@ import Icon from '@/components/Icon.vue'
         })
       },
       moveRelation(delta) {
-        if (this.parentItem && this.parentItem.fnObj) {
-          var parentFnObj = this.parentItem.fnObj
-          var relationRelativePath = this.item.fnObj.relativePath
-          parentFnObj.moveLink(relationRelativePath, delta)
+        if (this.parentItem && this.parentItem.noteObj) {
+          var parentNoteObj = this.parentItem.noteObj
+          var relationRelativePath = this.item.noteObj.relativePath
+          parentNoteObj.moveLink(relationRelativePath, delta)
           var $this = this
           setTimeout(() => {
             $this.$emit('updateParentsChildren')

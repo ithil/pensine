@@ -1,21 +1,21 @@
 <template>
-  <div class="fleetingNotePage" v-if="fn">
+  <div class="notePage" v-if="note">
     <div class="parentNote column">
-    <fleeting-note-list
-    :fleetingNotes="[fn]"
-    @updateFleetingNotes="updateFleetingNotes"
+    <note-list
+    :notes="[note]"
+    @updateNotes="updateNotes"
     @tabRight="focusLinkedNotes"
     @tabLeft="focusLinkedNotes"
-    :fleetingNoteOptions="{showStackBadge: true}"
+    :noteOptions="{showStackBadge: true}"
     :enableStatusBar="false"
     ref="parentNote"
     >
-  </fleeting-note-list>
+  </note-list>
     </div>
     <div class="linkedNotes column">
-    <fleeting-note-list
-    :fleetingNotes="linkedNotes.map(f => f.fnObj)"
-    @updateFleetingNotes="updateFleetingNotes"
+    <note-list
+    :notes="linkedNotes.map(f => f.noteObj)"
+    @updateNotes="updateNotes"
     @tabRight="focusParentNote"
     @tabLeft="focusParentNote"
     @focusSendBox="focusSendBox"
@@ -24,29 +24,29 @@
     @changeFilterTerm="changeFilterTerm"
     :sortOrder="sortOrder"
     :filterTerm="filterTerm"
-    :fleetingNoteOptions="{showStackBadge: true}"
+    :noteOptions="{showStackBadge: true}"
     :enableStackFilterBox="true"
     ref="linkedNotes"
     >
-  </fleeting-note-list>
+  </note-list>
     </div>
   </div>
 </template>
 
 <script>
-import fleetingNoteList from '@/components/FleetingNoteList.vue'
-import fleetingNote from '@/components/FleetingNote.vue'
+import NoteList from '@/components/NoteList.vue'
+import Note from '@/components/Note.vue'
 import { bus } from '@/main'
 
 export default {
-  name: 'FleetingNotePage',
+  name: 'note-page',
   components: {
-    fleetingNoteList,
-    fleetingNote,
+    NoteList,
+    Note,
   },
   data() {
     return {
-      fn: this.$store.state.currentNoteCollection.getFleetingNoteByPath(
+      note: this.$store.state.currentNoteCollection.getNoteByPath(
         this.$route.params.name.split('/').map(c => decodeURIComponent(c)).join('/')
       ),
       decodedPath: this.$route.params.name.split('/').map(c => decodeURIComponent(c)).join('/'),
@@ -57,9 +57,9 @@ export default {
     }
   },
   methods: {
-    updateFleetingNotes() {
+    updateNotes() {
       if ((new Date() - this.lastUpdated) > 1000 ) {
-        this.fn = this.$store.state.currentNoteCollection.getFleetingNoteByPath(
+        this.note = this.$store.state.currentNoteCollection.getNoteByPath(
           this.decodedPath
         )
         this.lastUpdated = new Date()
@@ -87,21 +87,21 @@ export default {
   computed: {
     linkedNotes() {
       var notes = []
-      if (this.fn.hasMetadata) {
-        var metadata = this.fn.getMetadata()
+      if (this.note.hasMetadata) {
+        var metadata = this.note.getMetadata()
         if (metadata.links) {
           for (let i of metadata.links) {
-            let fnObj = this.$store.state.currentNoteCollection.getFleetingNoteByPath(i[0])
-            if (fnObj) {
-              notes.push({type: 'link', fnObj: fnObj, edgeProperties: i[1]})
+            let noteObj = this.$store.state.currentNoteCollection.getNoteByPath(i[0])
+            if (noteObj) {
+              notes.push({type: 'link', noteObj: noteObj, edgeProperties: i[1]})
             }
           }
         }
         if (metadata.backlinks) {
           for (let i of metadata.backlinks) {
-            let fnObj = this.$store.state.currentNoteCollection.getFleetingNoteByPath(i[0])
-            if (fnObj) {
-              notes.push({type: 'backlink', fnObj: fnObj, edgeProperties: i[1]})
+            let noteObj = this.$store.state.currentNoteCollection.getNoteByPath(i[0])
+            if (noteObj) {
+              notes.push({type: 'backlink', noteObj: noteObj, edgeProperties: i[1]})
             }
           }
         }
@@ -109,15 +109,15 @@ export default {
       return notes
     },
     stack() {
-      if (this.fn) {
-        return this.$store.state.currentNoteCollection.stacks.getStackByPath(this.fn.stack)
+      if (this.note) {
+        return this.$store.state.currentNoteCollection.stacks.getStackByPath(this.note.stack)
       }
     },
     routeTab() {
-      if (this.fn) {
+      if (this.note) {
         var routeTabData = {
-          title: this.fn.title || this.fn.content.slice(0, 20),
-          tips: this.fn.abstract || this.fn.content.slice(0, 400),
+          title: this.note.title || this.note.content.slice(0, 20),
+          tips: this.note.abstract || this.note.content.slice(0, 400),
         }
         for (let p of ['icon', 'iconColor', 'iconBackground']) {
           let v = this.stack.metadata.get(`style.${p}`)
@@ -131,15 +131,15 @@ export default {
   },
   mounted() {
     var collection = this.$store.state.currentNoteCollection
-    collection.events.on('stacksItemAdd', this.updateFleetingNotes)
-    collection.events.on('stacksItemChange', this.updateFleetingNotes)
-    collection.events.on('stacksItemDelete', this.updateFleetingNotes)
+    collection.events.on('stacksItemAdd', this.updateNotes)
+    collection.events.on('stacksItemChange', this.updateNotes)
+    collection.events.on('stacksItemDelete', this.updateNotes)
   },
   unmounted() {
     var collection = this.$store.state.currentNoteCollection
-    collection.events.removeListener('stacksItemAdd', this.updateFleetingNotes)
-    collection.events.removeListener('stacksItemChange', this.updateFleetingNotes)
-    collection.events.removeListener('stacksItemDelete', this.updateFleetingNotes)
+    collection.events.removeListener('stacksItemAdd', this.updateNotes)
+    collection.events.removeListener('stacksItemChange', this.updateNotes)
+    collection.events.removeListener('stacksItemDelete', this.updateNotes)
   },
   activated() {
     if (this.previouslyFocusedElement) {
@@ -152,7 +152,7 @@ export default {
 }
 </script>
 <style lang='scss'>
-.fleetingNotePage {
+.notePage {
   background: rgba(0, 0, 0, 0.05);
   min-height: -webkit-fill-available;
   overflow: hidden;
@@ -181,7 +181,7 @@ export default {
   .linkedNotes:focus-within {
     background: linear-gradient(90deg, transparent, #0090f71a);
   }
-  .parentNote .fleetingNote {
+  .parentNote .note {
     border-color: #81c181;
   }
   .linkedNote {

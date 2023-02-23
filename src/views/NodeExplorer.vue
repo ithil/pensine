@@ -1,5 +1,5 @@
 <template>
-  <div class="nodeExplorer" v-if="fn">
+  <div class="nodeExplorer" v-if="note">
     <div class="column">
       <node-tree
       class="item"
@@ -12,31 +12,31 @@
       >
     </node-tree>
   </div>
-  <div class="focusedNote column" v-if="focusedFnObj">
-    <fleeting-note
-    :fleetingNoteObj="focusedFnObj"
+  <div class="focusedNote column" v-if="noteObj">
+    <note
+    :noteObj="noteObj"
     :options="{showStackBadge: true}"
     class="focusedNote"
-    ref="fleetingNoteItem"
+    ref="noteItem"
     >
-    </fleeting-note>
-    <fleeting-note-list
-    :fleetingNotes="focusedNoteRelations"
-    :fleetingNoteOptions="{showStackBadge: true}"
+    </note>
+    <note-list
+    :notes="focusedNoteRelations"
+    :noteOptions="{showStackBadge: true}"
     @changeSortOrder="changeSortOrder"
     @changeFilterTerm="changeFilterTerm"
     :sortOrder="sortOrder"
     :filterTerm="filterTerm"
-    ref="fleetingNoteList"
+    ref="noteList"
     >
-  </fleeting-note-list>
+  </note-list>
   </div>
 </div>
 </template>
 
 <script>
-import fleetingNoteList from '@/components/FleetingNoteList.vue'
-import fleetingNote from '@/components/FleetingNote.vue'
+import NoteList from '@/components/NoteList.vue'
+import Note from '@/components/Note.vue'
 import nodeTree from '@/components/NodeTree.vue'
 
 import { bus } from '@/main'
@@ -44,13 +44,13 @@ import { bus } from '@/main'
 export default {
   name: 'NodeExplorer',
   components: {
-    fleetingNoteList,
-    fleetingNote,
+    NoteList,
+    Note,
     nodeTree,
   },
   data() {
     return {
-      fn: this.$store.state.currentNoteCollection.getFleetingNoteByPath(
+      note: this.$store.state.currentNoteCollection.getNoteByPath(
         this.$route.params.name.split('/').map(c => decodeURIComponent(c)).join('/')
       ),
       decodedPath: this.$route.params.name.split('/').map(c => decodeURIComponent(c)).join('/'),
@@ -59,14 +59,14 @@ export default {
       filterTerm: '',
       tree: [],
       focused: '',
-      focusedFnObj: null,
+      focusedNoteObj: null,
       previouslyFocusedElement: null,
     }
   },
   methods: {
-    updateFleetingNotes() {
+    updateNotes() {
       if ((new Date() - this.lastUpdated) > 1000 ) {
-        this.fn = this.$store.state.currentNoteCollection.getFleetingNoteByPath(
+        this.note = this.$store.state.currentNoteCollection.getNoteByPath(
           this.decodedPath
         )
         this.lastUpdated = new Date()
@@ -79,36 +79,36 @@ export default {
       var $this = this
       var childGetter = function() {
         var childs = []
-        for (let r of $this.getLinkedNotes(this.fnObj)) {
+        for (let r of $this.getLinkedNotes(this.noteObj)) {
           childs.push({
-            name: r.fnObj.abstract,
-            fnObj: r.fnObj,
-            id: `${this.id} ${r.fnObj.relativePath}`,
+            name: r.noteObj.abstract,
+            noteObj: r.noteObj,
+            id: `${this.id} ${r.noteObj.relativePath}`,
             getChildren() { return $this.getChildGetter().bind(this)() },
-            click() { $this.focused = this.id; $this.focusedFnObj = this.fnObj },
+            click() { $this.focused = this.id; $this.focusedNoteObj = this.noteObj },
           })
         }
         return childs
       }
       return childGetter
     },
-    getLinkedNotes(fn) {
+    getLinkedNotes(note) {
       var notes = []
-      if (fn.hasMetadata) {
-        var metadata = fn.getMetadata()
+      if (note.hasMetadata) {
+        var metadata = note.getMetadata()
         if (metadata.links) {
           for (let i of metadata.links) {
-            let fnObj = this.$store.state.currentNoteCollection.getFleetingNoteByPath(i[0])
-            if (fnObj) {
-              notes.push({type: 'link', fnObj: fnObj, edgeProperties: i[1]})
+            let noteObj = this.$store.state.currentNoteCollection.getNoteByPath(i[0])
+            if (noteObj) {
+              notes.push({type: 'link', noteObj: noteObj, edgeProperties: i[1]})
             }
           }
         }
         if (metadata.backlinks) {
           for (let i of metadata.backlinks) {
-            let fnObj = this.$store.state.currentNoteCollection.getFleetingNoteByPath(i[0])
-            if (fnObj) {
-              notes.push({type: 'backlink', fnObj: fnObj, edgeProperties: i[1]})
+            let noteObj = this.$store.state.currentNoteCollection.getNoteByPath(i[0])
+            if (noteObj) {
+              notes.push({type: 'backlink', noteObj: noteObj, edgeProperties: i[1]})
             }
           }
         }
@@ -124,16 +124,16 @@ export default {
   },
   computed: {
     routeTab() {
-      if (this.fn) {
+      if (this.note) {
         return {
-          title: this.fn.title || this.fn.content.slice(0, 20),
-          tips: this.fn.abstract || this.fn.content.slice(0, 400),
+          title: this.note.title || this.note.content.slice(0, 20),
+          tips: this.note.abstract || this.note.content.slice(0, 400),
         }
       }
     },
     focusedNoteRelations() {
-      if (this.focusedFnObj) {
-        return this.getLinkedNotes(this.focusedFnObj).map(r => r.fnObj)
+      if (this.noteObj) {
+        return this.getLinkedNotes(this.noteObj).map(r => r.noteObj)
       }
       else {
         return []
@@ -143,23 +143,23 @@ export default {
   mounted() {
     var $this = this
     this.tree.push({
-      name: this.fn.abstract,
-      fnObj: this.fn,
-      id: `${this.fn.relativePath}`,
+      name: this.note.abstract,
+      noteObj: this.note,
+      id: `${this.note.relativePath}`,
       getChildren() {
         var childs = []
-        for (let r of $this.getLinkedNotes($this.fn)) {
+        for (let r of $this.getLinkedNotes($this.note)) {
           childs.push({
-            name: r.fnObj.abstract,
-            fnObj: r.fnObj,
-            id: `${this.id} ${r.fnObj.relativePath}`,
+            name: r.noteObj.abstract,
+            noteObj: r.noteObj,
+            id: `${this.id} ${r.noteObj.relativePath}`,
             getChildren() { return $this.getChildGetter().bind(this)() },
-            click() { $this.focused = this.id; $this.focusedFnObj = this.fnObj },
+            click() { $this.focused = this.id; $this.focusedNoteObj = this.noteObj },
           })
         }
         return childs
       },
-      click() { $this.focused = this.id; $this.focusedFnObj = this.fnObj },
+      click() { $this.focused = this.id; $this.focusedNoteObj = this.noteObj },
     })
   },
   unmounted() {
@@ -193,7 +193,7 @@ export default {
     width: 40%;
   }
 }
-.fleetingNote.focusedNote {
+.note.focusedNote {
   border-color: #81c181;
   margin-bottom: 20px;
 }

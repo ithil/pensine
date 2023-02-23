@@ -28,9 +28,9 @@
         </div>
       </div>
     </div>
-    <fleeting-note-list
-    :fleetingNotes="fleetingNotes"
-    @updateFleetingNotes="updateFleetingNotes"
+    <note-list
+    :notes="notes"
+    @updateNotes="updateNotes"
     @focusSendBox="focusSendBox"
     @focusFilterInput="focusFilterInput"
     @changeSortOrder="changeSortOrder"
@@ -39,18 +39,18 @@
     :stack="stack"
     :sortOrder="sortOrder"
     :filterTerm="filterTerm"
-    :fleetingNoteOptions="{showRightHandRelations: true}"
+    :noteOptions="{showRightHandRelations: true}"
     :showLeftHandBox="true"
-    ref="fleetingNoteList"
+    ref="noteList"
     >
-  </fleeting-note-list>
-  <div class="no-notes message-box" v-if="fleetingNotes.length == 0">
+  </note-list>
+  <div class="no-notes message-box" v-if="notes.length == 0">
     <Icon name="Ghost" />
     This stack does not have any notes.
   </div>
-  <div class="sendFleetingNote">
+  <div class="sendNote">
     <textarea
-    v-model="newFleetingNoteContent"
+    v-model="newNoteContent"
     @keydown="sendKeymonitor"
     ref="sendBox"
     placeholder="Send to Stack ..."
@@ -60,23 +60,23 @@
 </template>
 
 <script>
-import fleetingNoteList from '@/components/FleetingNoteList.vue'
+import NoteList from '@/components/NoteList.vue'
 import { bus } from '@/main'
 import Icon from '@/components/Icon.vue'
 
 export default {
   name: 'Stack',
   components: {
-    fleetingNoteList,
+    NoteList,
     Icon,
   },
   data() {
     return {
       stack: this.$store.state.currentNoteCollection.stacks.getStackByPath(this.$route.params.name),
-      fleetingNotes: [],
+      notes: [],
       lastUpdated: 0,
       substacks: [],
-      newFleetingNoteContent: '',
+      newNoteContent: '',
       sortOrder: 'newestFirst',
       filterTerm: '',
       sortOptions: [
@@ -97,31 +97,31 @@ export default {
     }
   },
   methods: {
-    updateFleetingNotes() {
+    updateNotes() {
       if ((new Date() - this.lastUpdated) > 1000 ) {
         var content = this.stack.getContent()
-        this.fleetingNotes = content.filter(i => !i.isStack)
+        this.notes = content.filter(i => !i.isStack)
         this.substacks = content.filter(i => i.isStack)
         this.lastUpdated = new Date()
-        if (this.$refs.fleetingNoteList?.focusedNotePath === '') {
-          this.$refs.fleetingNoteList.setFocusToFirstNote()
+        if (this.$refs.noteList?.focusedNotePath === '') {
+          this.$refs.noteList.setFocusToFirstNote()
         }
       }
     },
     sendNewNote() {
-      var notePath = this.stack.sendText(this.newFleetingNoteContent)
+      var notePath = this.stack.sendText(this.newNoteContent)
       if (notePath) {
-        this.$refs.fleetingNoteList.scrollToFocusedNoteOnNextUpdate = true
-        this.$refs.fleetingNoteList.setFocusedNotePath(notePath)
+        this.$refs.noteList.scrollToFocusedNoteOnNextUpdate = true
+        this.$refs.noteList.setFocusedNotePath(notePath)
       }
-      this.newFleetingNoteContent = ''
-      this.$refs.fleetingNoteList.$el.focus()
+      this.newNoteContent = ''
+      this.$refs.noteList.$el.focus()
     },
     _sendNewNote(text, {scrollIntoView = false} = {}) {
       var notePath = this.stack.sendText(text)
       if (notePath) {
-        this.$refs.fleetingNoteList.scrollToFocusedNoteOnNextUpdate = true
-        this.$refs.fleetingNoteList.setFocusedNotePath(notePath)
+        this.$refs.noteList.scrollToFocusedNoteOnNextUpdate = true
+        this.$refs.noteList.setFocusedNotePath(notePath)
       }
       return notePath
     },
@@ -132,20 +132,20 @@ export default {
         event.preventDefault()
       }
       else if (event.key == 'Escape') {
-        this.$refs.fleetingNoteList.$el.focus()
+        this.$refs.noteList.$el.focus()
       }
     },
     filterInputKeymonitor(event) {
       if (event.key == 'Enter') {
-        this.$refs.fleetingNoteList.$el.focus()
-        this.$refs.fleetingNoteList.setFocusToFirstNote()
+        this.$refs.noteList.$el.focus()
+        this.$refs.noteList.setFocusToFirstNote()
         event.stopPropagation()
         event.preventDefault()
       }
       else if (event.key == 'Escape') {
         this.filterTerm = ''
-        this.$refs.fleetingNoteList.$el.focus()
-        this.$refs.fleetingNoteList.scrollFocusedIntoView()
+        this.$refs.noteList.$el.focus()
+        this.$refs.noteList.scrollFocusedIntoView()
       }
     },
     focusSendBox() {
@@ -168,7 +168,7 @@ export default {
       if (this.stack) {
         var routeTabData = {
           title: this.stack.name || 'Stack',
-          tips: `${this.stack.relativePath} – ${this.fleetingNotes.length} items`,
+          tips: `${this.stack.relativePath} – ${this.notes.length} items`,
           tabClass: 'stack',
         }
         for (let p of ['icon', 'iconColor', 'iconBackground']) {
@@ -201,10 +201,10 @@ export default {
   mounted() {
     var collection = this.$store.state.currentNoteCollection
     this.$store.commit('setTitle', 'Stack')
-    collection.events.on('stacksItemAdd', this.updateFleetingNotes)
-    collection.events.on('stacksItemChange', this.updateFleetingNotes)
-    collection.events.on('stacksItemDelete', this.updateFleetingNotes)
-    this.updateFleetingNotes()
+    collection.events.on('stacksItemAdd', this.updateNotes)
+    collection.events.on('stacksItemChange', this.updateNotes)
+    collection.events.on('stacksItemDelete', this.updateNotes)
+    this.updateNotes()
     var $this = this
     bus.$on('filterTag', (opts) => {
       if (!$this._inactive) {
@@ -221,9 +221,9 @@ export default {
   },
   unmounted() {
     var collection = this.$store.state.currentNoteCollection
-    collection.events.removeListener('stacksItemAdd', this.updateFleetingNotes)
-    collection.events.removeListener('stacksItemChange', this.updateFleetingNotes)
-    collection.events.removeListener('stacksItemDelete', this.updateFleetingNotes)
+    collection.events.removeListener('stacksItemAdd', this.updateNotes)
+    collection.events.removeListener('stacksItemChange', this.updateNotes)
+    collection.events.removeListener('stacksItemDelete', this.updateNotes)
     this.$store.commit('resetTitle')
   },
   activated() {
@@ -347,14 +347,14 @@ export default {
       }
     }
   }
-  .fleetingNoteList {
-    /deep/ .fleetingNotes {
+  .noteList {
+    /deep/ .notes {
       margin: 0 auto;
       width: 630px;
       padding-top: 30px;
       padding-bottom: 30px;
     }
-    /deep/ .fleetingNote {
+    /deep/ .note {
       scroll-margin-top: 55px;
       scroll-margin-bottom: 55px;
     }
@@ -369,7 +369,7 @@ export default {
   border: 2px solid #b7b7b7;
   font-style: italic;
 }
-.sendFleetingNote {
+.sendNote {
   margin: auto auto;
   width: fit-content;
   position: sticky;

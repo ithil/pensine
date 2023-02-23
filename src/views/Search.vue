@@ -24,19 +24,19 @@
         </select>
       </div>
     </div>
-    <fleeting-note-list
-    :fleetingNotes="fleetingNotes"
-    @updateFleetingNotes="updateFleetingNotes"
+    <note-list
+    :notes="notes"
+    @updateNotes="updateNotes"
     @changeSortOrder="changeSortOrder"
     @focusFilterInput="$refs.searchInput.focus()"
     :sortOrder="sortOrder"
-    :fleetingNoteOptions="{showRightHandRelations: true, showStackBadge: true}"
+    :noteOptions="{showRightHandRelations: true, showStackBadge: true}"
     :showLeftHandBox="true"
     :enableStackFilterBox="true"
     :outlineOpen="true"
-    ref="fleetingNoteList"
+    ref="noteList"
     >
-  </fleeting-note-list>
+  </note-list>
   <div class="no-notes message-box" v-if="searchInProgess">
     <Icon name="Loader" />
     Search in progess ...
@@ -49,19 +49,19 @@
 </template>
 
 <script>
-import fleetingNoteList from '@/components/FleetingNoteList.vue'
+import NoteList from '@/components/NoteList.vue'
 import { bus } from '@/main'
 import Icon from '@/components/Icon.vue'
 
 export default {
   name: 'Search',
   components: {
-    fleetingNoteList,
+    NoteList,
     Icon,
   },
   data() {
     return {
-      fleetingNotes: [],
+      notes: [],
       lastUpdated: 0,
       sortOrder: 'newestFirst',
       searchTerm: '',
@@ -88,7 +88,7 @@ export default {
     }
   },
   methods: {
-    updateFleetingNotes() {
+    updateNotes() {
       if ((new Date() - this.lastUpdated) > 1000 ) {
         this.executeSearch()
         this.lastUpdated = new Date()
@@ -98,7 +98,7 @@ export default {
       var searchTerm = this.searchTerm
       if (searchTerm.length > 0) {
         this.executedSearchTerm = searchTerm
-        this.fleetingNotes = []
+        this.notes = []
         this.searchInProgess = true
         var useRegex = false
         if (this.useRegex) {
@@ -112,21 +112,21 @@ export default {
           useRegex = true
         }
         var collection = this.$store.state.currentNoteCollection
-        collection.searchFleetingNotes(searchTerm, useRegex).then(notes => {
+        collection.searchNotes(searchTerm, useRegex).then(notes => {
           this.searchInProgess = false
-          this.fleetingNotes = notes
-          this.$refs.fleetingNoteList.clearRelationFilter()
-          this.$refs.fleetingNoteList.clearStackFilter()
+          this.notes = notes
+          this.$refs.noteList.clearRelationFilter()
+          this.$refs.noteList.clearStackFilter()
           if (notes.length < 1) {
             this.noResults = true
           }
           else {
             this.noResults = false
-            this.$refs.fleetingNoteList.$el.focus()
+            this.$refs.noteList.$el.focus()
             var $this = this
             setTimeout(function () { // This is just a dirty hack so I can go to bed
-              $this.$refs.fleetingNoteList.setFocusToFirstNote()
-              $this.$refs.fleetingNoteList.scrollFocusedIntoView()
+              $this.$refs.noteList.setFocusToFirstNote()
+              $this.$refs.noteList.scrollFocusedIntoView()
             }, 50)
           }
         })
@@ -140,24 +140,24 @@ export default {
     routeTab() {
       return {
         title: this.executedSearchTerm || 'Search',
-        tips: `${this.fleetingNotes.length} results`,
+        tips: `${this.notes.length} results`,
       }
     },
   },
   mounted() {
     var collection = this.$store.state.currentNoteCollection
-    collection.events.on('stacksItemAdd', this.updateFleetingNotes)
-    collection.events.on('stacksItemChange', this.updateFleetingNotes)
-    collection.events.on('stacksItemDelete', this.updateFleetingNotes)
-    // this.updateFleetingNotes()
+    collection.events.on('stacksItemAdd', this.updateNotes)
+    collection.events.on('stacksItemChange', this.updateNotes)
+    collection.events.on('stacksItemDelete', this.updateNotes)
+    // this.updateNotes()
     this.$refs.searchInput.focus()
     var $this = this
   },
   unmounted() {
     var collection = this.$store.state.currentNoteCollection
-    collection.events.removeListener('stacksItemAdd', this.updateFleetingNotes)
-    collection.events.removeListener('stacksItemChange', this.updateFleetingNotes)
-    collection.events.removeListener('stacksItemDelete', this.updateFleetingNotes)
+    collection.events.removeListener('stacksItemAdd', this.updateNotes)
+    collection.events.removeListener('stacksItemChange', this.updateNotes)
+    collection.events.removeListener('stacksItemDelete', this.updateNotes)
   },
   activated() {
     if (this.previouslyFocusedElement) {
@@ -235,14 +235,14 @@ export default {
       }
     }
   }
-  .fleetingNoteList {
-    /deep/ .fleetingNotes {
+  .noteList {
+    /deep/ .notes {
       margin: 0 auto;
       width: 630px;
       padding-top: 30px;
       padding-bottom: 30px;
     }
-    /deep/ .fleetingNote {
+    /deep/ .note {
       scroll-margin-top: 101px;
       scroll-margin-bottom: 5px;
       .rightHandRelations {

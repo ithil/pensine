@@ -99,12 +99,12 @@ const store = new Vuex.Store({
       state.title = title
       document.title = title
     },
-    addToBag(state, fleetingNotePath) {
-      state.bag.push(fleetingNotePath)
+    addToBag(state, notePath) {
+      state.bag.push(notePath)
       state.bag = [...new Set(state.bag)]
     },
-    removeFromBag(state, fleetingNotePath) {
-      state.bag = state.bag.filter(i => i != fleetingNotePath)
+    removeFromBag(state, notePath) {
+      state.bag = state.bag.filter(i => i != notePath)
     },
     emptyBag(state) {
       state.bag = []

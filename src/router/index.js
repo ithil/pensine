@@ -2,7 +2,7 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
 import Stack from '../views/Stack.vue'
-import FleetingNotePage from '../views/FleetingNotePage.vue'
+import NotePage from '../views/NotePage.vue'
 import NodeExplorer from '../views/NodeExplorer.vue'
 import Search from '../views/Search.vue'
 
@@ -63,17 +63,17 @@ const routes = [
     },
   },
   {
-    path: '/fleetingnote/:name(.*)',
-    name: 'Fleeting Note Page',
+    path: '/note/:name(.*)',
+    name: 'Note Page',
     alias: '/n/:name(.*)',
-    component: FleetingNotePage,
+    component: NotePage,
     meta: {
-      title: 'Fleeting Note Page', // tab title
+      title: 'Note Page', // tab title
       icon: 'FileText',
       iconColor: '#000',
       iconBackground: '#fbe1e1',
       key: 'path',
-      tips: 'Fleeting Note Page', // tab tooltip, optional. defaults to `meta.title`
+      tips: 'Note Page', // tab tooltip, optional. defaults to `meta.title`
       closable: true // is tab closable, defaults to `true`
     },
   },

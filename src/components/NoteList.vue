@@ -1,6 +1,6 @@
 <template>
-  <div class="fleetingNoteList" tabindex="10" @keydown="keymonitor" ref="fleetingNoteList">
-    <div class="stackFilterBox" v-if="enableStackFilterBox && fleetingNotes.length > 0" >
+  <div class="noteList" tabindex="10" @keydown="keymonitor" ref="noteList">
+    <div class="stackFilterBox" v-if="enableStackFilterBox && notes.length > 0" >
       <span class="clearStackFilter" @click="clearStackFilter"><Icon name="XOctagon" /></span>
       <span
       v-for="[stack, number] in stackDistribution"
@@ -40,7 +40,7 @@
         </template>
         <template v-slot:body>
           <ul>
-            <li v-for="n in processedFleetingNotes" :key="n.relativePath"
+            <li v-for="n in processedNotes" :key="n.relativePath"
             class="relation"
             :class="{ title: n.title ? true : false, focused: focusedNotePath == n.path, selected: selectedNotes.some(i => i.path == n.path) }"
             :ref="focusedNotePath == n.path ? 'focusedInOutline' : undefined"
@@ -161,11 +161,11 @@
         </template>
       </collapse>
     </div>
-    <div class="fleetingNotes">
-      <div v-for="f in processedFleetingNotes" :key="f.filename">
-        <fleeting-note
-        :fleetingNoteObj="f"
-        :options="fleetingNoteOptions"
+    <div class="notes">
+      <div v-for="f in processedNotes" :key="f.filename">
+        <note
+        :noteObj="f"
+        :options="noteOptions"
         @selectNote="selectNote"
         @unselectNote="unselectNote"
         @focusNote="focusNote"
@@ -175,9 +175,9 @@
         :class="checkFocus(f) ? 'focused' : ''"
         :isFocused="checkFocus(f)"
         :searchString="searchString"
-        ref="fleetingNoteItems"
+        ref="noteItems"
         >
-        </fleeting-note>
+        </note>
       </div>
     </div>
     <div class="searchBar" v-if="searchBarVisible">
@@ -197,7 +197,7 @@
           <div
           class="note"
           :class="{ concise: overviewMode == 'concise' }"
-          v-for="f in processedFleetingNotes"
+          v-for="f in processedNotes"
           :key="f.filename"
           @click="clickOnOverviewNote($event, f)"
           :title="moment(f.date).format('ddd DD. MMMM YYYY HH:mm:ss')"
@@ -250,7 +250,7 @@
       <span v-if="focusedNoteIndex != null" class="statusBarItem focusedNoteIndex">{{focusedNoteIndex + 1}}</span>
       <span class="statusBarItem">
         <Icon name="FileText" />
-        <span v-if="processedFleetingNotes.length != fleetingNotes.length" class="filteredItemCount"> {{processedFleetingNotes.length}} /</span> {{fleetingNotes.length}}
+        <span v-if="processedNotes.length != notes.length" class="filteredItemCount"> {{processedNotes.length}} /</span> {{notes.length}}
       </span>
     </portal>
   </div>
@@ -263,7 +263,7 @@ import sanitizeFilename from 'sanitize-filename'
 import fuzzysort from 'fuzzysort'
 import moment from 'moment'
 import 'moment/locale/de'
-import fleetingNote from '@/components/FleetingNote.vue'
+import Note from '@/components/Note.vue'
 import MarkdownIt from 'markdown-it'
 import { clipboard, shell, nativeImage } from 'electron'
 import Icon from '@/components/Icon.vue'
@@ -287,10 +287,10 @@ function* arrIterator(arr) {
 }
 
 export default {
-  name: 'fleeting-note-list',
+  name: 'note-list',
   props: {
-    'fleetingNotes': Array,
-    'fleetingNoteOptions': {
+    'notes': Array,
+    'noteOptions': {
       type: Object,
       default() {
         return {}
@@ -323,7 +323,7 @@ export default {
     },
   },
   components: {
-    fleetingNote,
+    Note,
     Icon,
     Collapse,
   },
@@ -358,23 +358,23 @@ export default {
     }
   },
   methods: {
-    updateFleetingNotes() {
-      this.$emit('updateFleetingNotes')
+    updateNotes() {
+      this.$emit('updateNotes')
     },
     setFocusToFirstNote() {
       this.$nextTick(() => {
-        this.focusedNotePath = this.processedFleetingNotes[0] ? this.processedFleetingNotes[0].path : ''
+        this.focusedNotePath = this.processedNotes[0] ? this.processedNotes[0].path : ''
       })
     },
-    selectNote(fleetingNoteObj) {
-      this.selectedNotes.push(fleetingNoteObj)
+    selectNote(noteObj) {
+      this.selectedNotes.push(noteObj)
     },
-    unselectNote(fleetingNoteObj) {
-      var index = this.selectedNotes.findIndex(n => n.path == fleetingNoteObj.path)
+    unselectNote(noteObj) {
+      var index = this.selectedNotes.findIndex(n => n.path == noteObj.path)
       this.selectedNotes.splice(index, 1)
     },
-    markNote(fleetingNoteObj, mark) {
-      this.markedNotes[mark] = fleetingNoteObj
+    markNote(noteObj, mark) {
+      this.markedNotes[mark] = noteObj
     },
     gotoMark(mark) {
       if (this.markedNotes[mark]) {
@@ -388,15 +388,15 @@ export default {
     },
     chooseNoteModal() {
       var $this = this
-      var processedFleetingNotes = this.processedFleetingNotes
-      var items = processedFleetingNotes.map(fn => {
-        let numberOfLinks = fn.relations.length
+      var processedNotes = this.processedNotes
+      var items = processedNotes.map(note => {
+        let numberOfLinks = note.relations.length
         return {
-          label: fn.abstract,
+          label: note.abstract,
           lucideIcon: 'FileText',
-          description: `${numberOfLinks > 0 ? numberOfLinks+' relations – ' : ''}${moment(fn.date).format('DD.MM.YYYY')}`,
+          description: `${numberOfLinks > 0 ? numberOfLinks+' relations – ' : ''}${moment(note.date).format('DD.MM.YYYY')}`,
           action:() => {
-            $this.focusNote(fn)
+            $this.focusNote(note)
             $this.scrollFocusedIntoView()
           }
         }
@@ -424,8 +424,8 @@ export default {
     },
     stackFilter(mode) {
       var $this = this
-      var fleetingNotes = this.fleetingNotes
-      var stackList = [...new Set(fleetingNotes.map(fn => fn.stack || 'inbox'))]
+      var notes = this.notes
+      var stackList = [...new Set(notes.map(note => note.stack))]
       var items = stackList.map(s => {
         return {
           label: s,
@@ -546,16 +546,16 @@ export default {
     showBag() {
       var $this = this
       var bag = this.$store.state.bag
-      var items = bag.map(fnPath => {
-        var fn = $this.$store.state.currentNoteCollection.getFleetingNoteByPath(fnPath)
-        if (fn) {
+      var items = bag.map(notePath => {
+        var note = $this.$store.state.currentNoteCollection.getNoteByPath(notePath)
+        if (note) {
           return {
-            label: fn.abstract,
+            label: note.abstract,
             lucideIcon: 'File',
-            description: fn.stack || 'Inbox',
+            description: note.stack,
             action:() => {
-              console.log(fn.path)
-              this.$store.commit('removeFromBag', fn.path)
+              console.log(note.path)
+              this.$store.commit('removeFromBag', note.path)
             }
           }
         }
@@ -584,7 +584,7 @@ export default {
     deleteSelectedNotes(event) {
       var $this = this
       this.$store.commit('triggerCustomTextPrompt', {
-        message: `Are you sure you want to delete ${this.selectedNotes.length} fleeting notes?`,
+        message: `Are you sure you want to delete ${this.selectedNotes.length} notes?`,
         action: (text) => {
           if (['y', 'yes'].includes(text.trim())) {
             for (let n of $this.selectedNotes) {
@@ -604,16 +604,16 @@ export default {
       var stacks = this.$store.state.currentNoteCollection.stacks.getListOfStacks()
       var items = []
       var getSubItemsOfStack = function (stack) {
-        var fleetingNotes = stack.getContent().filter(i => !i.isStack)
-        var fnList = []
-        for (let fn of fleetingNotes) {
-          let numberOfLinks = fn.relations.length
-          fnList.push({
-            label: fn.abstract,
+        var notes = stack.getContent().filter(i => !i.isStack)
+        var noteList = []
+        for (let note of notes) {
+          let numberOfLinks = note.relations.length
+          noteList.push({
+            label: note.abstract,
             lucideIcon: 'FileText',
             description: `${numberOfLinks} relations`,
-            description: `${numberOfLinks > 0 ? numberOfLinks+' relations – ' : ''}${moment(fn.date).format('DD.MM.YYYY')}`,
-            type: 'fleetingNote',
+            description: `${numberOfLinks > 0 ? numberOfLinks+' relations – ' : ''}${moment(note.date).format('DD.MM.YYYY')}`,
+            type: 'note',
             action: () => {
               setTimeout(() => {
                 $this.$store.commit('triggerCustomTextPrompt', {
@@ -621,41 +621,41 @@ export default {
                   action: (edgeProperties) => {
                     edgeProperties = edgeProperties.split(',').map(i => i.trim()).filter(i => i)
                     for (let n of $this.selectedNotes) {
-                      n.addLink(fn.relativePath, edgeProperties)
+                      n.addLink(note.relativePath, edgeProperties)
                     }
                     $this.selectedNotes = []
-                    for (let n of $this.$refs.fleetingNoteItems) {
+                    for (let n of $this.$refs.noteItems) {
                       n.selected = false
                     }
-                    $this.$refs.fleetingNoteList.focus()
+                    $this.$refs.noteList.focus()
                   }
                 })
               }, 50)
             },
             getSubItems: () => {
               return {
-                newItems: getSubItemsOfFleetingNote(fn),
-                newMessage: fn.abstract,
+                newItems: getSubItemsOfNote(note),
+                newMessage: note.abstract,
               }
             },
           })
         }
-        return fnList
+        return noteList
       }
-      var getSubItemsOfFleetingNote = function (parentFn) {
-        var relations = parentFn.relations
+      var getSubItemsOfNote = function (parentNote) {
+        var relations = parentNote.relations
         if (relations.length < 1) {
           return false
         }
-        var fnList = []
+        var noteList = []
         for (let relation of relations) {
-          let fn = relation.fn
-          let numberOfLinks = fn.relations.length
-          fnList.push({
-            label: fn.abstract,
+          let note = relation.note
+          let numberOfLinks = note.relations.length
+          noteList.push({
+            label: note.abstract,
             lucideIcon: 'FileText',
-            description: `${fn.stack || 'Inbox'} –${numberOfLinks > 0 ? ' '+numberOfLinks+' relations –' : ''}  ${moment(fn.date).format('DD.MM.YYYY')}`,
-            type: 'fleetingNote',
+            description: `${note.stack} –${numberOfLinks > 0 ? ' '+numberOfLinks+' relations –' : ''}  ${moment(note.date).format('DD.MM.YYYY')}`,
+            type: 'note',
             action: () => {
               setTimeout(() => {
                 $this.$store.commit('triggerCustomTextPrompt', {
@@ -663,27 +663,27 @@ export default {
                   action: (edgeProperties) => {
                     edgeProperties = edgeProperties.split(',').map(i => i.trim()).filter(i => i)
                     for (let n of $this.selectedNotes) {
-                      n.addLink(fn.relativePath, edgeProperties)
+                      n.addLink(note.relativePath, edgeProperties)
                     }
                     $this.selectedNotes = []
-                    for (let n of $this.$refs.fleetingNoteItems) {
+                    for (let n of $this.$refs.noteItems) {
                       n.selected = false
                     }
-                    $this.$refs.fleetingNoteList.focus()
+                    $this.$refs.noteList.focus()
                   }
                 })
               }, 50)
             },
             getSubItems: () => {
               return {
-                newItems: getSubItemsOfFleetingNote(fn),
-                newMessage: fn.abstract,
+                newItems: getSubItemsOfNote(note),
+                newMessage: note.abstract,
               }
             },
           })
         }
-        var myStack = parentFn.collection.stacks.getStackByPath(parentFn.stack)
-        fnList.push({
+        var myStack = parentNote.collection.stacks.getStackByPath(parentNote.stack)
+        noteList.push({
           label: myStack.relativePath,
           lucideIcon: 'Layers',
           description: 'Stack',
@@ -695,7 +695,7 @@ export default {
             }
           },
         })
-        return fnList
+        return noteList
       }
       for (let s of stacks) {
         items.push({
@@ -732,11 +732,11 @@ export default {
     linkSelectedNotesChoosingFromBag() {
       var $this = this
       var bag = this.$store.state.bag
-      var items = bag.map(fnPath => {
-        var fn = $this.$store.state.currentNoteCollection.getFleetingNoteByPath(fnPath)
-        if (fn) {
+      var items = bag.map(notePath => {
+        var note = $this.$store.state.currentNoteCollection.getNoteByPath(notePath)
+        if (note) {
           return {
-            label: fn.abstract,
+            label: note.abstract,
             lucideIcon: 'File',
             action:() => {
               setTimeout(() => {
@@ -745,13 +745,13 @@ export default {
                   action: (edgeProperties) => {
                     edgeProperties = edgeProperties.split(',').map(i => i.trim()).filter(i => i)
                     for (let n of $this.selectedNotes) {
-                      n.addLink(fn.relativePath, edgeProperties)
+                      n.addLink(note.relativePath, edgeProperties)
                     }
                     $this.selectedNotes = []
-                    for (let n of this.$refs.fleetingNoteItems) {
+                    for (let n of this.$refs.noteItems) {
                       n.selected = false
                     }
-                    this.$refs.fleetingNoteList.focus()
+                    this.$refs.noteList.focus()
                   }
                 })
               }, 50)
@@ -795,7 +795,7 @@ export default {
                           n.addLink(i.relativePath, edgeProperties)
                         }
                         $this.selectedNotes = []
-                        for (let n of $this.$refs.fleetingNoteItems) {
+                        for (let n of $this.$refs.noteItems) {
                           n.selected = false
                         }
                       }
@@ -816,13 +816,13 @@ export default {
           lucideIcon: 'FilePlus',
           label: 'Link all bagged notes',
           action: () => {
-            for (let fnPath of bag) {
+            for (let notePath of bag) {
               for (let n of $this.selectedNotes) {
-                // this fnPath is absoulte but needs to be relative!!!
-                n.addLink(fnPath)
+                // this notePath is absoulte but needs to be relative!!!
+                n.addLink(notePath)
               }
               $this.selectedNotes = []
-              for (let n of $this.$refs.fleetingNoteItems) {
+              for (let n of $this.$refs.noteItems) {
                 n.selected = false
               }
             }
@@ -864,12 +864,12 @@ export default {
                     n.addLink(i.relativePath, edgeProperties)
                   }
                   $this.selectedNotes = []
-                  for (let n of $this.$refs.fleetingNoteItems) {
+                  for (let n of $this.$refs.noteItems) {
                     n.selected = false
                   }
                 }
                 else {
-                  let n = $this.getFocusedNoteItem().fleetingNoteObj
+                  let n = $this.getFocusedNoteItem().noteObj
                   if (n) {
                     n.addLink(i.relativePath, edgeProperties)
                   }
@@ -886,23 +886,23 @@ export default {
           label: newTag,
           description: 'Create new tag',
           action: () => {
-            var newFnPath = path.join(tagStackPath, `${sanitizeFilename(newTag)}.md`)
-            fs.writeFileSync(newFnPath, `# ${newTag}`, 'utf8')
-            var newFn = $this.$store.state.currentNoteCollection.getFleetingNoteByPath(newFnPath)
+            var newNotePath = path.join(tagStackPath, `${sanitizeFilename(newTag)}.md`)
+            fs.writeFileSync(newNotePath, `# ${newTag}`, 'utf8')
+            var newNote = $this.$store.state.currentNoteCollection.getNoteByPath(newNotePath)
             var edgeProperties = ['tag']
             if ($this.selectedNotes.length > 0) {
               for (let n of $this.selectedNotes) {
-                n.addLink(newFn.relativePath, edgeProperties)
+                n.addLink(newNote.relativePath, edgeProperties)
               }
               $this.selectedNotes = []
-              for (let n of $this.$refs.fleetingNoteItems) {
+              for (let n of $this.$refs.noteItems) {
                 n.selected = false
               }
             }
             else {
-              let n = $this.getFocusedNoteItem().fleetingNoteObj
+              let n = $this.getFocusedNoteItem().noteObj
               if (n) {
-                n.addLink(newFn.relativePath, edgeProperties)
+                n.addLink(newNote.relativePath, edgeProperties)
               }
             }
           },
@@ -969,7 +969,7 @@ export default {
               p.sendToPort(n)
             }
             $this.selectedNotes = []
-            this.$refs.fleetingNoteList.focus()
+            this.$refs.noteList.focus()
           }
         }
       })
@@ -979,8 +979,8 @@ export default {
         event.stopPropagation()
       }
     },
-    focusNote(fleetingNoteObj, event) {
-      this.focusedNotePath = fleetingNoteObj.path
+    focusNote(noteObj, event) {
+      this.focusedNotePath = noteObj.path
       if (event) {
         var el = event.target
         var classes = []
@@ -990,28 +990,28 @@ export default {
           }
           el = el.parentNode
         }
-        if (!classes.includes('fleetingNoteEditor')) {
-          this.$refs.fleetingNoteList.focus()
+        if (!classes.includes('noteEditor')) {
+          this.$refs.noteList.focus()
         }
       }
       else {
-        this.$refs.fleetingNoteList.focus()
+        this.$refs.noteList.focus()
       }
     },
     focusNext(c = 1) {
-      var index = this.processedFleetingNotes.findIndex(i => i.path == this.focusedNotePath)
-      var len = this.processedFleetingNotes.length
+      var index = this.processedNotes.findIndex(i => i.path == this.focusedNotePath)
+      var len = this.processedNotes.length
       if (index > -1) {
         if (index + c >= len) {
           let diff = (index + c) - len
-          this.focusedNotePath = this.processedFleetingNotes[0 + diff].path
+          this.focusedNotePath = this.processedNotes[0 + diff].path
         }
         else if (index + c < 0) {
           let diff = Math.abs(index + c)
-          this.focusedNotePath = this.processedFleetingNotes[len - diff].path
+          this.focusedNotePath = this.processedNotes[len - diff].path
         }
         else {
-          this.focusedNotePath = this.processedFleetingNotes[index + c].path
+          this.focusedNotePath = this.processedNotes[index + c].path
         }
         this.scrollFocusedIntoView()
       }
@@ -1035,10 +1035,10 @@ export default {
       this.focusedNotePath = notePath
     },
     getFocusedNoteItem() {
-      return this.$refs.fleetingNoteItems?.find(n => n.$el.classList.contains('focused'))
+      return this.$refs.noteItems?.find(n => n.$el.classList.contains('focused'))
     },
     getSelectedNotesItems() {
-      return this.$refs.fleetingNoteItems?.filter(n => n.$el.classList.contains('selected')) || []
+      return this.$refs.noteItems?.filter(n => n.$el.classList.contains('selected')) || []
     },
     preventDefaultFix(event) {
       var tagName = event.target.tagName
@@ -1107,13 +1107,13 @@ export default {
         }
         el = el.parentNode
       }
-      if (!(['INPUT', 'TEXTAREA'].includes(tagName)) && !classes.includes('fleetingNoteEditor')) {
+      if (!(['INPUT', 'TEXTAREA'].includes(tagName)) && !classes.includes('noteEditor')) {
         if (event.key === "Escape") {
           this.fullKeybuffer = ''
         }
         else if (event.key === 'Enter') {
-          let fn = this.getFocusedNoteItem().fleetingNoteObj
-          this.$router.push(`/fleetingnote/${encodeURIComponent(fn.relativePath)}`)
+          let note = this.getFocusedNoteItem().noteObj
+          this.$router.push(`/note/${encodeURIComponent(note.relativePath)}`)
         }
         else if (event.metaKey && event.key=='f') {
           this.$emit('focusFilterInput')
@@ -1156,13 +1156,13 @@ export default {
             if (this.keybufferCount) {
               // Focus nth item in list
               let index = this.keybufferCount - 1
-              if (0 <= index && index < this.processedFleetingNotes.length) {
-                this.focusedNotePath = this.processedFleetingNotes[index].path
+              if (0 <= index && index < this.processedNotes.length) {
+                this.focusedNotePath = this.processedNotes[index].path
               }
             }
             else {
               // Focus first item in list
-              this.focusedNotePath = this.processedFleetingNotes[0].path
+              this.focusedNotePath = this.processedNotes[0].path
             }
             this.scrollFocusedIntoView()
             this.fullKeybuffer = ''
@@ -1170,8 +1170,8 @@ export default {
           else if (this.keybuffer == "G")
           {
             // Focus last item in list
-            var len = this.processedFleetingNotes.length
-            this.focusedNotePath = this.processedFleetingNotes[len - 1].path
+            var len = this.processedNotes.length
+            this.focusedNotePath = this.processedNotes[len - 1].path
             this.scrollFocusedIntoView()
             this.fullKeybuffer = ''
           }
@@ -1242,7 +1242,7 @@ export default {
           else if (this.keybuffer == "zO")
           {
             // Disable compact mode (open fold) for all items
-            let allNotesItems = this.$refs.fleetingNoteItems
+            let allNotesItems = this.$refs.noteItems
             for (let n of allNotesItems) {
               n.toggleCompactMode(false)
             }
@@ -1265,7 +1265,7 @@ export default {
           else if (this.keybuffer == "zC")
           {
             // Enable compact mode (close fold) for all items
-            let allNotesItems = this.$refs.fleetingNoteItems
+            let allNotesItems = this.$refs.noteItems
             for (let n of allNotesItems) {
               n.toggleCompactMode(true)
             }
@@ -1274,7 +1274,7 @@ export default {
           else if (this.keybuffer == "r")
           {
             // Refresh note list
-            this.updateFleetingNotes()
+            this.updateNotes()
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == " ")
@@ -1375,8 +1375,8 @@ export default {
           else if (this.keybuffer == "b")
           {
             // Add focused note to bag
-            let fn = this.getFocusedNoteItem().fleetingNoteObj
-            this.$store.commit('addToBag', fn.path)
+            let note = this.getFocusedNoteItem().noteObj
+            this.$store.commit('addToBag', note.path)
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "B")
@@ -1388,7 +1388,7 @@ export default {
           {
             // Set jump mark for focused note
             let mark = this.keybuffer[1]
-            this.markNote(this.getFocusedNoteItem().fleetingNoteObj, mark)
+            this.markNote(this.getFocusedNoteItem().noteObj, mark)
             this.fullKeybuffer = ''
           }
           else if (/^'[a-zA-Z0-9]/.test(this.keybuffer))
@@ -1472,10 +1472,10 @@ export default {
           else if (this.keybuffer == "yr")
           {
             // Copy note as markdown (raw) to clipboard
-            var fleetingNoteItem = this.getFocusedNoteItem()
-            var fleetingNoteObj = fleetingNoteItem.fleetingNoteObj
-            if (fleetingNoteObj.isText) {
-              var content = fleetingNoteObj.content
+            var noteItem = this.getFocusedNoteItem()
+            var noteObj = noteItem.noteObj
+            if (noteObj.isText) {
+              var content = noteObj.content
               clipboard.writeText(content)
             }
             this.fullKeybuffer = ''
@@ -1483,10 +1483,10 @@ export default {
           else if (this.keybuffer == "yh")
           {
             // Copy note as HTML to clipboard
-            var fleetingNoteItem = this.getFocusedNoteItem()
-            var fleetingNoteObj = fleetingNoteItem.fleetingNoteObj
-            if (fleetingNoteObj.isText) {
-              var content = fleetingNoteItem.renderedContent
+            var noteItem = this.getFocusedNoteItem()
+            var noteObj = noteItem.noteObj
+            if (noteObj.isText) {
+              var content = noteItem.renderedContent
               clipboard.writeHTML(content)
             }
             this.fullKeybuffer = ''
@@ -1494,9 +1494,9 @@ export default {
           else if (this.keybuffer == "yi")
           {
             // Copy image to clipboard if note is image
-            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
-            if (fleetingNoteObj.isImage) {
-              let dataURL = `data:${fleetingNoteObj.mime};base64,${fleetingNoteObj.contentBase64}`
+            var noteObj = this.getFocusedNoteItem().noteObj
+            if (noteObj.isImage) {
+              let dataURL = `data:${noteObj.mime};base64,${noteObj.contentBase64}`
               let img = nativeImage.createFromDataURL(dataURL)
               clipboard.writeImage(img)
             }
@@ -1506,33 +1506,33 @@ export default {
           {
             // Copy note's nth link to clipboard
             var count = this.keybufferCount || 1
-            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
-            if (fleetingNoteObj.webLinks[count - 1]) {
-              clipboard.writeText(fleetingNoteObj.webLinks[count - 1])
+            var noteObj = this.getFocusedNoteItem().noteObj
+            if (noteObj.webLinks[count - 1]) {
+              clipboard.writeText(noteObj.webLinks[count - 1])
             }
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "yp")
           {
             // Copy note's path (.md) to clipboard
-            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
-            clipboard.writeText(fleetingNoteObj.path)
+            var noteObj = this.getFocusedNoteItem().noteObj
+            clipboard.writeText(noteObj.path)
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "yt")
           {
             // Copy note's title to clipboard
-            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
-            clipboard.writeText(fleetingNoteObj.abstract)
+            var noteObj = this.getFocusedNoteItem().noteObj
+            clipboard.writeText(noteObj.abstract)
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "yuu")
           {
             // Copy note's last (ultimate) line as markdown
-            var fleetingNoteItem = this.getFocusedNoteItem()
-            var fleetingNoteObj = fleetingNoteItem.fleetingNoteObj
-            if (fleetingNoteObj.isText) {
-              var lines = fleetingNoteObj.content.split('\n')
+            var noteItem = this.getFocusedNoteItem()
+            var noteObj = noteItem.noteObj
+            if (noteObj.isText) {
+              var lines = noteObj.content.split('\n')
               var lastLine = lines[lines.length -1]
               clipboard.writeText(lastLine)
             }
@@ -1541,10 +1541,10 @@ export default {
           else if (this.keybuffer == "yf")
           {
             // Copy note's first line as markdown
-            var fleetingNoteItem = this.getFocusedNoteItem()
-            var fleetingNoteObj = fleetingNoteItem.fleetingNoteObj
-            if (fleetingNoteObj.isText) {
-              var lines = fleetingNoteObj.content.split('\n')
+            var noteItem = this.getFocusedNoteItem()
+            var noteObj = noteItem.noteObj
+            if (noteObj.isText) {
+              var lines = noteObj.content.split('\n')
               var firstLine = lines[0]
               clipboard.writeText(firstLine)
             }
@@ -1590,14 +1590,14 @@ export default {
           else if (this.keybuffer == "gf")
           {
             // Reveal note in finder
-            var notePath = this.getFocusedNoteItem().fleetingNoteObj.path
+            var notePath = this.getFocusedNoteItem().noteObj.path
             shell.showItemInFolder(notePath)
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "go")
           {
             // Open note (.md file or other) in default App
-            var notePath = this.getFocusedNoteItem().fleetingNoteObj.path
+            var notePath = this.getFocusedNoteItem().noteObj.path
             shell.openPath(notePath)
             this.fullKeybuffer = ''
           }
@@ -1605,9 +1605,9 @@ export default {
           {
             // Open nth weblink of note
             var count = this.keybufferCount || 1
-            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
-            if (fleetingNoteObj.webLinks[count - 1]) {
-              shell.openExternal(fleetingNoteObj.webLinks[count - 1])
+            var noteObj = this.getFocusedNoteItem().noteObj
+            if (noteObj.webLinks[count - 1]) {
+              shell.openExternal(noteObj.webLinks[count - 1])
             }
             this.fullKeybuffer = ''
           }
@@ -1646,31 +1646,31 @@ export default {
           else if (this.keybuffer == "ap")
           {
             // Add appendix note
-            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
-            var filepath = fleetingNoteObj.addAppendixNote()
+            var noteObj = this.getFocusedNoteItem().noteObj
+            var filepath = noteObj.addAppendixNote()
             var col = this.$store.state.currentNoteCollection
-            var fn = col.getFleetingNoteByPath(filepath)
-            var encodedPath = fn.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
-            this.$router.push(`/fleetingnote/${encodedPath}`)
+            var note = col.getNoteByPath(filepath)
+            var encodedPath = note.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
+            this.$router.push(`/note/${encodedPath}`)
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == ",yp")
           {
             // Copy note's metadata path (.json) to clipboard
-            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
-            clipboard.writeText(fleetingNoteObj.metadataPath)
+            var noteObj = this.getFocusedNoteItem().noteObj
+            clipboard.writeText(noteObj.metadataPath)
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == ",ym")
           {
             // Copy note's metadata (.json) to clipboard
-            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
-            var metadata = fleetingNoteObj.getMetadata()
+            var noteObj = this.getFocusedNoteItem().noteObj
+            var metadata = noteObj.getMetadata()
             if (metadata) {
               clipboard.writeText(JSON.stringify(metadata, null, 2))
             }
             else {
-              clipboard.writeText(`The note "${fleetingNoteObj.path}" has no metadata.`)
+              clipboard.writeText(`The note "${noteObj.path}" has no metadata.`)
             }
             this.fullKeybuffer = ''
           }
@@ -1678,9 +1678,9 @@ export default {
           {
             // Select all notes
             this.selectedNotes = []
-            for (let n of this.$refs.fleetingNoteItems) {
+            for (let n of this.$refs.noteItems) {
               n.selected = true
-              this.selectedNotes.push(n.fleetingNoteObj)
+              this.selectedNotes.push(n.noteObj)
             }
             this.fullKeybuffer = ''
           }
@@ -1688,7 +1688,7 @@ export default {
           {
             // Unselect all notes
             this.selectedNotes = []
-            for (let n of this.$refs.fleetingNoteItems) {
+            for (let n of this.$refs.noteItems) {
               n.selected = false
             }
             this.fullKeybuffer = ''
@@ -1696,7 +1696,7 @@ export default {
           else if (this.keybuffer == "si")
           {
             // Inverse note selection
-            for (let n of this.$refs.fleetingNoteItems) {
+            for (let n of this.$refs.noteItems) {
               n.toggleSelectNote()
             }
             this.fullKeybuffer = ''
@@ -1704,40 +1704,40 @@ export default {
           else if (this.keybuffer == "sg")
           {
             // Select all notes above and including the focused one
-            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
-            for (let n of this.$refs.fleetingNoteItems) {
+            var noteObj = this.getFocusedNoteItem().noteObj
+            for (let n of this.$refs.noteItems) {
               n.selected = true
-              this.selectedNotes.push(n.fleetingNoteObj)
-              if (n.fleetingNoteObj.relativePath == fleetingNoteObj.relativePath) break
+              this.selectedNotes.push(n.noteObj)
+              if (n.noteObj.relativePath == noteObj.relativePath) break
             }
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "sG")
           {
             // Select all notes below and including the focused one
-            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
+            var noteObj = this.getFocusedNoteItem().noteObj
             var beyondFocusedNote = false
-            for (let n of this.$refs.fleetingNoteItems) {
-              if (n.fleetingNoteObj.relativePath == fleetingNoteObj.relativePath) beyondFocusedNote = true
+            for (let n of this.$refs.noteItems) {
+              if (n.noteObj.relativePath == noteObj.relativePath) beyondFocusedNote = true
               if (!beyondFocusedNote) continue
               n.selected = true
-              this.selectedNotes.push(n.fleetingNoteObj)
+              this.selectedNotes.push(n.noteObj)
             }
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "sj")
           {
             // Select given number of notes below and including focused one
-            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
+            var noteObj = this.getFocusedNoteItem().noteObj
             var beyondFocusedNote = false
             var count = this.keybufferCount || 1
             var counter = 0
-            for (let n of this.$refs.fleetingNoteItems) {
-              if (n.fleetingNoteObj.relativePath == fleetingNoteObj.relativePath) beyondFocusedNote = true
+            for (let n of this.$refs.noteItems) {
+              if (n.noteObj.relativePath == noteObj.relativePath) beyondFocusedNote = true
               if (!beyondFocusedNote) continue
               if (counter > count) break
               n.selected = true
-              this.selectedNotes.push(n.fleetingNoteObj)
+              this.selectedNotes.push(n.noteObj)
               counter++
             }
             this.fullKeybuffer = ''
@@ -1745,17 +1745,17 @@ export default {
           else if (this.keybuffer == "sk")
           {
             // Select given number of notes above and including focused one
-            var fleetingNoteObj = this.getFocusedNoteItem().fleetingNoteObj
-            var fleetingNoteItems = [...this.$refs.fleetingNoteItems].reverse()
+            var noteObj = this.getFocusedNoteItem().noteObj
+            var noteItems = [...this.$refs.noteItems].reverse()
             var beyondFocusedNote = false
             var count = this.keybufferCount || 1
             var counter = 0
-            for (let n of fleetingNoteItems) {
-              if (n.fleetingNoteObj.relativePath == fleetingNoteObj.relativePath) beyondFocusedNote = true
+            for (let n of noteItems) {
+              if (n.noteObj.relativePath == noteObj.relativePath) beyondFocusedNote = true
               if (!beyondFocusedNote) continue
               if (counter > count) break
               n.selected = true
-              this.selectedNotes.push(n.fleetingNoteObj)
+              this.selectedNotes.push(n.noteObj)
               counter++
             }
             this.fullKeybuffer = ''
@@ -1790,7 +1790,7 @@ export default {
             var count = this.keybufferCount || 1
             var iteration = this.resultsIt.next(1 * count)
             if (!iteration.done && iteration.value) {
-              this.focusedNotePath = iteration.value.fleetingNoteObj.path
+              this.focusedNotePath = iteration.value.noteObj.path
               this.scrollFocusedIntoView()
             }
           }
@@ -1804,7 +1804,7 @@ export default {
             var count = this.keybufferCount || 1
             var iteration = this.resultsIt.next(-1 * count)
             if (!iteration.done && iteration.value) {
-              this.focusedNotePath = iteration.value.fleetingNoteObj.path
+              this.focusedNotePath = iteration.value.noteObj.path
               this.scrollFocusedIntoView()
             }
           }
@@ -1923,6 +1923,21 @@ export default {
             })
             this.fullKeybuffer = ''
           }
+          else if (this.keybuffer == ",di")
+          {
+            let title = this.getFocusedNoteItem().noteObj.title
+            if (title) {
+              let parsedDate = moment(title, 'LLL', 'DE')
+              let newDate = parsedDate.add(1, 'd')
+              let content = `# ${newDate.format('dddd, D. MMMM YYYY')}`
+              let notePath = this.stack.sendText(content)
+              let col = this.$store.state.currentNoteCollection
+              let note = col.getNoteByPath(notePath)
+              var dateNote = col.createDateNode('calendar', newDate)
+              note.addLink(dateNote.relativePath, ['date'])
+              this.scrollToFocusedNoteOnNextUpdate = true
+              this.setFocusedNotePath(notePath)
+            }
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == "dd")
@@ -1936,7 +1951,7 @@ export default {
           {
             // Link note to calendar date that equals creation date
             let note = this.getFocusedNoteItem()
-            note.linkToDate(note.fleetingNoteObj.date)
+            note.linkToDate(note.noteObj.date)
             this.scrollToFocusedNoteOnNextUpdate = true
             this.fullKeybuffer = ''
           }
@@ -1981,17 +1996,23 @@ export default {
               else {
                 var focusedNote = this.getFocusedNoteItem()
                 if (focusedNote) {
-                  if (!starredNotes.includes(focusedNote.fleetingNoteObj.filename)) {
-                    starredNotes.push(focusedNote.fleetingNoteObj.filename)
+                  if (!starredNotes.includes(focusedNote.noteObj.filename)) {
+                    starredNotes.push(focusedNote.noteObj.filename)
                   }
                   else {
-                    starredNotes = starredNotes.filter(i => i != focusedNote.fleetingNoteObj.filename)
+                    starredNotes = starredNotes.filter(i => i != focusedNote.noteObj.filename)
                   }
                 }
               }
               this.stack.metadata.set('starredNotes', starredNotes)
               this.stack.metadata.save()
             }
+            this.fullKeybuffer = ''
+          }
+          else if (this.keybuffer == "gb")
+          {
+            var focusedNote = this.getFocusedNoteItem()
+            focusedNote.noteObj.setAsBookmark()
             this.fullKeybuffer = ''
           }
           else if (this.keybuffer == ",bg")
@@ -2082,16 +2103,16 @@ export default {
       if (event.key === "Escape") {
         this.searchBarVisible = false
         this.searchString = ''
-        this.$refs.fleetingNoteList.focus()
+        this.$refs.noteList.focus()
       }
       else if (event.key === "Enter") {
         this.searchBarVisible = false
-        this.$refs.fleetingNoteList.focus()
+        this.$refs.noteList.focus()
       }
       else if (event.key === 'Tab' && event.shiftKey) {
         var iteration = this.resultsIt.next(-1)
         if (!iteration.done && iteration.value) {
-          this.focusedNotePath = iteration.value.fleetingNoteObj.path
+          this.focusedNotePath = iteration.value.noteObj.path
           this.scrollFocusedIntoView()
         }
         event.preventDefault()
@@ -2100,37 +2121,37 @@ export default {
       else if (event.key === 'Tab') {
         var iteration = this.resultsIt.next(1)
         if (!iteration.done && iteration.value) {
-          this.focusedNotePath = iteration.value.fleetingNoteObj.path
+          this.focusedNotePath = iteration.value.noteObj.path
           this.scrollFocusedIntoView()
         }
         event.preventDefault()
         event.stopPropagation()
       }
       else if (this.searchString.length > 0) {
-        var index = this.$refs.fleetingNoteItems.findIndex(n => n.$el.classList.contains('focused'))
-        var fleetingNoteItems = this.$refs.fleetingNoteItems.slice(index)
-          .concat(this.$refs.fleetingNoteItems.slice(0,index))
-        this.foundItems = fleetingNoteItems
-          .filter(n => n.fleetingNoteObj.isText && (new RegExp(this.searchString, 'i')).test(n.content))
+        var index = this.$refs.noteItems.findIndex(n => n.$el.classList.contains('focused'))
+        var noteItems = this.$refs.noteItems.slice(index)
+          .concat(this.$refs.noteItems.slice(0,index))
+        this.foundItems = noteItems
+          .filter(n => n.noteObj.isText && (new RegExp(this.searchString, 'i')).test(n.content))
         this.resultsIt = arrIterator(this.foundItems)
         this.resultsIt.next()
         if (this.foundItems[0]) {
-          this.focusedNotePath = this.foundItems[0].fleetingNoteObj.path
+          this.focusedNotePath = this.foundItems[0].noteObj.path
           this.scrollFocusedIntoView()
         }
       }
     },
   },
   computed: {
-    processedFleetingNotes() {
+    processedNotes() {
       var processedNotes = []
       if (this.filterTerm && this.filterTerm.length > 0) {
-        processedNotes = this.fleetingNotes.filter(item => {
+        processedNotes = this.notes.filter(item => {
           return item.content.toLowerCase().indexOf(this.filterTerm.toLowerCase()) > -1
         })
       }
       else {
-        processedNotes = this.fleetingNotes
+        processedNotes = this.notes
       }
       if (this.filter.includeStacks.length > 0 || this.filter.excludeStacks.length > 0) {
         processedNotes = processedNotes.filter(item => {
@@ -2149,13 +2170,13 @@ export default {
       if (this.filter.includeRelations.length > 0 || this.filter.excludeRelations.length > 0) {
         processedNotes = processedNotes.filter(item => {
           if ((this.filter.includeRelations.length > 0) && !(this.filter.excludeRelations.length > 0)) {
-            return (this.filter.includeRelations.some(rn => item.rawRelations.map(i => i.fn).includes(rn.relativePath)))
+            return (this.filter.includeRelations.some(rn => item.rawRelations.map(i => i.notePath).includes(rn.relativePath)))
           }
           if ((this.filter.includeRelations.length > 0) && (this.filter.excludeRelations.length > 0)) {
-            return (this.filter.includeRelations.some(rn => item.rawRelations.map(i => i.fn).includes(rn.relativePath))) && !(this.filter.excludeRelations.some(rn => item.rawRelations.map(i => i.fn).includes(rn.relativePath)))
+            return (this.filter.includeRelations.some(rn => item.rawRelations.map(i => i.notePath).includes(rn.relativePath))) && !(this.filter.excludeRelations.some(rn => item.rawRelations.map(i => i.notePath).includes(rn.relativePath)))
           }
           if (this.filter.excludeRelations.length > 0) {
-            return !(this.filter.excludeRelations.some(rn => item.rawRelations.map(i => i.fn).includes(rn.relativePath)))
+            return !(this.filter.excludeRelations.some(rn => item.rawRelations.map(i => i.notePath).includes(rn.relativePath)))
           }
           return true
         })
@@ -2233,7 +2254,7 @@ export default {
       return processedNotes
     },
     stackDistribution() {
-      var stacks = this.fleetingNotes.map(n => n.stack)
+      var stacks = this.notes.map(n => n.stack)
       stacks = stacks.filter(s => s !== undefined)
       var distribution = stacks.reduce(function(prev, cur) {
         prev[cur] = (prev[cur] || 0) + 1;
@@ -2245,7 +2266,7 @@ export default {
     },
     calendarDistribution() {
       var calendarDistribution = {}
-      for (let n of this.fleetingNotes) {
+      for (let n of this.notes) {
         for (let rd of n.relatedDates) {
           let year = rd.getFullYear()
           let month = rd.getMonth()
@@ -2276,9 +2297,9 @@ export default {
     },
     relationDistribution() {
       var allRelations = []
-      for (let n of this.fleetingNotes) {
+      for (let n of this.notes) {
         for (let r of n.rawRelations) {
-          allRelations.push(r.fn)
+          allRelations.push(r.notePath)
         }
       }
       var distribution = allRelations.reduce(function(prev, cur) {
@@ -2290,7 +2311,7 @@ export default {
         if (this.relationsFilterTagsOnly && !noteRelativePath.split('/')[1].startsWith('tags')) continue
         distributionArr.push({
           noteRelativePath: noteRelativePath,
-          note: this.$store.state.currentNoteCollection.getFleetingNoteByPath(noteRelativePath),
+          note: this.$store.state.currentNoteCollection.getNoteByPath(noteRelativePath),
           amount: amount,
         })
       }
@@ -2305,7 +2326,7 @@ export default {
           var stackPath = this.stack.path
           starredNotes = starredNotes.map(n => {
             let notePath = `${stackPath}/${n}`
-            return $this.$store.state.currentNoteCollection.getFleetingNoteByPath(notePath)
+            return $this.$store.state.currentNoteCollection.getNoteByPath(notePath)
           })
           return starredNotes
         }
@@ -2313,13 +2334,13 @@ export default {
       return []
     },
     focusedNoteIndex() {
-      var index = this.processedFleetingNotes.findIndex(i => i.path == this.focusedNotePath)
+      var index = this.processedNotes.findIndex(i => i.path == this.focusedNotePath)
       if (index == -1) return null
       return index
     },
   },
   watch: {
-    fleetingNotes: {
+    notes: {
       handler: function (val, oldVal) {
         if (this.scrollToFocusedNoteOnNextUpdate) {
           this.scrollFocusedIntoView()
@@ -2331,8 +2352,8 @@ export default {
   },
   mounted() {
     this.isMounted = true
-    this.focusedNotePath = this.processedFleetingNotes[0] ? this.processedFleetingNotes[0].path : ''
-    this.$refs.fleetingNoteList.focus()
+    this.focusedNotePath = this.processedNotes[0] ? this.processedNotes[0].path : ''
+    this.$refs.noteList.focus()
   },
   unmounted() {
     this.isMounted = false
@@ -2347,7 +2368,7 @@ export default {
 }
 </script>
 <style lang='scss'>
-.fleetingNoteList {
+.noteList {
   outline: none;
   .stackFilterBox {
     &::-webkit-scrollbar {
@@ -2557,8 +2578,8 @@ export default {
     }
 }
 
-.fleetingNotes {
-  .fleetingNote {
+.notes {
+  .note {
     margin-bottom: 10px;
   }
 }

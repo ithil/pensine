@@ -1,44 +1,44 @@
 <template id='#item-template'>
   <transition name="fold">
-  <div v-if="computedOptions.compact" class="fleetingNote compactFleetingNote" @keydown="keymonitor" @click="focusNote" :class="{ selected: selected }" ref="fleetingNote" key="compact">
+  <div v-if="computedOptions.compact" class="note compactNote" @keydown="keymonitor" @click="focusNote" :class="{ selected: selected }" ref="note" key="compact">
     <span class="content">
-      <span class="abstract" :class="{ title: fleetingNoteObj.title ? true : false }">
-        {{fleetingNoteObj.abstract}}
+      <span class="abstract" :class="{ title: noteObj.title ? true : false }">
+        {{noteObj.abstract}}
       </span>
     </span>
   </div>
-  <article v-else class="fleetingNote" @keydown="keymonitor" @click="focusNote" :class="{ selected: selected }" ref="fleetingNote" key="full">
+  <article v-else class="note" @keydown="keymonitor" @click="focusNote" :class="{ selected: selected }" ref="note" key="full">
     <div class="stackBadge" v-if="computedOptions.showStackBadge">
-      <span v-if="fleetingNoteObj.stack" @click="$router.push(`/stacks/${fleetingNoteObj.stack}`)">
-        <Icon name="Layers" /> {{fleetingNoteObj.stack}}
+      <span v-if="noteObj.stack" @click="$router.push(`/stacks/${noteObj.stack}`)">
+        <Icon name="Layers" /> {{noteObj.stack}}
       </span>
     </div>
     <transition name="fade">
       <div class="rightHandRelations" v-if="computedOptions.showRightHandRelations && hasAnyLinks && isFocused">
         <ul>
-          <collapse v-for="r in relations" :key="r.fn.relativePath">
+          <collapse v-for="r in relations" :key="r.note.relativePath">
             <template v-slot:header="slotProps">
               <li
               class="relation"
-              :data-stack="r.fn.stack"
+              :data-stack="r.note.stack"
               @click="handleRelationClick(r, slotProps, $event)"
               >
-              <Icon v-if="r.fn.stack && customRelationIcons[r.fn.stack.split('/')[0]]" :name="customRelationIcons[r.fn.stack.split('/')[0]]" />
-              <Icon v-else-if="getCustomIcon(r.fn.stack)" :name="getCustomIcon(r.fn.stack)" />
+              <Icon v-if="r.note.stack && customRelationIcons[r.note.stack.split('/')[0]]" :name="customRelationIcons[r.note.stack.split('/')[0]]" />
+              <Icon v-else-if="getCustomIcon(r.note.stack)" :name="getCustomIcon(r.note.stack)" />
               <Icon v-else name="FileText" />
               <span
               class="name"
-              :class="{ title: r.fn.title ? true : false }"
+              :class="{ title: r.note.title ? true : false }"
               >
-                {{r.fn.abstract}}
+                {{r.note.abstract}}
               </span>
               <span class="stack">
-                <Icon name="Layers" /> {{r.fn.stack}}
+                <Icon name="Layers" /> {{r.note.stack}}
               </span>
             </li>
             </template>
             <template v-slot:body>
-              <div class="miniview" v-html="r.fn.contentRendered">
+              <div class="miniview" v-html="r.note.contentRendered">
               </div>
             </template>
           </collapse>
@@ -46,10 +46,10 @@
     </div>
   </transition>
     <header class="header">
-      <span class="ago" @click="$router.push(`/fleetingnote/${encodedPath}`)">
+      <span class="ago" @click="$router.push(`/note/${encodedPath}`)">
         <Icon name="Clock" />
         {{ headerDate }}
-        <span class="timestamp">{{ moment(fleetingNoteObj.date).format('ddd DD.MM.YYYY HH:mm:ss') }}</span>
+        <span class="timestamp">{{ moment(noteObj.date).format('ddd DD.MM.YYYY HH:mm:ss') }}</span>
       </span>
       <span class="links" v-if="hasAnyLinks">
         <span v-for="p in linksEdgeProperties" :key="p[0]" class="badge" :class="`badge-${p[0]}`">
@@ -63,18 +63,18 @@
       </span>
     </header>
     <div class="content" v-if="!editing">
-      <div v-if="fleetingNoteObj.isText" v-html="renderedContentWithHighlights">
+      <div v-if="noteObj.isText" v-html="renderedContentWithHighlights">
       </div>
-      <div v-else-if="fleetingNoteObj.isImage">
+      <div v-else-if="noteObj.isImage">
         <img
         class="image"
-        :src="`data:${fleetingNoteObj.mime};base64,${fleetingNoteObj.contentBase64}`"
+        :src="`data:${noteObj.mime};base64,${noteObj.contentBase64}`"
         ></img>
       </div>
-      <div v-else-if="fleetingNoteObj.isAudio">
+      <div v-else-if="noteObj.isAudio">
         <audio
         controls
-        :src="`data:${fleetingNoteObj.mime};base64,${fleetingNoteObj.contentBase64}`">
+        :src="`data:${noteObj.mime};base64,${noteObj.contentBase64}`">
       </audio>
     </div>
       <div v-else class="miscFile">
@@ -82,12 +82,12 @@
           <img class="icon" :src="icon"></img>
         </div>
         <div>
-          <div class="filename">{{ fleetingNoteObj.filename }}</div>
-          <div class="mime">{{ fleetingNoteObj.mime }}</div>
+          <div class="filename">{{ noteObj.filename }}</div>
+          <div class="mime">{{ noteObj.mime }}</div>
         </div>
       </div>
     </div>
-    <div class="fleetingNoteEditor" v-if="editing"
+    <div class="noteEditor" v-if="editing"
     @keydown.meta.83="saveNote"
     @keydown.ctrl.67="cancelEditing"
     @keydown.meta.76="insertLink"
@@ -100,7 +100,7 @@
     <footer>
       <ul class="actions">
         <li><a href="#" @click="deleteNote">delete</a></li>
-        <li v-if="fleetingNoteObj.isText"><a href="#" @click="editNote">edit</a></li>
+        <li v-if="noteObj.isText"><a href="#" @click="editNote">edit</a></li>
         <li><a href="#" @click="addToBag">bag</a></li>
         <li><a href="#" @click="linkNote">link</a></li>
         <li><a href="#" @click="unlinkNote">unlink</a></li>
@@ -140,9 +140,9 @@
   moment.locale('de')
 
   export default {
-    name: 'fleeting-note',
+    name: 'note',
     props: {
-      'fleetingNoteObj': Object,
+      'noteObj': Object,
       'searchString': String,
       'options': Object,
       'isFocused': Boolean,
@@ -205,7 +205,7 @@
     },
     computed: {
       content() {
-        return this.fleetingNoteObj.content
+        return this.noteObj.content
       },
       renderedContent() {
         return this.md.render(this.content)
@@ -223,7 +223,7 @@
         }
       },
       headerDate() {
-        let date = moment(this.fleetingNoteObj.date)
+        let date = moment(this.noteObj.date)
         if (moment().diff(date, 'hours') < 24) {
           return moment(date).fromNow()
         }
@@ -232,7 +232,7 @@
         }
       },
       encodedPath() {
-        return this.fleetingNoteObj.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
+        return this.noteObj.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
       },
       hasAnyLinks() {
         if (this.relations.length > 0) {
@@ -244,21 +244,21 @@
       },
       relations() {
         var relations = []
-        var fn = this.fleetingNoteObj
-        if (fn.hasMetadata) {
-          var metadata = fn.getMetadata()
+        var noteObj = this.noteObj
+        if (noteObj.hasMetadata) {
+          var metadata = noteObj.getMetadata()
           if (metadata.links) {
             for (let link of metadata.links) {
-              var [fnName, edgeProperties] = link
-              var fn = this.fleetingNoteObj.collection.getFleetingNoteByPath(fnName)
-              relations.push({fn: fn, properties: edgeProperties})
+              var [notePath, edgeProperties] = link
+              var note = this.noteObj.collection.getNoteByPath(notePath)
+              relations.push({note: note, properties: edgeProperties})
             }
           }
           if (metadata.backlinks) {
             for (let link of metadata.backlinks) {
-              var [fnName, edgeProperties] = link
-              var fn = this.fleetingNoteObj.collection.getFleetingNoteByPath(fnName)
-              relations.push({fn: fn, properties: edgeProperties})
+              var [notePath, edgeProperties] = link
+              var note = this.noteObj.collection.getNoteByPath(notePath)
+              relations.push({note: note, properties: edgeProperties})
             }
           }
         }
@@ -267,9 +267,9 @@
       linksEdgeProperties() {
         // TODO: Use this.relations to be more efficient!
         var linksEdgeProperties = {}
-        var fn = this.fleetingNoteObj
-        if (fn.hasMetadata) {
-          var metadata = fn.getMetadata()
+        var noteObj = this.noteObj
+        if (noteObj.hasMetadata) {
+          var metadata = noteObj.getMetadata()
           if (metadata.links) {
             for (let l of metadata.links) {
               if (l[1]) {
@@ -337,7 +337,7 @@
           event.preventDefault()
         }
         else {
-          this.$router.push(`/fleetingnote/${encodeURIComponent(relation.fn.relativePath)}`)
+          this.$router.push(`/note/${encodeURIComponent(relation.note.relativePath)}`)
         }
       },
       toggleCompactMode(state) {
@@ -350,11 +350,11 @@
       },
       deleteNote(event) {
         this.$store.commit('triggerCustomTextPrompt', {
-          message: `Are you sure you want to delete ${this.fleetingNoteObj.filename}?`,
+          message: `Are you sure you want to delete ${this.noteObj.filename}?`,
           action: (text) => {
             if (['y', 'yes'].includes(text.trim())) {
-              this.fleetingNoteObj.delete()
-              this.$refs.fleetingNote.focus()
+              this.noteObj.delete()
+              this.$refs.note.focus()
             }
           }
         })
@@ -364,41 +364,11 @@
         }
       },
       editNote(event) {
-        if (this.fleetingNoteObj.isText) {
+        if (this.noteObj.isText) {
           this.editing = !this.editing
           this.$nextTick(() => {
             this.$refs.cmEditor.codemirror.focus()
           })
-        }
-        if (event) {
-          event.preventDefault()
-          event.stopPropagation()
-        }
-      },
-      insertNote(event) {
-        if (this.fleetingNoteObj.isText) {
-          var $this = this
-          this.$store.commit('setFleetingNoteForInsertion', this.fleetingNoteObj)
-          var allNotes = this.fleetingNoteObj.collection.allNotes
-          var items = allNotes.map(n => {
-            return {
-              label: n.name,
-              action:() => {
-                console.log(n)
-                $this.$router.push(`/insert/${n.id}`).catch(err => {
-                  // Ignore the vuex err regarding  navigating to the page they are already on.
-                  if (
-                    err.name !== 'NavigationDuplicated' &&
-                    !err.message.includes('Avoided redundant navigation to current location')
-                  ) {
-                    // But print any other errors to the console
-                    console.error(err)
-                  }
-                })
-              }
-            }
-          })
-          this.$store.commit('triggerCustomSelectList', {items})
         }
         if (event) {
           event.preventDefault()
@@ -414,8 +384,8 @@
             lucideIcon: 'Layers',
             action:() => {
               console.log(s.path)
-              this.fleetingNoteObj.sendToStack(s.relativePath)
-              this.$refs.fleetingNote.focus()
+              this.noteObj.sendToStack(s.relativePath)
+              this.$refs.note.focus()
             }
           }
         })
@@ -430,8 +400,8 @@
             label: context.searchString.trim(),
             description: 'Create new stack',
             action: () => {
-              $this.fleetingNoteObj.sendToStack(context.searchString.trim())
-              $this.$refs.fleetingNote.focus()
+              $this.noteObj.sendToStack(context.searchString.trim())
+              $this.$refs.note.focus()
             },
           })
           return itemsFiltered
@@ -443,7 +413,7 @@
         }
       },
       addToBag() {
-        this.$store.commit('addToBag', this.fleetingNoteObj.path)
+        this.$store.commit('addToBag', this.noteObj.path)
         if (event) {
           event.preventDefault()
           event.stopPropagation()
@@ -454,74 +424,74 @@
         var stacks = this.$store.state.currentNoteCollection.stacks.getListOfStacks()
         var items = []
         var getSubItemsOfStack = function (stack) {
-          var fleetingNotes = stack.getContent().filter(i => !i.isStack)
-          var fnList = []
-          for (let fn of fleetingNotes) {
-            let numberOfLinks = fn.relations.length
-            fnList.push({
-              label: fn.abstract,
+          var notes = stack.getContent().filter(i => !i.isStack)
+          var noteList = []
+          for (let note of notes) {
+            let numberOfLinks = note.relations.length
+            noteList.push({
+              label: note.abstract,
               lucideIcon: 'FileText',
               description: `${numberOfLinks} relations`,
-              description: `${numberOfLinks > 0 ? numberOfLinks+' relations – ' : ''}${moment(fn.date).format('DD.MM.YYYY')}`,
-              type: 'fleetingNote',
+              description: `${numberOfLinks > 0 ? numberOfLinks+' relations – ' : ''}${moment(note.date).format('DD.MM.YYYY')}`,
+              type: 'note',
               action: () => {
                 setTimeout(() => {
                   $this.$store.commit('triggerCustomTextPrompt', {
                     message: `Edge Properties (comma-separated)`,
                     action: (edgeProperties) => {
                       edgeProperties = edgeProperties.split(',').map(i => i.trim()).filter(i => i)
-                      $this.fleetingNoteObj.addLink(fn.relativePath, edgeProperties)
-                      $this.$refs.fleetingNote.focus()
+                      $this.noteObj.addLink(note.relativePath, edgeProperties)
+                      $this.$refs.note.focus()
                     }
                   })
                 }, 50)
               },
               getSubItems: () => {
                 return {
-                  newItems: getSubItemsOfFleetingNote(fn),
-                  newMessage: fn.abstract,
+                  newItems: getSubItemsOfNote(note),
+                  newMessage: note.abstract,
                 }
               },
             })
           }
-          return fnList
+          return noteList
         }
-        var getSubItemsOfFleetingNote = function (parentFn) {
-          var relations = parentFn.relations
+        var getSubItemsOfNote = function (parentNote) {
+          var relations = parentNote.relations
           if (relations.length < 1) {
             return false
           }
-          var fnList = []
+          var noteList = []
           for (let relation of relations) {
-            let fn = relation.fn
-            let numberOfLinks = fn.relations.length
-            fnList.push({
-              label: fn.abstract,
+            let note = relation.note
+            let numberOfLinks = note.relations.length
+            noteList.push({
+              label: note.abstract,
               lucideIcon: 'FileText',
-              description: `${fn.stack || 'Inbox'} –${numberOfLinks > 0 ? ' '+numberOfLinks+' relations –' : ''}  ${moment(fn.date).format('DD.MM.YYYY')}`,
-              type: 'fleetingNote',
+              description: `${note.stack} –${numberOfLinks > 0 ? ' '+numberOfLinks+' relations –' : ''}  ${moment(note.date).format('DD.MM.YYYY')}`,
+              type: 'note',
               action: () => {
                 setTimeout(() => {
                   $this.$store.commit('triggerCustomTextPrompt', {
                     message: `Edge Properties (comma-separated)`,
                     action: (edgeProperties) => {
                       edgeProperties = edgeProperties.split(',').map(i => i.trim()).filter(i => i)
-                      $this.fleetingNoteObj.addLink(fn.relativePath, edgeProperties)
-                      $this.$refs.fleetingNote.focus()
+                      $this.noteObj.addLink(note.relativePath, edgeProperties)
+                      $this.$refs.note.focus()
                     }
                   })
                 }, 50)
               },
               getSubItems: () => {
                 return {
-                  newItems: getSubItemsOfFleetingNote(fn),
-                  newMessage: fn.abstract,
+                  newItems: getSubItemsOfNote(note),
+                  newMessage: note.abstract,
                 }
               },
             })
           }
-          var myStack = parentFn.collection.stacks.getStackByPath(parentFn.stack)
-          fnList.push({
+          var myStack = parentNote.collection.stacks.getStackByPath(parentNote.stack)
+          noteList.push({
             label: myStack.relativePath,
             lucideIcon: 'Layers',
             description: 'Stack',
@@ -533,7 +503,7 @@
               }
             },
           })
-          return fnList
+          return noteList
         }
         for (let s of stacks) {
           items.push({
@@ -570,21 +540,21 @@
       linkNoteChoosingFromBag() {
         var $this = this
         var bag = this.$store.state.bag
-        var items = bag.map(fnPath => {
-          var fn = $this.fleetingNoteObj.collection.getFleetingNoteByPath(fnPath)
-          if (fn) {
+        var items = bag.map(notePath => {
+          var note = $this.noteObj.collection.getNoteByPath(notePath)
+          if (note) {
             return {
-              label: fn.abstract,
+              label: note.abstract,
               lucideIcon: 'File',
               action:() => {
-                console.log(fn.path)
+                console.log(note.path)
                 setTimeout(() => {
                   this.$store.commit('triggerCustomTextPrompt', {
                     message: `Edge Properties (comma-separated)`,
                     action: (edgeProperties) => {
                       edgeProperties = edgeProperties.split(',').map(i => i.trim()).filter(i => i)
-                      this.fleetingNoteObj.addLink(fn.relativePath, edgeProperties)
-                      this.$refs.fleetingNote.focus()
+                      this.noteObj.addLink(note.relativePath, edgeProperties)
+                      this.$refs.note.focus()
                     }
                   })
                 }, 50)
@@ -595,9 +565,18 @@
         var filter = function (context) {
           var $items = context.itemsWithIds
           var searchString = context.searchString.toLowerCase()
-          var registers = $this.fleetingNoteObj.collection.registers
+          var registers = $this.noteObj.collection.registers
           var registerPath = null
           var registerName = null
+          var registerCache = {}
+          var getRegisterContent = (rPath) => {
+            if (registerCache[rPath]) return registerCache[rPath]
+            let stack = $this.noteObj.collection.stacks.getStackByPath(rPath)
+            let stackContent = stack.getContent()
+            stackContent.sort((a,b) => b.numberOfRelations - a.numberOfRelations)
+            registerCache[rPath] = stackContent
+            return stackContent
+          }
           for (let r of registers) {
             if (searchString.startsWith(r.prefix)) {
               registerPath = r.path
@@ -607,9 +586,7 @@
             }
           }
           if (registerPath) {
-            var stack = $this.fleetingNoteObj.collection.stacks.getStackByPath(registerPath)
-            var stackContent = stack.getContent()
-            stackContent.sort((a,b) => b.numberOfRelations - a.numberOfRelations)
+            var stackContent = getRegisterContent(registerPath)
             var items = []
             var id = 1
             for (let i of stackContent) {
@@ -626,7 +603,7 @@
                         message: `Edge Properties (comma-separated)`,
                         action: (edgeProperties) => {
                           edgeProperties = edgeProperties.split(',').map(i => i.trim()).filter(i => i)
-                          $this.fleetingNoteObj.addLink(i.relativePath, edgeProperties)
+                          $this.noteObj.addLink(i.relativePath, edgeProperties)
                         }
                       })
                     }, 50)
@@ -653,12 +630,12 @@
               label: newEntry,
               description: 'Create new registry entry',
               action: () => {
-                var newFnPath = stack.sendText(`# ${newEntry}`)
-                var newFn = $this.$store.state.currentNoteCollection.getFleetingNoteByPath(newFnPath)
+                var newNotePath = stack.sendText(`# ${newEntry}`)
+                var newNote = $this.$store.state.currentNoteCollection.getNoteByPath(newNotePath)
                 var edgeProperties = []
-                let n = $this.fleetingNoteObj
+                let n = $this.noteObj
                 if (n) {
-                  n.addLink(newFn.relativePath, edgeProperties)
+                  n.addLink(newNotePath.relativePath, edgeProperties)
                 }
               },
             })
@@ -678,9 +655,9 @@
               lucideIcon: 'Plus',
               label: 'Link all bagged notes',
               action: () => {
-                for (let fnPath of bag) {
-                  // this fnPath is absolute but needs to be relative!!!
-                  $this.fleetingNoteObj.addLink(fnPath)
+                for (let notePath of bag) {
+                  // this notePath is absolute but needs to be relative!!!
+                  $this.noteObj.addLink(notePath)
                 }
               },
             })
@@ -705,7 +682,7 @@
           }
           var fuzzyResults = fuzzysort.go(searchString, $items, {key: 'label'}, {threshold: -10000})
           fuzzyResults.sort((a, b) => {
-            if (b.obj.type != 'fleetingNote') return 0
+            if (b.obj.type != 'note') return 0
             if (Math.abs(a.score - b.score) > 10) return 0
             return b.obj.numberOfRelations - a.obj.numberOfRelations
           })
@@ -715,70 +692,70 @@
           return itemsFiltered
         }
         var getSubItemsOfStack = function (stack) {
-          var fleetingNotes = stack.getContent().filter(i => !i.isStack)
-          var fnList = []
-          for (let fn of fleetingNotes) {
-            let numberOfLinks = fn.relations.length
-            fnList.push({
-              label: fn.abstract,
+          var notes = stack.getContent().filter(i => !i.isStack)
+          var noteList = []
+          for (let note of notes) {
+            let numberOfLinks = note.relations.length
+            noteList.push({
+              label: note.abstract,
               lucideIcon: 'FileText',
               description: `${numberOfLinks} relations`,
-              description: `${numberOfLinks > 0 ? numberOfLinks+' relations – ' : ''}${moment(fn.date).format('DD.MM.YYYY')}`,
-              numberOfRelations: fn.numberOfRelations,
-              type: 'fleetingNote',
+              description: `${numberOfLinks > 0 ? numberOfLinks+' relations – ' : ''}${moment(note.date).format('DD.MM.YYYY')}`,
+              numberOfRelations: note.numberOfRelations,
+              type: 'note',
               action: () => {
-                $this.fleetingNoteObj.addLink(fn.relativePath, [])
+                $this.noteObj.addLink(note.relativePath, [])
                 setTimeout(() => {
-                  $this.$store.commit('triggerCustomSelectList', {items: getSubItemsOfStack($this.$store.state.currentNoteCollection.stacks.getStackByPath(fn.stack)), filter})
+                  $this.$store.commit('triggerCustomSelectList', {items: getSubItemsOfStack($this.$store.state.currentNoteCollection.stacks.getStackByPath(note.stack)), filter})
                 }, 50)
               },
               getSubItems: () => {
                 return {
-                  newItems: getSubItemsOfFleetingNote(fn),
-                  newMessage: fn.abstract,
+                  newItems: getSubItemsOfNote(note),
+                  newMessage: note.abstract,
                 }
               },
             })
           }
-          return fnList
+          return noteList
         }
-        var getSubItemsOfFleetingNote = function (parentFn) {
-          var relations = parentFn.relations
+        var getSubItemsOfNote = function (parentNote) {
+          var relations = parentNote.relations
           if (relations.length < 1) {
             return false
           }
-          var fnList = []
+          var noteList = []
           for (let relation of relations) {
-            let fn = relation.fn
-            let numberOfLinks = fn.relations.length
-            fnList.push({
-              label: fn.abstract,
+            let note = relation.note
+            let numberOfLinks = note.relations.length
+            noteList.push({
+              label: note.abstract,
               lucideIcon: 'FileText',
-              description: `${fn.stack || 'Inbox'} –${numberOfLinks > 0 ? ' '+numberOfLinks+' relations –' : ''}  ${moment(fn.date).format('DD.MM.YYYY')}`,
-              numberOfRelations: fn.numberOfRelations,
-              type: 'fleetingNote',
+              description: `${note.stack} –${numberOfLinks > 0 ? ' '+numberOfLinks+' relations –' : ''}  ${moment(note.date).format('DD.MM.YYYY')}`,
+              numberOfRelations: note.numberOfRelations,
+              type: 'note',
               action: () => {
                 setTimeout(() => {
                   $this.$store.commit('triggerCustomTextPrompt', {
                     message: `Edge Properties (comma-separated)`,
                     action: (edgeProperties) => {
                       edgeProperties = edgeProperties.split(',').map(i => i.trim()).filter(i => i)
-                      $this.fleetingNoteObj.addLink(fn.relativePath, edgeProperties)
-                      $this.$refs.fleetingNote.focus()
+                      $this.noteObj.addLink(note.relativePath, edgeProperties)
+                      $this.$refs.note.focus()
                     }
                   })
                 }, 50)
               },
               getSubItems: () => {
                 return {
-                  newItems: getSubItemsOfFleetingNote(fn),
-                  newMessage: fn.abstract,
+                  newItems: getSubItemsOfNote(note),
+                  newMessage: note.abstract,
                 }
               },
             })
           }
-          var myStack = parentFn.collection.stacks.getStackByPath(parentFn.stack)
-          fnList.push({
+          var myStack = parentNote.collection.stacks.getStackByPath(parentNote.stack)
+          noteList.push({
             label: myStack.relativePath,
             lucideIcon: 'Layers',
             description: 'Stack',
@@ -790,7 +767,7 @@
               }
             },
           })
-          return fnList
+          return noteList
         }
         for (let s of stacks) {
           items.push({
@@ -814,41 +791,41 @@
       },
       unlinkNote() {
         var $this = this
-        if (!$this.fleetingNoteObj.hasMetadata) {
+        if (!$this.noteObj.hasMetadata) {
           return false
         }
-        var links = this.fleetingNoteObj.getMetadata().links || []
-        var backlinks = this.fleetingNoteObj.getMetadata().backlinks || []
+        var links = this.noteObj.getMetadata().links || []
+        var backlinks = this.noteObj.getMetadata().backlinks || []
         var linksItems = links.map(link => {
-          var [fnName, edgeProperties] = link
-          var fn = $this.fleetingNoteObj.collection.getFleetingNoteByPath(fnName)
-          if (fn) {
+          var [notePath, edgeProperties] = link
+          var note = $this.noteObj.collection.getNoteByPath(notePath)
+          if (note) {
             return {
-              label: fn.abstract,
+              label: note.abstract,
               description: 'Link',
               lucideIcon: 'Link',
               badges: (edgeProperties && edgeProperties.length > 0) ? edgeProperties : [],
               action:() => {
-                console.log(fn.path)
-                fn.removeBacklink($this.fleetingNoteObj.relativePath)
-                $this.fleetingNoteObj.removeLink(fn.relativePath)
+                console.log(note.path)
+                note.removeBacklink($this.noteObj.relativePath)
+                $this.noteObj.removeLink(note.relativePath)
               }
             }
           }
         })
         var backlinksItems = backlinks.map(link => {
-          var [fnName, edgeProperties] = link
-          var fn = $this.fleetingNoteObj.collection.getFleetingNoteByPath(fnName)
-          if (fn) {
+          var [notePath, edgeProperties] = link
+          var note = $this.noteObj.collection.getNoteByPath(notePath)
+          if (note) {
             return {
-              label: fn.abstract,
+              label: note.abstract,
               description: 'Backlink',
               lucideIcon: 'File',
               badges: (edgeProperties && edgeProperties.length > 0) ? edgeProperties : [],
               action:() => {
-                console.log(fn.path)
-                $this.fleetingNoteObj.removeBacklink(fn.relativePath)
-                fn.removeLink($this.fleetingNoteObj.relativePath)
+                console.log(note.path)
+                $this.noteObj.removeBacklink(note.relativePath)
+                note.removeLink($this.noteObj.relativePath)
               }
             }
           }
@@ -879,58 +856,58 @@
       },
       showLinks() {
         var $this = this
-        if (!$this.fleetingNoteObj.hasMetadata) {
+        if (!$this.noteObj.hasMetadata) {
           return false
         }
-        var links = this.fleetingNoteObj.getMetadata().links || []
-        var backlinks = this.fleetingNoteObj.getMetadata().backlinks || []
+        var links = this.noteObj.getMetadata().links || []
+        var backlinks = this.noteObj.getMetadata().backlinks || []
         var linksItems = links.map(link => {
-          var fnName = link[0]
+          var notePath = link[0]
           var edgeProperties = link[1]
-          var fn = $this.fleetingNoteObj.collection.getFleetingNoteByPath(fnName)
-          if (fn) {
+          var note = $this.noteObj.collection.getNoteByPath(notePath)
+          if (note) {
             return {
-              label: fn.abstract,
+              label: note.abstract,
               description: 'Link',
               lucideIcon: 'File',
               badges: (edgeProperties && edgeProperties.length > 0) ? edgeProperties : [],
               action:() => {
-                console.log(fn.path)
-                if (fn.stack == $this.fleetingNoteObj.stack) {
+                console.log(note.path)
+                if (note.stack == $this.noteObj.stack) {
                   console.log('Yay! I let my partner shine! :)')
-                  $this.$emit('focusNote', fn)
+                  $this.$emit('focusNote', note)
                   $this.$emit('scrollFocusedIntoView')
                 }
                 else {
                   console.log('My partner is in a different stack but thats no problemo :)')
-                  var encodedPath = fn.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
-                  $this.$router.push(`/fleetingnote/${encodedPath}`)
+                  var encodedPath = note.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
+                  $this.$router.push(`/note/${encodedPath}`)
                 }
               }
             }
           }
         })
         var backlinksItems = backlinks.map(link => {
-          var fnName = link[0]
+          var notePath = link[0]
           var edgeProperties = link[1]
-          var fn = $this.fleetingNoteObj.collection.getFleetingNoteByPath(fnName)
-          if (fn) {
+          var note = $this.noteObj.collection.getNoteByPath(notePath)
+          if (note) {
             return {
-              label: fn.abstract,
+              label: note.abstract,
               description: 'Backlink',
               lucideIcon: 'File',
               badges: (edgeProperties && edgeProperties.length > 0) ? edgeProperties : [],
               action:() => {
-                console.log(fn.path)
-                if ((fn.inInbox && $this.fleetingNoteObj.inInbox) || (fn.stack == $this.fleetingNoteObj.stack)) {
+                console.log(note.path)
+                if ((note.stack == $this.noteObj.stack)) {
                   console.log('Yay! I let my partner shine! :)')
-                  $this.$emit('focusNote', fn)
+                  $this.$emit('focusNote', note)
                   $this.$emit('scrollFocusedIntoView')
                 }
                 else {
                   console.log('My partner is in a different stack but thats no problemo :)')
-                  let encodedPath = fn.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
-                  $this.$router.push(`/fleetingnote/${encodedPath}`)
+                  let encodedPath = note.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
+                  $this.$router.push(`/note/${encodedPath}`)
                 }
               }
             }
@@ -959,14 +936,14 @@
         var $this = this
         var suggestedDate = moment().format('YYYY/MM/DD')
         this.$store.commit('triggerCustomTextPrompt', {
-          message: `Link fleeting note to following date:`,
+          message: `Link note to following date:`,
           text: suggestedDate,
           selection: [suggestedDate.length, suggestedDate.length],
           action: (date) => {
             var date = moment(date)
             console.log(date.format('YYYY_MM_DD'))
-            var fn = $this.fleetingNoteObj.collection.createDateNode('calendar', date)
-            $this.fleetingNoteObj.addLink(fn.relativePath, ['date'])
+            var note = $this.noteObj.collection.createDateNode('calendar', date)
+            $this.noteObj.addLink(note.relativePath, ['date'])
           }
         })
         if (event) {
@@ -977,13 +954,13 @@
       linkToDate(date) {
         var date = moment(date)
         console.log(date.format('YYYY_MM_DD'))
-        var fn = this.fleetingNoteObj.collection.createDateNode('calendar', date)
-        this.fleetingNoteObj.addLink(fn.relativePath, ['date'])
+        var note = this.noteObj.collection.createDateNode('calendar', date)
+        this.noteObj.addLink(note.relativePath, ['date'])
       },
       sendToPort(event) {
         var $this = this
         var ports = this.$global.pensieve.ports
-        ports = ports.filter(p => p.collectionName != this.fleetingNoteObj.collection.name)
+        ports = ports.filter(p => p.collectionName != this.noteObj.collection.name)
         var items = ports.map(p => {
           return {
             label: p.name,
@@ -991,8 +968,8 @@
             description: p.collectionName,
             action:() => {
               console.log(p.id)
-              p.sendToPort(this.fleetingNoteObj)
-              this.$refs.fleetingNote.focus()
+              p.sendToPort(this.noteObj)
+              this.$refs.note.focus()
             }
           }
         })
@@ -1007,8 +984,8 @@
         var renderedRelations = ""
         if (includeRelations) {
           for (let r of this.relations) {
-            if (['calendar', 'tags', 'courses'].some(str => r.fn.stack.includes(str))) continue
-            let renderedRelation = this.md.render(r.fn.content)
+            if (['calendar', 'tags', 'courses'].some(str => r.note.stack.includes(str))) continue
+            let renderedRelation = this.md.render(r.note.content)
             renderedRelations += `<div class="note relation">${renderedRelation}</div>\n`
           }
         }
@@ -1139,8 +1116,8 @@
             font-weight: normal;
           }
           `
-        var dateString = moment(this.fleetingNoteObj.relatedDates[0] || this.fleetingNoteObj.date).format('YYYY-MM-DD')
-        var title = `${dateString} ${this.fleetingNoteObj.title}`.replaceAll(':', '')
+        var dateString = moment(this.noteObj.relatedDates[0] || this.noteObj.date).format('YYYY-MM-DD')
+        var title = `${dateString} ${this.noteObj.title}`.replaceAll(':', '')
         var html = `
         <!DOCTYPE html>
         <html>
@@ -1176,10 +1153,10 @@
       toggleSelectNote(event) {
         this.selected = !this.selected
         if (this.selected) {
-          this.$emit('selectNote', this.fleetingNoteObj)
+          this.$emit('selectNote', this.noteObj)
         }
         else {
-          this.$emit('unselectNote', this.fleetingNoteObj)
+          this.$emit('unselectNote', this.noteObj)
         }
         if (event) {
           event.preventDefault()
@@ -1188,18 +1165,18 @@
       },
       focusNote(event) {
         this.focused = true
-        this.$emit('focusNote', this.fleetingNoteObj, event)
+        this.$emit('focusNote', this.noteObj, event)
       },
       saveNote(event) {
-        this.fleetingNoteObj.setContent(this.editorContent)
+        this.noteObj.setContent(this.editorContent)
         this.editing = !this.editing
-        this.$emit('focusNote', this.fleetingNoteObj)
+        this.$emit('focusNote', this.noteObj)
         event.preventDefault()
         event.stopPropagation()
       },
       cancelEditing(event) {
         this.editing = !this.editing
-        this.$emit('focusNote', this.fleetingNoteObj)
+        this.$emit('focusNote', this.noteObj)
         event.preventDefault()
         event.stopPropagation()
       },
@@ -1208,6 +1185,75 @@
         var cm = this.$refs.cmEditor.codemirror
         var cursor = cm.getCursor()
         cm.replaceRange(dateString, cursor, cursor)
+        if (event) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+      },
+      insertLink(event) {
+        var $this = this
+        var bag = this.$store.state.bag
+        var items = bag.map(notePath => {
+          var note = $this.noteObj.collection.getNoteByPath(notePath)
+          if (note) {
+            return {
+              label: note.abstract,
+              lucideIcon: 'File',
+              action:() => {
+                console.log(note.path)
+                let link = `/${note.stack.split('/').map(d => encodeURIComponent(d)).join('/')}/${encodeURIComponent(note.name)}`
+                this.$refs.cmEditor.codemirror.replaceSelection(`[${note.abstract}](${link})`)
+                this.$nextTick(() => {
+                  this.$refs.cmEditor.codemirror.focus()
+                })
+              }
+            }
+          }
+        })
+        var filter = function (context) {
+          var $items = context.itemsWithIds
+          var searchString = context.searchString.toLowerCase()
+          var registers = $this.noteObj.collection.registers
+          var registerPath = null
+          var registerName = null
+          for (let r of registers) {
+            if (searchString.startsWith(r.prefix)) {
+              registerPath = r.path
+              registerName = r.name
+              searchString = searchString.slice(r.prefix.length)
+            }
+          }
+          if (registerPath) {
+            var stack = $this.noteObj.collection.stacks.getStackByPath(registerPath)
+            var stackContent = stack.getContent()
+            var items = []
+            var id = 1
+            for (let i of stackContent) {
+              if (!i.isStack && i.content.toLowerCase().indexOf(searchString) > -1) {
+                items.push({
+                  id: id,
+                  lucideIcon: 'AtSign',
+                  label: i.abstract,
+                  description: registerName,
+                  action: () => {
+                    let link = `/${i.stack.split('/').map(d => encodeURIComponent(d)).join('/')}/${encodeURIComponent(i.name)}`
+                    $this.$refs.cmEditor.codemirror.replaceSelection(`[${i.abstract}](${link})`)
+                    $this.$nextTick(() => {
+                      $this.$refs.cmEditor.codemirror.focus()
+                    })
+                  },
+                })
+                id++
+              }
+            }
+            return items
+          }
+          var itemsFiltered = $items.filter(item => {
+            return item.label.toLowerCase().indexOf(context.searchString.toLowerCase()) > -1
+          })
+          return itemsFiltered
+        }
+        this.$store.commit('triggerCustomSelectList', {items, filter})
         if (event) {
           event.preventDefault()
           event.stopPropagation()
@@ -1243,7 +1289,7 @@
         allowedAttributes: []  // empty array = all attributes are allowed
       })
       this.md.use( require('markdown-it-collapsible') )
-      var stacksPath = this.fleetingNoteObj.collection.collectionJson.paths.stacks.split('/')[1]
+      var stacksPath = this.noteObj.collection.collectionJson.paths.stacks.split('/')[1]
       this.md.use( require('markdown-it-replace-link'), {
         replaceLink: function (link, env) {
           if (link.startsWith('/')) {
@@ -1264,7 +1310,7 @@
       var $this = this;
 
       (async () => {
-        const icon = await ipcRenderer.invoke('getFileIcon', $this.fleetingNoteObj.path)
+        const icon = await ipcRenderer.invoke('getFileIcon', $this.noteObj.path)
         $this.icon = icon
       })()
     }
@@ -1272,12 +1318,12 @@
 </script>
 
 <style lang="scss">
-.fleetingNoteList:focus {
-  .fleetingNote.focused {
+.noteList:focus {
+  .note.focused {
     box-shadow: 0 0 0 3px cornflowerblue;
   }
 }
-.fleetingNote {
+.note {
   min-width: 100px;
   height: min-content;
   position: relative;
@@ -1484,14 +1530,14 @@
 
 
 @media screen and (max-width: 1100px) {
-  .fleetingNote {
+  .note {
     .rightHandRelations {
       display: none;
     }
   }
 }
 
-.fleetingNote.compactFleetingNote {
+.note.compactNote {
   padding: 10px;
   background: #d3d3d3;
   border: 1px solid #bbbbbb;
@@ -1527,7 +1573,7 @@
   margin-right: 2px;
 }
 
-.fleetingNote .content {
+.note .content {
   padding: 5px;
   font-family: 'Georgia';
   margin: 10px;
@@ -2016,7 +2062,7 @@
   }
 }
 
-.fleetingNote .fleetingNoteEditor {
+.note .noteEditor {
   textarea {
     padding: 10px;
     margin: 10px;
@@ -2175,7 +2221,7 @@
   }
 }
 
-.fleetingNote .header {
+.note .header {
   font-size: 12px;
   color: rgb(17, 17, 17);
   padding: 10px 10px 5px;
@@ -2247,7 +2293,7 @@
   }
 }
 
-.fleetingNote .header .ago {
+.note .header .ago {
   padding-right: 5px;
   position: relative;
   cursor: pointer;
@@ -2283,13 +2329,13 @@
   }
 }
 
-.fleetingNote .header .ago:hover .timestamp {
+.note .header .ago:hover .timestamp {
   visibility: visible;
   opacity: 1;
 }
 
 
-.fleetingNote footer {
+.note footer {
   border-top: 1px solid #6495ed3b;
   background-color: #5082ce12;
   display: inline-flex;

@@ -242,17 +242,17 @@ export default {
             var $this = this
             setTimeout(() => {
               var stacksPath = this.$store.state.currentNoteCollection.paths.stacks
-              var bookmarksNote = this.$store.state.currentNoteCollection.getFleetingNoteByPath(`${stacksPath}/.internal/bookmarks.md`)
+              var bookmarksNote = this.$store.state.currentNoteCollection.getNoteByPath(`${stacksPath}/.internal/bookmarks.md`)
               var items = []
               if (bookmarksNote) {
-                var notes = bookmarksNote.relations.map(r => r.fn)
+                var notes = bookmarksNote.relations.map(r => r.note)
                 for (let n of notes) {
                   items.push({
                     label: `${n.abstract}`,
                     lucideIcon: 'Bookmark',
                     action: () => {
                       var encodedPath = n.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
-                      $this.$router.push(`/fleetingNote/${encodedPath}`).catch(err => {
+                      $this.$router.push(`/note/${encodedPath}`).catch(err => {
                         // Ignore the vuex err regarding  navigating to the page they are already on.
                         if (
                           err.name !== 'NavigationDuplicated' &&
@@ -329,7 +329,7 @@ export default {
                                     label: `${n.abstract}`,
                                     action: () => {
                                       var encodedPath = n.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
-                                      $this.$router.push(`/fleetingNote/${encodedPath}`).catch(err => {
+                                      $this.$router.push(`/note/${encodedPath}`).catch(err => {
                                         // Ignore the vuex err regarding  navigating to the page they are already on.
                                         if (
                                           err.name !== 'NavigationDuplicated' &&
@@ -386,7 +386,7 @@ export default {
                     lucideIcon: 'Tag',
                     action: () => {
                       var encodedPath = n.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
-                      $this.$router.push(`/fleetingNote/${encodedPath}`).catch(err => {
+                      $this.$router.push(`/note/${encodedPath}`).catch(err => {
                         // Ignore the vuex err regarding  navigating to the page they are already on.
                         if (
                           err.name !== 'NavigationDuplicated' &&
@@ -434,24 +434,24 @@ export default {
             var bag = this.$store.state.bag
             setTimeout(() => {
               var endowItemsWithAction = function (callback) {
-                return $this.$store.state.bag.map(fnPath => {
-                  var fn = $this.$store.state.currentNoteCollection.getFleetingNoteByPath(fnPath)
-                  if (fn) {
+                return $this.$store.state.bag.map(notePath => {
+                  var note = $this.$store.state.currentNoteCollection.getNoteByPath(notePath)
+                  if (note) {
                     return {
-                      label: fn.abstract,
+                      label: note.abstract,
                       lucideIcon: 'File',
-                      description: fn.stack,
+                      description: note.stack,
                       action:() => {
-                        callback(fn)
+                        callback(note)
                       }
                     }
                   }
                 })
               }
-              // this.$store.commit('removeFromBag', fn.path)
+              // this.$store.commit('removeFromBag', note.path)
               var items = endowItemsWithAction((n) => {
                 var encodedPath = n.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
-                $this.$router.push(`/fleetingNote/${encodedPath}`).catch(err => {
+                $this.$router.push(`/note/${encodedPath}`).catch(err => {
                   // Ignore the vuex err regarding  navigating to the page they are already on.
                   if (
                     err.name !== 'NavigationDuplicated' &&
@@ -533,7 +533,7 @@ export default {
                     label: `${n.abstract}`,
                     action: () => {
                       var encodedPath = n.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
-                      $this.$router.push(`/fleetingNote/${encodedPath}`).catch(err => {
+                      $this.$router.push(`/note/${encodedPath}`).catch(err => {
                         // Ignore the vuex err regarding  navigating to the page they are already on.
                         if (
                           err.name !== 'NavigationDuplicated' &&
@@ -890,7 +890,7 @@ export default {
                 numberOfRelations: i.numberOfRelations,
                 action: () => {
                   var encodedPath = i.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
-                  this.$router.push(`/fleetingNote/${encodedPath}`).catch(err => {
+                  this.$router.push(`/note/${encodedPath}`).catch(err => {
                     // Ignore the vuex err regarding  navigating to the page they are already on.
                     if (
                       err.name !== 'NavigationDuplicated' &&
@@ -933,19 +933,19 @@ export default {
       var stacks = this.$store.state.currentNoteCollection.stacks.getListOfStacks()
       var stacksList = []
       var getSubItemsOfStack = function (stack) {
-        var fleetingNotes = stack.getContent().filter(i => !i.isStack)
-        fleetingNotes.sort((a, b) => b.date - a.date)
-        var fnList = []
-        for (let fn of fleetingNotes) {
-          let numberOfLinks = fn.relations.length
-          fnList.push({
-            label: fn.abstract,
+        var notes = stack.getContent().filter(i => !i.isStack)
+        notes.sort((a, b) => b.date - a.date)
+        var noteList = []
+        for (let note of notes) {
+          let numberOfLinks = note.relations.length
+          noteList.push({
+            label: note.abstract,
             lucideIcon: 'FileText',
-            description: `${numberOfLinks > 0 ? numberOfLinks+' relations – ' : ''}${moment(fn.date).format('DD.MM.YYYY')}`,
-            type: 'fleetingNote',
+            description: `${numberOfLinks > 0 ? numberOfLinks+' relations – ' : ''}${moment(note.date).format('DD.MM.YYYY')}`,
+            type: 'note',
             action: () => {
-              var encodedPath = fn.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
-              $this.$router.push(`/fleetingNote/${encodedPath}`).catch(err => {
+              var encodedPath = note.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
+              $this.$router.push(`/note/${encodedPath}`).catch(err => {
                 // Ignore the vuex err regarding  navigating to the page they are already on.
                 if (
                   err.name !== 'NavigationDuplicated' &&
@@ -958,31 +958,31 @@ export default {
             },
             getSubItems: () => {
               return {
-                newItems: getSubItemsOfFleetingNote(fn),
-                newMessage: fn.abstract,
+                newItems: getSubItemsOfNote(note),
+                newMessage: note.abstract,
               }
             },
           })
         }
-        return fnList
+        return noteList
       }
-      var getSubItemsOfFleetingNote = function (parentFn) {
-        var relations = parentFn.relations
+      var getSubItemsOfNote = function (parentNote) {
+        var relations = parentNote.relations
         if (relations.length < 1) {
           return false
         }
-        var fnList = []
+        var noteList = []
         for (let relation of relations) {
-          let fn = relation.fn
-          let numberOfLinks = fn.relations.length
-          fnList.push({
-            label: fn.abstract,
+          let note = relation.note
+          let numberOfLinks = note.relations.length
+          noteList.push({
+            label: note.abstract,
             lucideIcon: 'FileText',
-            description: `${fn.stack || 'Inbox'} –${numberOfLinks > 0 ? ' '+numberOfLinks+' relations –' : ''}  ${moment(fn.date).format('DD.MM.YYYY')}`,
-            type: 'fleetingNote',
+            description: `${note.stack} –${numberOfLinks > 0 ? ' '+numberOfLinks+' relations –' : ''}  ${moment(note.date).format('DD.MM.YYYY')}`,
+            type: 'note',
             action: () => {
-              var encodedPath = fn.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
-              $this.$router.push(`/fleetingNote/${encodedPath}`).catch(err => {
+              var encodedPath = note.relativePath.split('/').map(c => encodeURIComponent(c)).join('/')
+              $this.$router.push(`/note/${encodedPath}`).catch(err => {
                 // Ignore the vuex err regarding  navigating to the page they are already on.
                 if (
                   err.name !== 'NavigationDuplicated' &&
@@ -995,14 +995,14 @@ export default {
             },
             getSubItems: () => {
               return {
-                newItems: getSubItemsOfFleetingNote(fn),
-                newMessage: fn.abstract,
+                newItems: getSubItemsOfNote(note),
+                newMessage: note.abstract,
               }
             },
           })
         }
-        var myStack = parentFn.collection.stacks.getStackByPath(parentFn.stack)
-        fnList.push({
+        var myStack = parentNote.collection.stacks.getStackByPath(parentNote.stack)
+        noteList.push({
           label: myStack.relativePath,
           lucideIcon: 'Layers',
           description: 'Stack',
@@ -1026,7 +1026,7 @@ export default {
             }
           },
         })
-        return fnList
+        return noteList
       }
       for (let s of stacks) {
         stacksList.push({

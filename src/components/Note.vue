@@ -630,12 +630,12 @@
               label: newEntry,
               description: 'Create new registry entry',
               action: () => {
-                var newNotePath = stack.sendText(`# ${newEntry}`)
+                var newNotePath = $this.noteObj.collection.stacks.getStackByPath(registerPath).sendText(`# ${newEntry}`)
                 var newNote = $this.$store.state.currentNoteCollection.getNoteByPath(newNotePath)
                 var edgeProperties = []
                 let n = $this.noteObj
                 if (n) {
-                  n.addLink(newNotePath.relativePath, edgeProperties)
+                  n.addLink(newNote.relativePath, edgeProperties)
                 }
               },
             })

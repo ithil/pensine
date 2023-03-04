@@ -232,6 +232,7 @@ export default {
                 options: {hintMode: true},
               })
             }, 50)
+            return {returnFocus: false}
           },
         },
         {
@@ -291,6 +292,7 @@ export default {
                 options: {hintMode: true},
               })
             }, 50)
+            return {returnFocus: false}
           },
         },
         {
@@ -339,6 +341,7 @@ export default {
                                           console.error(err)
                                         }
                                       })
+                                      return {returnFocus: false}
                                     },
                                   })
                                   $this.$store.commit('triggerCustomPopoverList', {
@@ -348,6 +351,7 @@ export default {
                                   })
                                 }
                               }, 50)
+                              return {returnFocus: false}
                             },
                           })
                         }
@@ -357,6 +361,7 @@ export default {
                           options: {hintMode: true},
                         })
                       }, 50)
+                      return {returnFocus: false}
                     },
                   })
                 }
@@ -367,6 +372,7 @@ export default {
                 options: {hintMode: true},
               })
             }, 50)
+            return {returnFocus: false}
           },
         },
         {
@@ -406,6 +412,7 @@ export default {
                 options: {hintMode: true},
               })
             }, 50)
+            return {returnFocus: false}
           },
         },
         {
@@ -443,6 +450,7 @@ export default {
                       description: note.stack,
                       action:() => {
                         callback(note)
+                        return {returnFocus: false}
                       }
                     }
                   }
@@ -481,6 +489,7 @@ export default {
                       }, 50)
                     }
                     removeFromBag()
+                    return {returnFocus: false}
                   },
                 },
                 {
@@ -496,6 +505,7 @@ export default {
                 options: {hintMode: true},
               })
             }, 50)
+            return {returnFocus: false}
           },
         },
         {
@@ -553,6 +563,7 @@ export default {
                 })
               })
             }, 50)
+            return {returnFocus: false}
           },
         },
         {

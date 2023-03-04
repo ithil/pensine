@@ -70,7 +70,7 @@ import Icon from '@/components/Icon.vue'
       }
     },
     methods: {
-      close(cb) {
+      close(cb, {returnFocus = true} = {} ) {
         this.active = false
         this.show = true
         this.portalActive = false
@@ -80,8 +80,10 @@ import Icon from '@/components/Icon.vue'
           cb()
         }
         this.$emit('close')
-        if(this.previouslyFocusedElement) {
-          this.previouslyFocusedElement.focus()
+        if (returnFocus) {
+          if(this.previouslyFocusedElement) {
+            this.previouslyFocusedElement.focus()
+          }
         }
       },
       open(cb) {
@@ -157,8 +159,9 @@ import Icon from '@/components/Icon.vue'
         if (this.selected) {
           var item = this.itemsWithIds.find(i => i.id == this.selected)
           if (item && item.action) {
-            item.action()
-            this.close()
+            let opts = item.action() || {}
+            let returnFocus = opts.returnFocus ?? true
+            this.close(null, {returnFocus: returnFocus})
           }
         }
         else {
@@ -315,9 +318,10 @@ import Icon from '@/components/Icon.vue'
             if (event.ctrlKey) modifier = 'Ctrl'
             let associatedCallback = this.registeredKeys[modifier]?.[event.key.toUpperCase()]
             if (associatedCallback) {
-              associatedCallback()
+              var opts = associatedCallback() || {}
               setTimeout(() => {
-                this.close()
+                let returnFocus = opts.returnFocus ?? true
+                this.close(null, {returnFocus: returnFocus})
               }, 100)
             }
           }

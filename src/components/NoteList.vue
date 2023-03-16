@@ -2071,6 +2071,21 @@ export default {
             }
             this.fullKeybuffer = ''
           }
+          else if (this.keybuffer == ",nc")
+          {
+            if (this.stack) {
+              var $this = this
+              this.$store.commit('triggerCustomTextPrompt', {
+                message: `Enter canvas title`,
+                action: (text) => {
+                  var filepath = this.stack.createCanvas({title: text})
+                  this.scrollToFocusedNoteOnNextUpdate = true
+                  this.setFocusedNotePath(filepath)
+                }
+              })
+            }
+            this.fullKeybuffer = ''
+          }
           else if (this.keybuffer == "vt")
           {
             this.enterOverview('title')

@@ -1,6 +1,6 @@
 'use strict'
 
-import { app, protocol, BrowserWindow, Menu, ipcMain, globalShortcut, Notification, shell, dialog } from 'electron'
+import { app, protocol, BrowserWindow, Menu, ipcMain, globalShortcut, Notification, shell, dialog, nativeImage } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import contextMenu from 'electron-context-menu'
@@ -369,6 +369,10 @@ async function createWindow() {
     const icon = await app.getFileIcon(myPath)
     return icon.toDataURL()
     // win.webContents.send('')
+  })
+  ipcMain.handle('getThumbnail', async (event, myPath, callback) => {
+    const thumbnail = await nativeImage.createThumbnailFromPath(myPath, {width: 512, height: 512})
+    return thumbnail.toDataURL()
   })
   ipcMain.handle('dialog', (event, method, params) => {
     dialog[method](params)

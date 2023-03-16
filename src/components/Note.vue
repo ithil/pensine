@@ -63,7 +63,12 @@
       </span>
     </header>
     <div class="content" v-if="!editing">
-      <div v-if="noteObj.isText" v-html="renderedContentWithHighlights">
+      <div v-if="noteObj.isText && !noteObj.isCanvas" v-html="renderedContentWithHighlights">
+      </div>
+      <div v-else-if="noteObj.isCanvas">
+        <h1><Icon name="LayoutDashboard"/> {{canvasObj.title}}</h1>
+        <p>Canvas · {{canvasObj.elements.length}} elements</p>
+        <button class="canvasOpenButton" @click="$router.push(`/canvas/${encodedPath}`)">Open</button>
       </div>
       <div v-else-if="noteObj.isImage">
         <img
@@ -303,6 +308,11 @@
       },
       showRightHandRelationsNow() {
         return this.computedOptions.showRightHandRelations && this.selected
+      },
+      canvasObj() {
+        if (this.noteObj.isCanvas) {
+          return JSON.parse(this.noteObj.content)
+        }
       },
     },
   watch: {
@@ -1351,6 +1361,15 @@
     color: white;
     padding: 5px;
     border-radius: 6px 6px 0px 0px;
+  }
+  button.canvasOpenButton {
+    background: transparent;
+    border: 1px solid grey;
+    border-radius: 5px;
+    font-size: 20px;
+    padding: 10px;
+    color: grey;
+    cursor: pointer;
   }
   .rightHandRelations {
     position: absolute;

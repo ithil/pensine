@@ -3,6 +3,7 @@ import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
 import Stack from '../views/Stack.vue'
 import NotePage from '../views/NotePage.vue'
+import CanvasPage from '../views/CanvasPage.vue'
 import NodeExplorer from '../views/NodeExplorer.vue'
 import Search from '../views/Search.vue'
 
@@ -74,6 +75,18 @@ const routes = [
       iconBackground: '#fbe1e1',
       key: 'path',
       tips: 'Note Page', // tab tooltip, optional. defaults to `meta.title`
+      closable: true // is tab closable, defaults to `true`
+    },
+  },
+  {
+    path: '/canvas/:name(.*)',
+    name: 'Canvas Page',
+    component: CanvasPage,
+    meta: {
+      title: 'Canvas Page', // tab title
+      icon: 'LayoutDashboard',
+      key: 'path',
+      tips: 'Canvas Page', // tab tooltip, optional. defaults to `meta.title`
       closable: true // is tab closable, defaults to `true`
     },
   },

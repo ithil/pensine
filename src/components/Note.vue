@@ -1317,12 +1317,13 @@
           this.$set(this.computedOptions, o, this.options[o])
         }
       }
-      var $this = this;
-
-      (async () => {
-        const icon = await ipcRenderer.invoke('getFileIcon', $this.noteObj.path)
-        $this.icon = icon
-      })()
+      if (!(this.noteObj.isText || this.noteObj.isCanvas || this.noteObj.isImage || this.noteObj.isImage)) {
+        var $this = this;
+        (async () => {
+          const icon = await ipcRenderer.invoke('getFileIcon', $this.noteObj.path)
+          $this.icon = icon
+        })()
+      }
     }
   }
 </script>

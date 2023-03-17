@@ -1220,8 +1220,22 @@ body {
   background-color: #222527;
   color: white;
   width: 100%;
-  padding: 2px;
   height: $status-bar-height;
+  .mode {
+    background: white;
+    color: black;
+    padding: 7px;
+    display: inline-flex;
+    justify-content: space-around;
+    .svg-icon {
+      margin-right: 3px;
+    }
+  }
+}
+
+.statusBarLeft, .statusBarRight {
+  display: flex;
+  align-items: center;
 }
 
 .statusBarLeft {

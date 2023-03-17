@@ -31,9 +31,13 @@
     </div>
     <portal to="statusBarRight" :order="1" v-if="portalActive">
       <span class="keybuffer">{{fullKeybuffer}}</span>
-      <span class="mode">Mode: {{mode}}</span>
-      <span class="zoom"><Icon name="ZoomIn"/><span>{{this.scale}}</span></span>
-      <span><Icon name="MousePointer"/><span>{{toWorldPos(mouseposx,mouseposy)}}</span></span>
+      <span class="mode" :style="modes[mode].style"><Icon v-if="modes[mode].lucideIcon" :name="modes[mode].lucideIcon"/><span class="label">{{modes[mode].label || mode}}</span></span>
+      <span><Icon name="Files"/><span>{{canvasElements.length}}</span></span>
+      <span class="debugInfo" v-if="statusBarDebugInfo">
+        <span class="zoom"><Icon name="ZoomIn"/><span>{{this.scale}}</span></span>
+        <span><Icon name="MousePointer"/><span>{{toWorldPos(mouseposx,mouseposy)}}</span></span>
+        <span><Icon name="View"/><span>{{visibleElements.length}}</span></span>
+      </span>
     </portal>
   </div>
 </template>
@@ -63,7 +67,30 @@ export default {
       canvasBus: new Vue(),
       isMounted: false,
       portalActive: true,
+      statusBarDebugInfo: false,
       mode: 'normal',
+      modes: {
+        'normal': {
+          label: 'Normal',
+          lucideIcon: 'Circle',
+          style: {
+            background: '#3e6e51',
+            color: '#fff',
+          },
+        },
+        'move': {
+          label: 'Move',
+          lucideIcon: 'Move',
+        },
+        'edit': {
+          label: 'Edit',
+          lucideIcon: 'Edit2',
+          style: {
+            background: '#4F99D3',
+            color: '#fff',
+          },
+        },
+      },
       fullKeybuffer: '',
       keybuffer: '',
       keybufferCount: null,
@@ -232,6 +259,9 @@ export default {
       this.focusedElementId = id
     },
     setMode(newmode) {
+      if (!Object.keys(this.modes).includes(newmode)) {
+        this.modes[newmode] = {}
+      }
       this.mode = newmode
     },
     getFocusedElementItem() {
@@ -461,7 +491,7 @@ export default {
               this.canvasElements[index].y = this.moveOrigins[id][1]
             }
           }
-          this.mode = 'normal'
+          this.setMode('normal')
           this.fullKeybuffer = ''
         }
         else if (event.key == 's' && event.metaKey) {
@@ -482,7 +512,7 @@ export default {
             if (this.keybuffer == "e")
             {
               this.getFocusedElementItem()?.editElement()
-              this.mode = 'edit'
+              this.setMode('edit')
               this.fullKeybuffer = ''
             }
             else if (this.keybuffer == "x")
@@ -493,6 +523,11 @@ export default {
             else if (this.keybuffer == "z0")
             {
               this.setScale(1)
+              this.fullKeybuffer = ''
+            }
+            else if (this.keybuffer == ",d")
+            {
+              this.statusBarDebugInfo = !this.statusBarDebugInfo
               this.fullKeybuffer = ''
             }
             else if (this.keybuffer == "l")
@@ -723,7 +758,7 @@ export default {
               this.$set(this.moveOrigins, 'cursor', [x, y])
               var focusedElement = this.canvasElements.find(e => e.id == this.focusedElementId)
               this.$set(this.moveOrigins, focusedElement.id, [focusedElement.x, focusedElement.y])
-              this.mode = 'move'
+              this.setMode('move')
               this.fullKeybuffer = ''
             }
             else if (this.keybuffer == "cc")
@@ -786,7 +821,7 @@ export default {
             }
             else if (this.keybuffer == "cg")
             {
-              this.mode = 'grow'
+              this.setMode('grow')
               this.fullKeybuffer = ''
             }
             else if (this.keybuffer == "cr")

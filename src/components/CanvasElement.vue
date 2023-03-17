@@ -6,7 +6,7 @@
   :class="{focused: isFocused}"
   ref="canvasElement"
   >
-    <div class="canvas-element-container" :data-element-type="canvasElementObj.type">
+    <div class="canvas-element-container" :data-element-type="canvasElementObj.type" :class="additionalCssClasses">
       <div class="content markdown" v-if="canvasElementObj.fitText && canvasElementObj.type == 'markdown' && !editing">
         <div>
           <div class="fitText" ref="content" v-html="renderedContent"></div>
@@ -187,6 +187,15 @@
           filter,
           transform,
         }
+      },
+      additionalCssClasses() {
+        var additionalCssClasses = []
+        if (this.canvasElementObj.cssClasses) {
+          for (let c of this.canvasElementObj.cssClasses) {
+            additionalCssClasses.push(`opt_${c}`)
+          }
+        }
+        return additionalCssClasses
       },
     },
   watch: {
@@ -755,6 +764,25 @@
   width: 100%;
   height: 100%;
   transition: border 0.25s;
+  &.opt_textColorFromElementColor {
+    color: RGB(var(--canvas-color));
+  }
+  &.opt_blurBackground {
+    backdrop-filter: blur(10px);
+  }
+  &.opt_contentOnly {
+    &:not(:hover) {
+      border-color: transparent;
+    }
+    .content.markdown {
+      background: none;
+    }
+  }
+  &.opt_centerHeadings {
+    h1, h2, h3, h4, h5, h6 {
+      text-align: center;
+    }
+  }
   &[data-element-type="image"]:not(:hover) {
     border-color: transparent;
   }

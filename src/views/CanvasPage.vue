@@ -930,6 +930,64 @@ export default {
               }
               this.fullKeybuffer = ''
             }
+            else if (this.keybuffer == "qc")
+            {
+              var focusedElementIndex = this.canvasElements.findIndex(e => e.id == this.focusedElementId)
+              if (focusedElementIndex > -1) {
+                var focusedElement = this.canvasElements[focusedElementIndex]
+                  if (!focusedElement.cssClasses) {
+                    this.$set(this.canvasElements[focusedElementIndex], 'cssClasses', [])
+                  }
+                  var cssClasses = [
+                    {
+                      label: 'Element color = text color',
+                      className: 'textColorFromElementColor',
+                    },
+                    {
+                      label: 'Blur background',
+                      className: 'blurBackground',
+                    },
+                    {
+                      label: 'Content only',
+                      className: 'contentOnly',
+                    },
+                    {
+                      label: 'Center Headings',
+                      className: 'centerHeadings',
+                    },
+                  ]
+                  var items = []
+                  for (let c of cssClasses) {
+                    items.push({
+                      label: c.label,
+                      lucideIcon: focusedElement.cssClasses.includes(c.className) ? 'CheckCircle2' : 'Circle',
+                      action: () => {
+                        if (!focusedElement.cssClasses.includes(c.className)) {
+                          this.canvasElements[focusedElementIndex].cssClasses.push(c.className)
+                        }
+                        else {
+                          this.canvasElements[focusedElementIndex].cssClasses = this.canvasElements[focusedElementIndex].cssClasses.filter(cl => cl !== c.className)
+                        }
+                      },
+                    })
+                  }
+                  items = items.concat([
+                    { role: 'separator' },
+                    {
+                      label: 'Remove all classes',
+                      action: () => {
+                        this.$delete(this.canvasElements[focusedElementIndex], 'cssClasses')
+                      },
+                    },
+                  ])
+                  this.$store.commit('triggerCustomPopoverList', {
+                    message: 'Add CSS class',
+                    items: items,
+                    options: {hintMode: false},
+                  })
+              }
+              this.fullKeybuffer = ''
+            }
             else if (this.keybuffer == "cf")
             {
               // Fit to viewport // doesn't quite work yet

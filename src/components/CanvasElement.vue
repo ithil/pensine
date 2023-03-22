@@ -3,7 +3,7 @@
   class="canvas-element"
   :style="{width: `${canvasElementObj.width}px`, height: `${canvasElementObj.height}px`, transform: `translate(${canvasElementObj.x}px, ${canvasElementObj.y}px) rotate(${canvasElementObj.rotation || 0}deg)`, '--canvas-color': canvasElementObj.color}"
   @click="setFocusedElement(canvasElementObj.id)"
-  :class="{focused: isFocused}"
+  :class="{focused: isFocused, selected: isSelected}"
   ref="canvasElement"
   >
     <div class="canvas-element-container" :data-element-type="canvasElementObj.type" :class="additionalCssClasses">
@@ -74,6 +74,7 @@
       'canvasElementObj': Object,
       'options': Object,
       'isFocused': Boolean,
+      'isSelected': Boolean,
       'canvasBus': Object,
       'scale': Number,
       'canvasMatrix': Object,
@@ -741,6 +742,11 @@
     user-select: text;
   }
 }
+
+.canvas-element.selected .canvas-element-container {
+  border-style: dashed;
+}
+
 @mixin favicon {
   background-size: 18px 18px;
   background-position: center center;

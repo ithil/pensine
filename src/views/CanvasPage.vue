@@ -22,17 +22,28 @@
         @focusCanvasWrapper="focusCanvasWrapper"
         :canvasBus="canvasBus"
         :isFocused="element.id == focusedElementId"
+        :isSelected="selectedElementsIds.includes(element.id)"
         :scale="scale"
         :canvasMatrix="canvasMatrix"
         ref="elementItems"
         >
         </canvas-element>
+        <div
+        v-for="element in helperElements"
+        :key="element.id"
+        class="canvas-helper-element"
+        :class="element.classes"
+        :style="{width: `${element.width}px`, height: `${element.height}px`, transform: `translate(${element.x}px, ${element.y}px) rotate(${element.rotation || 0}deg)`}"
+        ref="helperElementItems"
+        >
+        </div>
       </div>
     </div>
     <portal to="statusBarRight" :order="1" v-if="portalActive">
       <span class="keybuffer">{{fullKeybuffer}}</span>
+      <span class="selectedElements statusBarItem" v-if="selectedElementsIds.length > 0" @click="selectedElementsIds = []"><Icon name="BoxSelect"/><span class="label">{{selectedElementsIds.length}}</span></span>
       <span class="mode" :style="modes[mode].style"><Icon v-if="modes[mode].lucideIcon" :name="modes[mode].lucideIcon"/><span class="label">{{modes[mode].label || mode}}</span></span>
-      <span><Icon name="Files"/><span>{{canvasElements.length}}</span></span>
+      <span class="statusBarItem"><Icon name="Files"/><span>{{canvasElements.length}}</span></span>
       <span class="debugInfo" v-if="statusBarDebugInfo">
         <span class="zoom"><Icon name="ZoomIn"/><span>{{this.scale}}</span></span>
         <span><Icon name="MousePointer"/><span>{{toWorldPos(mouseposx,mouseposy)}}</span></span>
@@ -96,6 +107,8 @@ export default {
       keybufferCount: null,
       keybufferRegister: null,
       focusedElementId: null,
+      selectedElementsIds: [],
+      selectRectBeingDrawn: false,
       scale: 1,
       originX: 0,
       originY: 0,
@@ -108,6 +121,7 @@ export default {
       },
       visibleElements: [],
       canvasElements: [],
+      helperElements: [],
       moveOrigins: {},
       savedViews: [],
     }
@@ -164,6 +178,9 @@ export default {
 
       // redraw
       this.setCanvasMatrix(canvasMatrix)
+      if (this.mode == 'move') {
+        this.handleMoveElements()
+      }
       event.preventDefault()
     },
     toWorldPos(x, y, canvasMatrix) {
@@ -184,6 +201,17 @@ export default {
       this.canvasMatrix.a = newScale
       this.canvasMatrix.d = newScale
     },
+    handleMoveElements() {
+      let affectedIds = this.getElementIdsToBeAffected()
+      for (let id of affectedIds) {
+        let elementIndex = this.canvasElements.findIndex(e => e.id == id)
+        let [x, y] = this.toWorldPos(this.mouseposx, this.mouseposy)
+        let xdelta = x - this.moveOrigins.cursor[0]
+        let ydelta = y - this.moveOrigins.cursor[1]
+        this.canvasElements[elementIndex].x = xdelta + this.moveOrigins[this.canvasElements[elementIndex].id][0]
+        this.canvasElements[elementIndex].y = ydelta + this.moveOrigins[this.canvasElements[elementIndex].id][1]
+      }
+    },
     mouseMove(event) {
       const boundingClientRect = this.$refs.canvasWrapper.getBoundingClientRect()
       const mouseposx = event.clientX - boundingClientRect.left
@@ -192,20 +220,78 @@ export default {
       this.mouseposy = mouseposy
       this.canvasBus.$emit('canvasWrapperMouseMove', {event, mouseposx, mouseposy})
       if (this.mode == 'move') {
-        var focusedElementIndex = this.canvasElements.findIndex(e => e.id == this.focusedElementId)
+        this.handleMoveElements()
+      }
+      if (this.selectRectBeingDrawn) {
         let [x, y] = this.toWorldPos(this.mouseposx, this.mouseposy)
-        let xdelta = x - this.moveOrigins.cursor[0]
-        let ydelta = y - this.moveOrigins.cursor[1]
-        this.canvasElements[focusedElementIndex].x = xdelta + this.moveOrigins[this.canvasElements[focusedElementIndex].id][0]
-        this.canvasElements[focusedElementIndex].y = ydelta + this.moveOrigins[this.canvasElements[focusedElementIndex].id][1]
+        let helperElementIndex = this.helperElements.findIndex(el => el.type == 'select-rect')
+        let helperElement = this.helperElements[helperElementIndex]
+        if ((x > helperElement.originalX) && (y > helperElement.originalY)) { // Bottom right
+          this.helperElements[helperElementIndex].x = helperElement.originalX
+          this.helperElements[helperElementIndex].y = helperElement.originalY
+          this.helperElements[helperElementIndex].height = y - helperElement.originalY
+          this.helperElements[helperElementIndex].width = x - helperElement.originalX
+        }
+        else if ((x > helperElement.originalX) && (y < helperElement.originalY)) { // Top right
+          this.helperElements[helperElementIndex].x = helperElement.originalX
+          this.helperElements[helperElementIndex].y = y
+          this.helperElements[helperElementIndex].height = helperElement.originalY - y
+          this.helperElements[helperElementIndex].width = x - helperElement.originalX
+        }
+        else if ((x < helperElement.originalX) && (y < helperElement.originalY)) { // Top left
+          this.helperElements[helperElementIndex].x = x
+          this.helperElements[helperElementIndex].y = y
+          this.helperElements[helperElementIndex].height = helperElement.originalY - y
+          this.helperElements[helperElementIndex].width = helperElement.originalX - x
+        }
+        else if ((x < helperElement.originalX) && (y > helperElement.originalY)) { // Bottom left
+          this.helperElements[helperElementIndex].x = x
+          this.helperElements[helperElementIndex].y = helperElement.originalY
+          this.helperElements[helperElementIndex].height = y - helperElement.originalY
+          this.helperElements[helperElementIndex].width = helperElement.originalX - x
+        }
       }
     },
     mouseUp(event) {
       this.canvasBus.$emit('canvasWrapperMouseUp', {event})
+      if (this.selectRectBeingDrawn) {
+        this.selectRectBeingDrawn = false
+        var helperElementIndex = this.helperElements.findIndex(el => el.type == 'select-rect')
+        var helperElement = this.helperElements[helperElementIndex]
+        var selectRect = this.calculateRectanglePoints(helperElement.x, helperElement.y, helperElement.width, helperElement.height)
+        for (let el of this.canvasElements) {
+          if (this.checkOverlap(
+            this.calculateRectanglePoints(el.x, el.y, el.width, el.height),
+            selectRect
+          )) {
+            if (event.shiftKey) {
+              this.selectedElementsIds = this.selectedElementsIds.filter(id => id != el.id)
+            }
+            else {
+              this.selectedElementsIds.push(el.id)
+            }
+          }
+        }
+        this.focusedElementId = null
+        this.helperElements = this.helperElements.filter(el => !(el.type == 'select-rect'))
+      }
     },
     mouseDown(event) {
       if (event.target == this.$refs.canvasWrapper) {
         this.canvasBus.$emit('canvasWrapperMouseDown', {event})
+        this.selectRectBeingDrawn = true
+        var [x, y] = this.toWorldPos(this.mouseposx, this.mouseposy)
+        this.helperElements.push({
+          id: uuidv4(),
+          type: 'select-rect',
+          classes: ['selectRect'],
+          x,
+          y,
+          originalX: x,
+          originalY: y,
+          height: 0,
+          width: 0,
+        })
       }
     },
     canvasWrapperClick(event) {
@@ -277,6 +363,18 @@ export default {
     },
     focusCanvasWrapper() {
       this.$refs.canvasWrapper.focus()
+    },
+    getElementIdsToBeAffected() {
+      if (this.selectedElementsIds.length > 0) {
+        return this.selectedElementsIds
+      }
+      else {
+        return [this.focusedElementId]
+      }
+    },
+    getElementsToBeAffected() {
+      let ids = this.getElementIdsToBeAffected()
+      return this.canvasElements.filter(el => ids.includes(el.id))
     },
     addNewMarkdownElement({
       x = 0,
@@ -482,6 +580,10 @@ export default {
       }
       if (!(['INPUT', 'TEXTAREA'].includes(tagName)) && !classes.includes('editor')) {
         if (event.key === "Escape") {
+          if (this.selectRectBeingDrawn) {
+            this.selectRectBeingDrawn = false
+            this.helperElements = this.helperElements.filter(el => !(el.type == 'select-rect'))
+          }
           if (this.mode == 'move') {
             for (let id in this.moveOrigins) {
               if (id == 'cursor') continue
@@ -517,7 +619,40 @@ export default {
             }
             else if (this.keybuffer == "x")
             {
-              this.canvasElements = this.canvasElements.filter(e => e.id != this.focusedElementId)
+              // this.canvasElements = this.canvasElements.filter(e => e.id != this.focusedElementId)
+              let affectedIds = this.getElementIdsToBeAffected()
+              let affectedElements = this.getElementsToBeAffected()
+              let newCanvasElements = this.canvasElements.filter(e => !affectedIds.includes(e.id))
+              for (let el of affectedElements) {
+                if (el.type == 'note' && !(newCanvasElements.some(e => e.path == el.path))) {
+                  this.note.removeLink(el.path)
+                }
+              }
+              this.edges = this.edges.filter(ed => !affectedIds.includes(ed.fromElement) && !affectedIds.includes(ed.toElement))
+              this.canvasElements = newCanvasElements
+              this.focusedElementId = null
+              this.selectedElementsIds = []
+              this.fullKeybuffer = ''
+            }
+            else if (this.keybuffer == " ")
+            {
+              let focusedElementId = this.focusedElementId
+              if (this.selectedElementsIds.includes(focusedElementId)) {
+                this.selectedElementsIds = this.selectedElementsIds.filter(id => id != focusedElementId)
+              }
+              else {
+                this.selectedElementsIds.push(focusedElementId)
+              }
+              this.fullKeybuffer = ''
+            }
+            else if (this.keybuffer == "sn")
+            {
+              this.selectedElementsIds = []
+              this.fullKeybuffer = ''
+            }
+            else if (this.keybuffer == "sv")
+            {
+              this.selectedElementsIds = this.visibleElements.map(el => el.id)
               this.fullKeybuffer = ''
             }
             else if (this.keybuffer == "z0")
@@ -757,7 +892,10 @@ export default {
               this.moveOrigins = {}
               this.$set(this.moveOrigins, 'cursor', [x, y])
               var focusedElement = this.canvasElements.find(e => e.id == this.focusedElementId)
-              this.$set(this.moveOrigins, focusedElement.id, [focusedElement.x, focusedElement.y])
+              let affectedElements = this.getElementsToBeAffected()
+              for (let el of affectedElements) {
+                this.$set(this.moveOrigins, el.id, [el.x, el.y])
+              }
               this.setMode('move')
               this.fullKeybuffer = ''
             }
@@ -780,14 +918,17 @@ export default {
                   label: color,
                   lucideIcon: 'Palette',
                   action: () => {
-                    var focusedElementIndex = this.canvasElements.findIndex(e => e.id == this.focusedElementId)
-                    var focusedElement = this.canvasElements[focusedElementIndex]
-                    if (number == 9) {
-                      focusedElement.color = '0, 0, 0'
-                      this.$set(this.canvasElements[focusedElementIndex], 'color', '0, 0, 0')
-                    }
-                    else {
-                      this.$set(this.canvasElements[focusedElementIndex], 'color', `var(--canvas-color-${number})`)
+                    var affectedIds = this.getElementIdsToBeAffected()
+                    for (let id of affectedIds) {
+                      var elementIndex = this.canvasElements.findIndex(e => e.id == id)
+                      var focusedElement = this.canvasElements[elementIndex]
+                      if (number == 9) {
+                        focusedElement.color = '0, 0, 0'
+                        this.$set(this.canvasElements[elementIndex], 'color', '0, 0, 0')
+                      }
+                      else {
+                        this.$set(this.canvasElements[elementIndex], 'color', `var(--canvas-color-${number})`)
+                      }
                     }
                   },
                 })
@@ -805,7 +946,11 @@ export default {
                       text: focusedElement.color || '0, 0, 0',
                       action: (color) => {
                         if (/\d{1,3},\s?\d{1,3},\s?\d{1,3}/.test(color)) {
-                          this.$set(this.canvasElements[focusedElementIndex], 'color', color)
+                          var affectedIds = this.getElementIdsToBeAffected()
+                          for (let id of affectedIds) {
+                            var elementIndex = this.canvasElements.findIndex(e => e.id == id)
+                            this.$set(this.canvasElements[elementIndex], 'color', color)
+                          }
                         }
                       }
                     })
@@ -1232,5 +1377,9 @@ export default {
   outline: none;
 }
 .canvas {
+  .selectRect {
+    border: 1px dashed black;
+    background: rgba(256, 256, 256, 0.15);
+  }
 }
 </style>

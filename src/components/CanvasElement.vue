@@ -16,7 +16,7 @@
       <div class="noteLink" v-if="canvasElementObj.type == 'note' && !editing" @click="$router.push(`/note/${encodedPath}`)">
         <Icon name="FileText"/>
       </div>
-      <div class="content markdown note" v-html="renderedContent" v-if="canvasElementObj.type == 'note' && !editing"></div>
+      <div class="content markdown note" v-html="renderedContent" v-if="canvasElementObj.type == 'note' && !editing" ref="content"></div>
       <div class="content image" v-else-if="canvasElementObj.type == 'image'">
         <img :src="canvasElementObj.src" :style="imageStyle"></img>
       </div>
@@ -283,6 +283,15 @@
     },
     onCmReady(cm) {
       // cm.setSize(null, '60vh')
+    },
+    growDownUntilNoOverflow() {
+      var contentEl = this.$refs.content
+      if (contentEl) {
+        var diff = contentEl.scrollHeight - contentEl.clientHeight
+        var newCanvasElementObj = {...this.canvasElementObj}
+        newCanvasElementObj.height += diff
+        this.$emit('replaceCanvasElementObj', newCanvasElementObj)
+      }
     },
     startResize(location) {
       this.beingResized = true

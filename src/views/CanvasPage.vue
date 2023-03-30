@@ -1201,6 +1201,15 @@ export default {
                 let newCenterY = y + (height/2)
                 let newCanvasX = -newCenterX + ((canvasWidth  / 2 ) / this.canvasMatrix.a)
                 let newCanvasY = -newCenterY + ((canvasHeight / 2 ) / this.canvasMatrix.d)
+            else if (this.keybuffer == "qx")
+            {
+              // Grow height of element until there is no more overflow (scrollbar)
+              var focusedElementItem = this.getFocusedElementItem()
+              if (focusedElementItem) {
+                focusedElementItem.growDownUntilNoOverflow()
+              }
+              this.fullKeybuffer = ''
+            }
                 this.canvasMatrix.e = newCanvasX
                 this.canvasMatrix.f = newCanvasY
               }

@@ -1390,5 +1390,10 @@ export default {
     border: 1px dashed black;
     background: rgba(256, 256, 256, 0.15);
   }
+  .CodeMirror-cursors,
+  .CodeMirror-measure:nth-child(2) + div{
+    transform:scale(var(--inverse-scale));
+    transform-origin: 0 0;
+  }
 }
 </style>

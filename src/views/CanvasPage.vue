@@ -1241,6 +1241,58 @@ export default {
               this.canvasElements[focusedElementIndex].x -= this.keybufferCount ? parseInt(this.keybufferCount) : 20
               this.fullKeybuffer = ''
             }
+            else if (this.keybuffer == "t")
+            {
+              let affectedIds = this.getElementIdsToBeAffected()
+              for (let id of affectedIds) {
+                let elIndex = this.canvasElements.findIndex(el => el.id == id)
+                let el = this.canvasElements[elIndex]
+                let highestZ = el.zIndex ?? 0
+                for (let ele of this.canvasElements) {
+                  if (ele.id == el.id) continue
+                  if (this.checkOverlap(
+                    this.calculateRectanglePoints(el.x, el.y, el.width, el.height),
+                    this.calculateRectanglePoints(ele.x, ele.y, ele.width, ele.height),
+                  )) {
+                    highestZ = (ele.zIndex > highestZ) ? ele.zIndex : highestZ
+                  }
+                }
+                let newZ = highestZ + 1
+                if (newZ == 0 && this.canvasElements[elIndex].hasOwnProperty('zIndex')) {
+                  this.$delete(this.canvasElements[elIndex], 'zIndex')
+                }
+                else {
+                  this.$set(this.canvasElements[elIndex], 'zIndex', newZ)
+                }
+              }
+              this.fullKeybuffer = ''
+            }
+            else if (this.keybuffer == "b")
+            {
+              let affectedIds = this.getElementIdsToBeAffected()
+              for (let id of affectedIds) {
+                let elIndex = this.canvasElements.findIndex(el => el.id == id)
+                let el = this.canvasElements[elIndex]
+                let lowestZ = el.zIndex ?? 0
+                for (let ele of this.canvasElements) {
+                  if (ele.id == el.id) continue
+                  if (this.checkOverlap(
+                    this.calculateRectanglePoints(el.x, el.y, el.width, el.height),
+                    this.calculateRectanglePoints(ele.x, ele.y, ele.width, ele.height),
+                  )) {
+                    lowestZ = (ele.zIndex < lowestZ) ? ele.zIndex : lowestZ
+                  }
+                }
+                let newZ = lowestZ - 1
+                if (newZ == 0 && this.canvasElements[elIndex].hasOwnProperty('zIndex')) {
+                  this.$delete(this.canvasElements[elIndex], 'zIndex')
+                }
+                else {
+                  this.$set(this.canvasElements[elIndex], 'zIndex', newZ)
+                }
+              }
+              this.fullKeybuffer = ''
+            }
           }
           else if (this.mode == 'grow') {
             if (this.keybuffer == "j")

@@ -1,12 +1,12 @@
 <template>
   <div
   class="canvas-element"
-  :style="{width: `${canvasElementObj.width}px`, height: `${canvasElementObj.height}px`, transform: `translate(${canvasElementObj.x}px, ${canvasElementObj.y}px) rotate(${canvasElementObj.rotation || 0}deg)`, '--canvas-color': canvasElementObj.color}"
+  :style="{width: `${canvasElementObj.width}px`, height: `${canvasElementObj.height}px`, transform: `translate(${canvasElementObj.x}px, ${canvasElementObj.y}px) rotate(${canvasElementObj.rotation || 0}deg)`, '--canvas-color': canvasElementObj.color, 'z-index': zIndex}"
   @click="setFocusedElement(canvasElementObj.id)"
   :class="{focused: isFocused, selected: isSelected}"
   ref="canvasElement"
   >
-    <div class="canvas-element-container" :data-element-type="canvasElementObj.type" :class="additionalCssClasses">
+    <div class="canvas-element-container" :data-element-type="canvasElementObj.type" :data-element-id="canvasElementObj.id" :class="additionalCssClasses" :style="{'z-index': zIndex}">
       <div class="content markdown" v-if="canvasElementObj.fitText && canvasElementObj.type == 'markdown' && !editing">
         <div>
           <div class="fitText" ref="content" v-html="renderedContent"></div>
@@ -197,6 +197,17 @@
           }
         }
         return additionalCssClasses
+      },
+      zIndex() {
+        if (this.canvasElementObj.type == 'container') {
+          return -100
+        }
+        else if (this.canvasElementObj.zIndex) {
+          return this.canvasElementObj.zIndex
+        }
+        else {
+          return null
+        }
       },
     },
   watch: {

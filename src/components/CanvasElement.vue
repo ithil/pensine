@@ -7,6 +7,7 @@
   ref="canvasElement"
   >
     <div class="canvas-element-container" :data-element-type="canvasElementObj.type" :data-element-id="canvasElementObj.id" :class="additionalCssClasses" :style="{'z-index': zIndex}">
+      <div class="is-selected-overlay" v-if="isSelected"></div>
       <div class="content markdown" v-if="canvasElementObj.fitText && canvasElementObj.type == 'markdown' && !editing">
         <div>
           <div class="fitText" ref="content" v-html="renderedContent"></div>
@@ -763,8 +764,6 @@
   }
 }
 
-.canvas-element.selected .canvas-element-container {
-  border-style: dashed;
 }
 
 @mixin favicon {
@@ -789,7 +788,25 @@
   top: 0;
   width: 100%;
   height: 100%;
+  box-sizing: border-box;
   transition: border 0.25s;
+  background: var(--background-primary);
+  .is-selected-overlay {
+    position: absolute;
+    top: 0;
+    left :0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 4px,
+      RGBA(var(--canvas-color), 0.6) 4px,
+      RGBA(var(--canvas-color), 0.6) 8px
+    );
+    pointer-events:none; /* To be able to click through */
+    z-index: 2;
+  }
   &.opt_textColorFromElementColor {
     color: RGB(var(--canvas-color));
   }

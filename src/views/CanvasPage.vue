@@ -42,12 +42,13 @@
     <portal to="statusBarRight" :order="1" v-if="portalActive">
       <span class="keybuffer">{{fullKeybuffer}}</span>
       <span class="selectedElements statusBarItem" v-if="selectedElementsIds.length > 0" @click="selectedElementsIds = []"><Icon name="BoxSelect"/><span class="label">{{selectedElementsIds.length}}</span></span>
+      <span class="zoom statusBarItem"><Icon name="ZoomIn"/><span>{{(this.scale * 100).toFixed(0)}}%</span></span>
       <span class="mode" :style="modes[mode].style"><Icon v-if="modes[mode].lucideIcon" :name="modes[mode].lucideIcon"/><span class="label">{{modes[mode].label || mode}}</span></span>
       <span class="statusBarItem"><Icon name="Files"/><span>{{canvasElements.length}}</span></span>
       <span class="debugInfo" v-if="statusBarDebugInfo">
-        <span class="zoom"><Icon name="ZoomIn"/><span>{{this.scale}}</span></span>
-        <span><Icon name="MousePointer"/><span>{{toWorldPos(mouseposx,mouseposy)}}</span></span>
-        <span><Icon name="View"/><span>{{visibleElements.length}}</span></span>
+        <span class="zoom statusBarItem"><Icon name="ZoomIn"/><span>{{this.scale}}</span></span>
+        <span class="statusBarItem"><Icon name="MousePointer"/><span>{{toWorldPos(mouseposx,mouseposy)}}</span></span>
+        <span class="statusBarItem"><Icon name="View"/><span>{{visibleElements.length}}</span></span>
       </span>
     </portal>
   </div>

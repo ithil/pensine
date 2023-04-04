@@ -1231,6 +1231,10 @@ body {
       margin-right: 3px;
     }
   }
+  .debugInfo {
+    padding: 7px;
+    background: #5c3a3a;
+  }
 }
 
 .statusBarLeft, .statusBarRight {
@@ -1258,6 +1262,8 @@ body {
 .statusBarItem {
   margin-left: 5px;
   vertical-align: middle;
+  display: inline-flex;
+  gap: 3px;
   &.bold {
     font-weight: bold;
   }

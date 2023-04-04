@@ -1352,6 +1352,7 @@ export default {
       }
       return {
         background,
+        '--inverse-scale': 1/this.scale,
       }
     },
     viewportCoordinates() {

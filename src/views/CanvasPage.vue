@@ -460,24 +460,31 @@ export default {
       height = 200,
       lucideIcon = 'FileQuestion',
     } = {}) {
-      this.$store.commit('triggerCustomTextPrompt', {
-        message: 'Please Lucide Icon name:',
-        action: (lucideIcon) => {
-          var newElement = {
-            id: uuidv4(),
-            type: 'lucideIcon',
-            lucideIcon,
-            x,
-            y,
-            width,
-            height,
-            fitText: true,
-            creationDate: new Date(),
-            modificationDate: new Date(),
+      let ComponentClass = Vue.extend(Icon)
+      let iconInstance = new ComponentClass()
+      let listofAllIcons = iconInstance.getListOfAllIcons()
+      var items = listofAllIcons.map(lucideIcon => {
+        return {
+          label: lucideIcon,
+          lucideIcon,
+          action:() => {
+            var newElement = {
+              id: uuidv4(),
+              type: 'lucideIcon',
+              lucideIcon,
+              x,
+              y,
+              width,
+              height,
+              fitText: true,
+              creationDate: new Date(),
+              modificationDate: new Date(),
+            }
+            this.canvasElements.push(newElement)
           }
-          this.canvasElements.push(newElement)
         }
       })
+      this.$store.commit('triggerCustomSelectList', {items})
     },
     addNewFile({
       x = 0,

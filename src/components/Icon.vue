@@ -19,6 +19,11 @@ export default {
       return icons[this.name];
     },
   },
+  methods: {
+    getListOfAllIcons() {
+      return Object.keys(icons)
+    },
+  },
 };
 </script>
 

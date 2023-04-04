@@ -257,6 +257,7 @@
 </template>
 
 <script>
+import Vue from 'vue'
 import fs from 'fs'
 import path from 'path'
 import sanitizeFilename from 'sanitize-filename'
@@ -2032,14 +2033,20 @@ export default {
           else if (this.keybuffer == ",ii")
           {
             if (this.stack) {
-              var $this = this
-              this.$store.commit('triggerCustomTextPrompt', {
-                message: `Enter Lucide Icon Name for this stack`,
-                action: (text) => {
-                  this.stack.metadata.set('style.icon', text.trim())
-                  this.stack.metadata.save()
+              let ComponentClass = Vue.extend(Icon)
+              let iconInstance = new ComponentClass()
+              let listofAllIcons = iconInstance.getListOfAllIcons()
+              var items = listofAllIcons.map(lucideIcon => {
+                return {
+                  label: lucideIcon,
+                  lucideIcon,
+                  action:() => {
+                    this.stack.metadata.set('style.icon', lucideIcon)
+                    this.stack.metadata.save()
+                  }
                 }
               })
+              this.$store.commit('triggerCustomSelectList', {items})
             }
             this.fullKeybuffer = ''
           }

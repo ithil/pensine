@@ -133,15 +133,17 @@ import Icon from '@/components/Icon.vue'
         this.$emit('open')
       },
       addItem(item) {
-        var newId = this.getHighestId() + 1
-        this.itemsWithIds.push({
-          id: newId,
-          ...((this.options.hintMode && (item.role != 'separator')) && {hint: this.hintGenerator.next().value}),
-          ...item
-        })
-        if (item.key) {
-          this.registerKey(item.key, item.action, newId)
-        }
+        if (item.visible !== false) {
+          var newId = this.getHighestId() + 1
+          this.itemsWithIds.push({
+            id: newId,
+            ...((this.options.hintMode && (item.role != 'separator')) && {hint: this.hintGenerator.next().value}),
+            ...item
+          })
+          if (item.key) {
+            this.registerKey(item.key, item.action, newId)
+          }
+        } 
       },
       addItems(items) {
         for (let i of items) {

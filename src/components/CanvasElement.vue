@@ -815,6 +815,9 @@
   &[data-element-type="lucideIcon"]:not(:hover) {
     border-color: transparent;
   }
+  &[data-element-type="container"] {
+    background: RGBA(var(--canvas-color), 0.07);
+  }
   .noteLink {
     position: absolute;
     right: 4px;

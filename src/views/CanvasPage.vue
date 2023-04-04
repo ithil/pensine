@@ -132,10 +132,12 @@ export default {
       var canvasMatrix = this.canvasMatrix
       const mousex = (event.clientX - event.target.offsetLeft)
       const mousey = (event.clientY - event.target.offsetTop)
-      // Allow scrolling of a focused element
-      for (let el of event.path) {
-        if (el.classList?.contains('canvas-element') & el.classList?.contains('focused')) {
-          return true
+      if (this.mode != 'move') {
+        // Allow scrolling of a focused element
+        for (let el of event.path) {
+          if (el.classList?.contains('canvas-element') && el.classList?.contains('focused') && !el.querySelector('[data-element-type="container"]')) {
+            return true
+          }
         }
       }
       // Zoom into point under cursor
@@ -202,6 +204,19 @@ export default {
       this.canvasMatrix.a = newScale
       this.canvasMatrix.d = newScale
     },
+    getElementsFullyEnclosed({x, y, width, height}) {
+      let enclosedElements = []
+      let highestX = x + width
+      let highestY = y + height
+      for (let el of this.canvasElements) {
+        let bottomrightX = el.x + el.width
+        let bottomrightY = el.y + el.height
+        if (el.x >= x && el.y >= y && bottomrightX <= highestX && bottomrightY <= highestY) {
+          enclosedElements.push(el)
+        }
+      }
+      return enclosedElements
+    },
     handleMoveElements() {
       let affectedIds = this.getElementIdsToBeAffected()
       for (let id of affectedIds) {
@@ -261,6 +276,7 @@ export default {
         var helperElement = this.helperElements[helperElementIndex]
         var selectRect = this.calculateRectanglePoints(helperElement.x, helperElement.y, helperElement.width, helperElement.height)
         for (let el of this.canvasElements) {
+          if (el.id == helperElement.startedInContainer) continue
           if (this.checkOverlap(
             this.calculateRectanglePoints(el.x, el.y, el.width, el.height),
             selectRect
@@ -278,7 +294,13 @@ export default {
       }
     },
     mouseDown(event) {
-      if (event.target == this.$refs.canvasWrapper) {
+      if (this.mode == 'move') {
+        this.setMode('normal')
+        event.preventDefault()
+        event.stopPropagation()
+        return false
+      }
+      if (event.target == this.$refs.canvasWrapper || event.target.dataset.elementType == 'container') {
         this.canvasBus.$emit('canvasWrapperMouseDown', {event})
         this.selectRectBeingDrawn = true
         var [x, y] = this.toWorldPos(this.mouseposx, this.mouseposy)
@@ -292,12 +314,13 @@ export default {
           originalY: y,
           height: 0,
           width: 0,
+          ...(event.target.dataset.elementType == 'container' && {startedInContainer: event.target.dataset.elementId}),
         })
       }
     },
     canvasWrapperClick(event) {
       if (this.mode == 'move') {
-        this.mode = 'normal'
+        this.setMode('normal')
         event.preventDefault()
         event.stopPropagation()
         return false
@@ -394,8 +417,20 @@ export default {
         height,
         creationDate: new Date(),
         modificationDate: new Date(),
+    addNewElement(elementProps) {
+      var newElement = {
+        id: uuidv4(),
+        type: 'markdown',
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 100,
+        creationDate: new Date(),
+        modificationDate: new Date(),
+        ...elementProps,
       }
       this.canvasElements.push(newElement)
+      return newElement
     },
     addNewFittedMarkdownElement({
       x = 0,
@@ -859,6 +894,55 @@ export default {
               this.addNewNote({x, y})
               this.fullKeybuffer = ''
             }
+            else if (this.keybuffer == "nc")
+            {
+              let affectedElements = this.getElementsToBeAffected()
+              if (affectedElements.length > 0) {
+                let boundingRect = this.getBoundingRectCoveringGivenElements(affectedElements)
+                var {x, y, width, height} = boundingRect
+                let padding = 20
+                x -= padding
+                y -= padding
+                width += padding * 2
+                height += padding * 2
+              }
+              else {
+                var [x, y] = this.toWorldPos(this.mouseposx, this.mouseposy)
+                var width = 200
+                var height = 200
+              }
+              this.addNewElement({x, y, width, height, type: 'container'})
+              this.fullKeybuffer = ''
+            }
+            else if (this.keybuffer == "nC")
+            {
+              let affectedElements = this.getElementsToBeAffected()
+              let affectedIds = this.getElementIdsToBeAffected()
+              if (affectedElements.length > 0) {
+                let boundingRect = this.getBoundingRectCoveringGivenElements(affectedElements)
+                var {x, y, width, height} = boundingRect
+                let padding = 20
+                x -= padding
+                y -= padding
+                width += padding * 2
+                height += padding * 2
+              }
+              else {
+                var [x, y] = this.toWorldPos(this.mouseposx, this.mouseposy)
+                var width = 200
+                var height = 200
+              }
+              let newElement = this.addNewElement({x, y, width, height, type: 'container'})
+              for (let ed of this.edges) {
+                if (affectedIds.includes(ed.fromElement) && !affectedIds.includes(ed.toElement)) {
+                  ed.fromElement = newElement.id
+                }
+                else if (affectedIds.includes(ed.toElement) && !affectedIds.includes(ed.fromElement)) {
+                  ed.toElement = newElement.id
+                }
+              }
+              this.fullKeybuffer = ''
+            }
             else if (this.keybuffer == "nF")
             {
               var [x, y] = this.toWorldPos(this.mouseposx, this.mouseposy)
@@ -894,6 +978,10 @@ export default {
               this.$set(this.moveOrigins, 'cursor', [x, y])
               var focusedElement = this.canvasElements.find(e => e.id == this.focusedElementId)
               let affectedElements = this.getElementsToBeAffected()
+              for (let con of affectedElements.filter(el => el.type == 'container')) {
+                let additionalElements = this.getElementsFullyEnclosed({x, y, width, height} = con)
+                affectedElements = affectedElements.concat(additionalElements)
+              }
               for (let el of affectedElements) {
                 this.$set(this.moveOrigins, el.id, [el.x, el.y])
               }

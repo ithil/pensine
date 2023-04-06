@@ -764,6 +764,19 @@
   }
 }
 
+.canvas-element-label {
+  position: absolute;
+  left: 0;
+  top: -42px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: initial;
+  font-size: 1.2em;
+  padding: 7px;
+  border-radius: 5px;
+  color: #525252;
+  background-color: rgba(var(--canvas-color), 0.1);
+  line-height: 1;
 }
 
 @mixin favicon {
@@ -834,6 +847,15 @@
   }
   &[data-element-type="container"] {
     background: RGBA(var(--canvas-color), 0.07);
+  }
+  &[data-element-type="dot"] {
+    --dot-size: 20px;
+    border-radius: var(--dot-size);
+    background: RGBA(var(--canvas-color), 1);
+    & + .canvas-element-label {
+      transform: translateX(-50%);
+      left: 50%;
+    }
   }
   .noteLink {
     position: absolute;

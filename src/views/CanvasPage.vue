@@ -12,6 +12,48 @@
     @keydown="keymonitor"
     >
       <div class="canvas" :style="computedTransformStyle">
+        <svg class="canvas-edges">
+        <g
+        v-for="edge in visibleEdges"
+        :key="edge.id"
+        class="canvas-edge"
+        :class="{focused: edge.id == focusedEdgeId}"
+        >
+          <defs>
+            <path :id="edge.id" :d="edge.pathD" />
+            <marker
+            v-if="edge.toEnd == 'arrow' || edge.fromEnd == 'arrow'"
+            :id="`arrow_${edge.id}`"
+            viewBox="0 0 10 10"
+            refX="5"
+            refY="5"
+            markerWidth="6"
+            markerHeight="6"
+            orient="auto-start-reverse"
+            :style="{fill: edge.color ? `rgb(${edge.color})` : null}"
+            >
+              <path d="M 0 0 L 10 5 L 0 10 z" />
+            </marker>
+          </defs>
+          <use xmlns:xlink="http://www.w3.org/1999/xlink"
+          :xlink:href="`#${edge.id}`"
+          class="edge-outline"
+          @click="setFocusedEdge(edge.id)"
+          :style="{stroke: edge.color ? `rgba(${edge.color}, 0.11)` : null}"
+          ></use>
+          <use xmlns:xlink="http://www.w3.org/1999/xlink"
+          :xlink:href="`#${edge.id}`"
+          class="edge"
+          :marker-end="edge.toEnd == 'arrow' ? `url(#arrow_${edge.id})` : null"
+          :marker-start="edge.fromEnd == 'arrow' ? `url(#arrow_${edge.id})` : null"
+          @click="setFocusedEdge(edge.id)"
+          :style="{stroke: edge.color ? `rgb(${edge.color})` : null}"
+          ></use>
+          <text style="font-size: 24px;" dy="-10px" v-if="edge.label" :style="{fill: edge.color ? `rgb(${edge.color})` : null}">
+            <textPath :xlink:href="`#${edge.id}`" startOffset="50%" text-anchor="middle">{{edge.label}}</textPath>
+          </text>
+        </g>
+        </svg>
         <canvas-element
         v-for="element in visibleElements"
         :key="element.id"
@@ -33,7 +75,8 @@
         :key="element.id"
         class="canvas-helper-element"
         :class="element.classes"
-        :style="{width: `${element.width}px`, height: `${element.height}px`, transform: `translate(${element.x}px, ${element.y}px) rotate(${element.rotation || 0}deg)`}"
+        :style="{width: element.width ? `${element.width}px` : null, height: element.height ? `${element.height}px` : null, transform: `translate(${element.x}px, ${element.y}px) rotate(${element.rotation || 0}deg)`}"
+        @[element.click?`click`:null]="element.click"
         ref="helperElementItems"
         >
         </div>
@@ -41,6 +84,7 @@
     </div>
     <portal to="statusBarRight" :order="1" v-if="portalActive">
       <span class="keybuffer">{{fullKeybuffer}}</span>
+      <span class="edgeArrowMode" @click="nextEdgeArrowMode"><Icon :name="edgeArrowModeIcon"/></span>
       <span class="selectedElements statusBarItem" v-if="selectedElementsIds.length > 0" @click="selectedElementsIds = []"><Icon name="BoxSelect"/><span class="label">{{selectedElementsIds.length}}</span></span>
       <span class="zoom statusBarItem"><Icon name="ZoomIn"/><span>{{(this.scale * 100).toFixed(0)}}%</span></span>
       <span class="mode" :style="modes[mode].style"><Icon v-if="modes[mode].lucideIcon" :name="modes[mode].lucideIcon"/><span class="label">{{modes[mode].label || mode}}</span></span>
@@ -102,13 +146,20 @@ export default {
             color: '#fff',
           },
         },
+        'edge-create': {
+          label: 'Edge Create',
+          lucideIcon: 'GitBranchPlus',
+        },
       },
       fullKeybuffer: '',
       keybuffer: '',
       keybufferCount: null,
       keybufferRegister: null,
       focusedElementId: null,
+      focusedEdgeId: null,
+      edgeArrowMode: 'none',
       selectedElementsIds: [],
+      activatedEdgeInitiators: [],
       selectRectBeingDrawn: false,
       scale: 1,
       originX: 0,
@@ -122,6 +173,7 @@ export default {
       },
       visibleElements: [],
       canvasElements: [],
+      edges: [],
       helperElements: [],
       moveOrigins: {},
       savedViews: [],
@@ -290,6 +342,7 @@ export default {
           }
         }
         this.focusedElementId = null
+        this.focusedEdgeId = null
         this.helperElements = this.helperElements.filter(el => !(el.type == 'select-rect'))
       }
     },
@@ -365,8 +418,45 @@ export default {
       }
       this.visibleElements = elements
     },
+    calculatEdgeCreateHelpers() {
+      this.helperElements = []
+      for (let el of this.visibleElements) {
+        let elementMeasurements = {
+          top: {x: el.x + (el.width / 2), y: el.y},
+          right: {x: el.x + el.width, y: el.y + (el.height / 2)},
+          bottom: {x: el.x + (el.width / 2 ), y: el.y + el.height},
+          left: {x: el.x, y: el.y + (el.height / 2 )},
+        }
+        for (let side of Object.keys(elementMeasurements)) {
+          let {x, y} = elementMeasurements[side]
+          let isActivated = this.activatedEdgeInitiators.some(ei => ((ei.elementId == el.id) && (ei.side == side)))
+          this.helperElements.push({
+            id: uuidv4(),
+            elementId: el.id,
+            type: 'edge-initiator',
+            classes: ['edge-initiator', `edge-initiator-${side}`, isActivated ? 'activated' : null].filter(i => i !== null),
+            side: side,
+            x,
+            y,
+            click: () => {
+              console.log(`Clicked: ${el.id} at ${side}`)
+              this.activatedEdgeInitiators.push({
+                elementId: el.id,
+                side: side,
+              })
+              this.calculatEdgeCreateHelpers()
+            },
+          })
+        }
+      }
+    },
     setFocusedElement(id) {
       this.focusedElementId = id
+      this.focusedEdgeId = null
+    },
+    setFocusedEdge(id) {
+      this.focusedEdgeId = id
+      this.focusedElementId = null
     },
     setMode(newmode) {
       if (!Object.keys(this.modes).includes(newmode)) {
@@ -601,6 +691,16 @@ export default {
       })
       this.$store.commit('triggerCustomSelectList', {items})
     },
+    nextEdgeArrowMode() {
+      let currentEdgeArrowMode = this.edgeArrowMode
+      let edgeArrowModes = ['none', 'to', 'from', 'bidirectional']
+      let index = edgeArrowModes.findIndex(m => m == currentEdgeArrowMode)
+      if (index > -1) {
+        index++
+        if (index >= edgeArrowModes.length) index = 0
+        this.edgeArrowMode = edgeArrowModes[index]
+      }
+    },
     saveCanvas() {
       var oldCanvas = this.canvasObj
       var newCanvas = {...oldCanvas}
@@ -608,6 +708,7 @@ export default {
       newCanvas.savedViews = this.savedViews
       newCanvas.title = this.canvasObj.title
       newCanvas.background = this.canvasObj.background
+      newCanvas.edges = this.edges
       this.note.setContent(JSON.stringify(newCanvas, null, 2))
       this.canvasObj = newCanvas
     },
@@ -626,6 +727,10 @@ export default {
           if (this.selectRectBeingDrawn) {
             this.selectRectBeingDrawn = false
             this.helperElements = this.helperElements.filter(el => !(el.type == 'select-rect'))
+          }
+          if (this.mode == 'edge-create') {
+            this.helperElements = this.helperElements.filter(el => !(el.type == 'edge-initiator'))
+            this.activatedEdgeInitiators = []
           }
           if (this.mode == 'move') {
             for (let id in this.moveOrigins) {
@@ -654,6 +759,130 @@ export default {
             // Might not need the first helper function here
             var doesRangeContainAnother = (r1, r2) => ((r1[0] <= r2[0]) && (r1[1] >= r2[1])) || ((r2[0] <= r1[0]) && (r2[1] >= r1[1]))
             var doRangesOverlap = (r1, r2) => (r1[1] - r2[0] >= 0) && (r2[1] - r1[0] >= 0)
+            if (this.focusedEdgeId) {
+              if (this.keybuffer == "d") {
+                // Create dot between for focused edge on mouse position
+                let focusedEdge = this.edges.find(ed => ed.id == this.focusedEdgeId)
+                let {toElement, fromElement, fromSide, toSide} = focusedEdge
+                toElement = this.canvasElements.find(el => el.id == toElement)
+                fromElement = this.canvasElements.find(el => el.id == fromElement)
+                let [x, y] = this.toWorldPos(this.mouseposx, this.mouseposy)
+                let newDot = this.addNewElement({x, y, width: 20, height: 20, type: 'dot'})
+                let dotElementMeasurements = {
+                  top: {x: newDot.x + (newDot.width / 2), y: newDot.y},
+                  right: {x: newDot.x + newDot.width, y: newDot.y + (newDot.height / 2)},
+                  bottom: {x: newDot.x + (newDot.width / 2 ), y: newDot.y + newDot.height},
+                  left: {x: newDot.x, y: newDot.y + (newDot.height / 2 )},
+                }
+                let toElementMeasurements = {
+                  top: {x: toElement.x + (toElement.width / 2), y: toElement.y},
+                  right: {x: toElement.x + toElement.width, y: toElement.y + (toElement.height / 2)},
+                  bottom: {x: toElement.x + (toElement.width / 2 ), y: toElement.y + toElement.height},
+                  left: {x: toElement.x, y: toElement.y + (toElement.height / 2 )},
+                }
+                let fromElementMeasurements = {
+                  top: {x: fromElement.x + (fromElement.width / 2), y: fromElement.y},
+                  right: {x: fromElement.x + fromElement.width, y: fromElement.y + (fromElement.height / 2)},
+                  bottom: {x: fromElement.x + (fromElement.width / 2 ), y: fromElement.y + fromElement.height},
+                  left: {x: fromElement.x, y: fromElement.y + (fromElement.height / 2 )},
+                }
+                let sideDistancesToElement = []
+                for (let fromSide of Object.keys(dotElementMeasurements)) {
+                  sideDistancesToElement.push({
+                    toSide,
+                    fromSide,
+                    distance: Math.sqrt((dotElementMeasurements[fromSide].x - toElementMeasurements[toSide].x)**2 + (dotElementMeasurements[fromSide].y - toElementMeasurements[toSide].y)**2),
+                  })
+                }
+                let shortestDistanceToElement = sideDistancesToElement.reduce((prev, curr) => prev.distance < curr.distance ? prev : curr)
+                this.edges.push({
+                  ...focusedEdge,
+                  id: uuidv4(),
+                  fromElement: newDot.id,
+                  fromSide: shortestDistanceToElement.fromSide,
+                  toElement: toElement.id,
+                  toSide: toSide,
+                })
+                let sideDistancesFromElement = []
+                for (let toSide of Object.keys(dotElementMeasurements)) {
+                  sideDistancesFromElement.push({
+                    toSide,
+                    fromSide,
+                    distance: Math.sqrt((fromElementMeasurements[fromSide].x - dotElementMeasurements[toSide].x)**2 + (fromElementMeasurements[fromSide].y - dotElementMeasurements[toSide].y)**2),
+                  })
+                }
+                let shortestDistanceFromElement = sideDistancesFromElement.reduce((prev, curr) => prev.distance < curr.distance ? prev : curr)
+                this.edges.push({
+                  ...focusedEdge,
+                  id: uuidv4(),
+                  toElement: newDot.id,
+                  toSide: shortestDistanceFromElement.toSide,
+                  fromElement: fromElement.id,
+                  fromSide: fromSide,
+                })
+                this.focusedElementId = newDot.id
+                this.focusedEdgeId = null
+                this.edges = this.edges.filter(ed => ed.id != focusedEdge.id)
+                this.fullKeybuffer = ''
+                return
+              }
+              else if (this.keybuffer == "a") {
+                let focusedEdge = this.edges.find(ed => ed.id == this.focusedEdgeId)
+                var items = [
+                  {
+                    label: 'Nondirectional',
+                    lucideIcon: 'Minus',
+                    action: () => {
+                      this.$delete(focusedEdge, 'toEnd')
+                      this.$delete(focusedEdge, 'fromEnd')
+                    },
+                  },
+                  {
+                    label: 'Unidirectional',
+                    lucideIcon: 'ArrowRight',
+                    action: () => {
+                      this.$set(focusedEdge, 'toEnd', 'arrow')
+                      this.$delete(focusedEdge, 'fromEnd')
+                    },
+                  },
+                  {
+                    label: 'Bidirectional',
+                    lucideIcon: 'MoveHorizontal',
+                    action: () => {
+                      this.$set(focusedEdge, 'toEnd', 'arrow')
+                      this.$set(focusedEdge, 'fromEnd', 'arrow')
+                    },
+                  },
+                ]
+                this.$store.commit('triggerCustomPopoverList', {
+                  message: `Arrow`,
+                  items: items,
+                  options: {hintMode: false},
+                })
+                this.fullKeybuffer = ''
+                return
+              }
+              else if (this.keybuffer == "r") {
+                let focusedEdge = this.edges.find(ed => ed.id == this.focusedEdgeId)
+                let {toElement, fromElement, toSide, fromSide, toEnd, fromEnd} = focusedEdge
+                this.$set(focusedEdge, 'toElement', fromElement)
+                this.$set(focusedEdge, 'fromElement', toElement)
+                this.$set(focusedEdge, 'toEnd', fromEnd)
+                this.$set(focusedEdge, 'fromEnd', toEnd)
+                this.$set(focusedEdge, 'toSide', fromSide)
+                this.$set(focusedEdge, 'fromSide', toSide)
+                this.fullKeybuffer = ''
+                return
+              }
+              else if (this.keybuffer == "s") {
+                let focusedEdge = this.edges.find(ed => ed.id == this.focusedEdgeId)
+                let {toElement, fromElement, toSide, fromSide, toEnd, fromEnd} = focusedEdge
+                this.$set(focusedEdge, 'toEnd', fromEnd)
+                this.$set(focusedEdge, 'fromEnd', toEnd)
+                this.fullKeybuffer = ''
+                return
+              }
+            }
             if (this.keybuffer == "e")
             {
               this.getFocusedElementItem()?.editElement()
@@ -662,19 +891,24 @@ export default {
             }
             else if (this.keybuffer == "x")
             {
-              // this.canvasElements = this.canvasElements.filter(e => e.id != this.focusedElementId)
-              let affectedIds = this.getElementIdsToBeAffected()
-              let affectedElements = this.getElementsToBeAffected()
-              let newCanvasElements = this.canvasElements.filter(e => !affectedIds.includes(e.id))
-              for (let el of affectedElements) {
-                if (el.type == 'note' && !(newCanvasElements.some(e => e.path == el.path))) {
-                  this.note.removeLink(el.path)
-                }
+              if (this.focusedEdgeId) {
+                this.edges = this.edges.filter(ed => ed.id != this.focusedEdgeId)
+                this.focusedEdgeId = null
               }
-              this.edges = this.edges.filter(ed => !affectedIds.includes(ed.fromElement) && !affectedIds.includes(ed.toElement))
-              this.canvasElements = newCanvasElements
-              this.focusedElementId = null
-              this.selectedElementsIds = []
+              else {
+                let affectedIds = this.getElementIdsToBeAffected()
+                let affectedElements = this.getElementsToBeAffected()
+                let newCanvasElements = this.canvasElements.filter(e => !affectedIds.includes(e.id))
+                for (let el of affectedElements) {
+                  if (el.type == 'note' && !(newCanvasElements.some(e => e.path == el.path))) {
+                    this.note.removeLink(el.path)
+                  }
+                }
+                this.edges = this.edges.filter(ed => !affectedIds.includes(ed.fromElement) && !affectedIds.includes(ed.toElement))
+                this.canvasElements = newCanvasElements
+                this.focusedElementId = null
+                this.selectedElementsIds = []
+              }
               this.fullKeybuffer = ''
             }
             else if (this.keybuffer == " ")
@@ -696,6 +930,26 @@ export default {
             else if (this.keybuffer == "sv")
             {
               this.selectedElementsIds = this.visibleElements.map(el => el.id)
+              this.fullKeybuffer = ''
+            }
+            else if (this.keybuffer == "sc")
+            {
+              let affectedIds = this.getElementIdsToBeAffected()
+              let processedElementIds = []
+              let addToSelection = (id) => {
+                if (!this.selectedElementsIds.includes(id)) {
+                  this.selectedElementsIds.push(id)
+                }
+              }
+              let addConnectedToSelection = (id) => {
+                if (processedElementIds.includes(id)) return
+                let connectedIds = this.edges.filter(ed => ed.fromElement == id || ed.toElement == id).map(ed => [ed.toElement, ed.fromElement]).flat()
+                connectedIds = [...new Set(connectedIds)]
+                connectedIds.forEach((id) => addToSelection(id))
+                processedElementIds.push(id)
+                connectedIds.forEach((id) => addConnectedToSelection(id))
+              }
+              affectedIds.forEach((id) => addConnectedToSelection(id))
               this.fullKeybuffer = ''
             }
             else if (this.keybuffer == "z0")
@@ -901,6 +1155,39 @@ export default {
               this.addNewNote({x, y})
               this.fullKeybuffer = ''
             }
+            else if (/ne[hjkl]/.test(this.keybuffer))
+            {
+              let side = {h: 'left', j: 'bottom', k: 'top', l: 'right'}[this.keybuffer.match(/ne([hjkl])/)[1]]
+              let focusedElement = this.canvasElements.find(e => e.id == this.focusedElementId)
+              if (!focusedElement) return
+              let {x, y} = focusedElement
+              let width = 120
+              let height = 60
+              let offset = 40
+              let calculateCoordinates = {
+                top: () => ({x: (x + (focusedElement.width / 2) - width / 2), y: (y - offset - height)}),
+                bottom: () => ({x: (x + (focusedElement.width / 2) - width / 2), y: (y + focusedElement.height + offset)}),
+                left: () => ({x: (x - offset - width), y: (y + (focusedElement.height / 2) - height / 2)}),
+                right: () => ({x: (x + focusedElement.width + offset), y: (y + (focusedElement.height / 2) - height / 2)}),
+              }
+              let newElement = this.addNewMarkdownElement({
+                ...calculateCoordinates[side](),
+                width,
+                height,
+              })
+              this.focusedElementId = newElement.id
+              let oppositeSide = {left: 'right', right: 'left', top: 'bottom', bottom: 'top'}
+              this.edges.push({
+                id: uuidv4(),
+                fromElement: focusedElement.id,
+                fromSide: side,
+                toElement: newElement.id,
+                toSide: oppositeSide[side],
+                ...((this.edgeArrowMode == 'from' || this.edgeArrowMode == 'bidirectional') && {fromEnd: 'arrow'}),
+                ...((this.edgeArrowMode == 'to' || this.edgeArrowMode == 'bidirectional') && {toEnd: 'arrow'}),
+              })
+              this.fullKeybuffer = ''
+            }
             else if (this.keybuffer == "nc")
             {
               let affectedElements = this.getElementsToBeAffected()
@@ -995,6 +1282,52 @@ export default {
               this.setMode('move')
               this.fullKeybuffer = ''
             }
+            else if (this.keybuffer == "ae") {
+              this.setMode('edge-create')
+              this.calculatEdgeCreateHelpers()
+              this.fullKeybuffer = ''
+            }
+            else if (this.keybuffer == "<")
+            {
+              this.nextEdgeArrowMode()
+              this.fullKeybuffer = ''
+            }
+            else if (this.keybuffer == "cl")
+            {
+              var focusedElement = this.canvasElements.find(e => e.id == this.focusedElementId)
+              if (focusedElement) {
+                this.$store.commit('triggerCustomTextPrompt', {
+                  message: 'Change label of canvas element',
+                  text: focusedElement.label || '',
+                  selectAll: true,
+                  action: (label) => {
+                    if (label.trim()) {
+                      this.$set(focusedElement, 'label', label)
+                    }
+                    else {
+                      this.$delete(focusedElement, 'label')
+                    }
+                  }
+                })
+              }
+              else if (this.focusedEdgeId) {
+                var edgeIndex = this.edges.findIndex(ed => ed.id == this.focusedEdgeId)
+                this.$store.commit('triggerCustomTextPrompt', {
+                  message: 'Change label of edge',
+                  text: this.edges[edgeIndex].label || '',
+                  selectAll: true,
+                  action: (label) => {
+                    if (label.trim()) {
+                      this.$set(this.edges[edgeIndex], 'label', label)
+                    }
+                    else {
+                      this.$delete(this.edges[edgeIndex], 'label')
+                    }
+                  }
+                })
+              }
+              this.fullKeybuffer = ''
+            }
             else if (this.keybuffer == "cc")
             {
               var items = []
@@ -1015,6 +1348,16 @@ export default {
                   lucideIcon: 'Palette',
                   action: () => {
                     var affectedIds = this.getElementIdsToBeAffected()
+                    if (affectedIds.length == 0 && this.focusedEdgeId) {
+                      var edgeIndex = this.edges.findIndex(ed => ed.id == this.focusedEdgeId)
+                      if (number == 9) {
+                        this.$set(this.edges[edgeIndex], 'color', '0, 0, 0')
+                      }
+                      else {
+                        this.$set(this.edges[edgeIndex], 'color', `var(--canvas-color-${number})`)
+                      }
+                      return
+                    }
                     for (let id of affectedIds) {
                       var elementIndex = this.canvasElements.findIndex(e => e.id == id)
                       var focusedElement = this.canvasElements[elementIndex]
@@ -1043,6 +1386,11 @@ export default {
                       action: (color) => {
                         if (/\d{1,3},\s?\d{1,3},\s?\d{1,3}/.test(color)) {
                           var affectedIds = this.getElementIdsToBeAffected()
+                          if (affectedIds.length == 0 && this.focusedEdgeId) {
+                            var edgeIndex = this.edges.findIndex(ed => ed.id == this.focusedEdgeId)
+                            this.$set(this.edges[edgeIndex], 'color', color)
+                            return
+                          }
                           for (let id of affectedIds) {
                             var elementIndex = this.canvasElements.findIndex(e => e.id == id)
                             this.$set(this.canvasElements[elementIndex], 'color', color)
@@ -1058,6 +1406,80 @@ export default {
                 items: items,
                 options: {hintMode: true},
               })
+              this.fullKeybuffer = ''
+            }
+            else if (this.keybuffer == "ce")
+            {
+              if (this.focusedElementId && this.selectedElementsIds.length == 1 && this.focusedElementId != this.selectedElementsIds[0]) {
+                let fromElementId = this.focusedElementId
+                let toElementId = this.selectedElementsIds[0]
+                let fromElement = this.canvasElements.find(el => el.id == fromElementId)
+                let toElement = this.canvasElements.find(el => el.id == toElementId)
+                let fromElementMeasurements = {
+                  top: {x: fromElement.x + (fromElement.width / 2), y: fromElement.y},
+                  right: {x: fromElement.x + fromElement.width, y: fromElement.y + (fromElement.height / 2)},
+                  bottom: {x: fromElement.x + (fromElement.width / 2 ), y: fromElement.y + fromElement.height},
+                  left: {x: fromElement.x, y: fromElement.y + (fromElement.height / 2 )},
+                }
+                let toElementMeasurements = {
+                  top: {x: toElement.x + (toElement.width / 2), y: toElement.y},
+                  right: {x: toElement.x + toElement.width, y: toElement.y + (toElement.height / 2)},
+                  bottom: {x: toElement.x + (toElement.width / 2 ), y: toElement.y + toElement.height},
+                  left: {x: toElement.x, y: toElement.y + (toElement.height / 2 )},
+                }
+                let sideDistances = []
+                for (let fromSide of Object.keys(fromElementMeasurements)) {
+                  for (let toSide of Object.keys(toElementMeasurements)) {
+                    sideDistances.push({
+                      toSide,
+                      fromSide,
+                      distance: Math.sqrt((fromElementMeasurements[fromSide].x - toElementMeasurements[toSide].x)**2 + (fromElementMeasurements[fromSide].y - toElementMeasurements[toSide].y)**2),
+                    })
+                  }
+                }
+                let shortestDistance = sideDistances.reduce((prev, curr) => prev.distance < curr.distance ? prev : curr)
+                this.edges.push({
+                  id: uuidv4(),
+                  fromElement: fromElementId,
+                  fromSide: shortestDistance.fromSide,
+                  toElement: toElementId,
+                  toSide: shortestDistance.toSide,
+                  ...((this.edgeArrowMode == 'from' || this.edgeArrowMode == 'bidirectional') && {fromEnd: 'arrow'}),
+                  ...((this.edgeArrowMode == 'to' || this.edgeArrowMode == 'bidirectional') && {toEnd: 'arrow'}),
+                })
+              }
+              this.fullKeybuffer = ''
+            }
+            else if (this.keybuffer == "cE")
+            {
+              if (this.focusedElementId && this.selectedElementsIds.length == 1 && this.focusedElementId != this.selectedElementsIds[0]) {
+                let fromElementId = this.focusedElementId
+                let toElementId = this.selectedElementsIds[0]
+                var items = []
+                for (let fromSide of ['right', 'left', 'top', 'bottom']) {
+                  for (let toSide of ['right', 'left', 'top', 'bottom']) {
+                    items.push({
+                      label: `${fromSide} to ${toSide}`,
+                      action: () => {
+                        this.edges.push({
+                          id: uuidv4(),
+                          fromElement: fromElementId,
+                          fromSide,
+                          toElement: toElementId,
+                          toSide,
+                          ...((this.edgeArrowMode == 'from' || this.edgeArrowMode == 'bidirectional') && {fromEnd: 'arrow'}),
+                          ...((this.edgeArrowMode == 'to' || this.edgeArrowMode == 'bidirectional') && {toEnd: 'arrow'}),
+                        })
+                      },
+                    })
+                  }
+                }
+                this.$store.commit('triggerCustomPopoverList', {
+                  message: 'Set sides',
+                  items: items,
+                  options: {hintMode: true},
+                })
+              }
               this.fullKeybuffer = ''
             }
             else if (this.keybuffer == "cg")
@@ -1462,6 +1884,74 @@ export default {
         bottomright: toWorldPos(width, height),
       }
     },
+    computedEdges() {
+      var edges = []
+      for (let ed of this.edges) {
+        let fromElement = this.canvasElements.find(el => el.id == ed.fromElement)
+        let toElement = this.canvasElements.find(el => el.id == ed.toElement)
+        let toElementOffset = (ed.toEnd == 'arrow') ? 9 : 0
+        let fromElementOffset = (ed.fromEnd == 'arrow') ? 9 : 0
+        let fromElementMeasurements = {
+          top: {x: fromElement.x + (fromElement.width / 2), y: fromElement.y - fromElementOffset},
+          right: {x: fromElement.x + fromElement.width + fromElementOffset, y: fromElement.y + (fromElement.height / 2)},
+          bottom: {x: fromElement.x + (fromElement.width / 2 ), y: fromElement.y + fromElement.height + fromElementOffset},
+          left: {x: fromElement.x - fromElementOffset, y: fromElement.y + (fromElement.height / 2 )},
+        }
+        let toElementMeasurements = {
+          top: {x: toElement.x + (toElement.width / 2), y: toElement.y - toElementOffset},
+          right: {x: toElement.x + toElement.width + toElementOffset, y: toElement.y + (toElement.height / 2)},
+          bottom: {x: toElement.x + (toElement.width / 2 ), y: toElement.y + toElement.height + toElementOffset},
+          left: {x: toElement.x - toElementOffset, y: toElement.y + (toElement.height / 2 )},
+        }
+        ed.fromElementMeasurements = fromElementMeasurements
+        ed.toElementMeasurements = toElementMeasurements
+        let halfpointX = (fromElementMeasurements[ed.fromSide].x + toElementMeasurements[ed.toSide].x) / 2
+        let pointDiffX = Math.abs(fromElementMeasurements[ed.fromSide].x - toElementMeasurements[ed.toSide].x)
+        let pointDiffY = Math.abs(fromElementMeasurements[ed.fromSide].y - toElementMeasurements[ed.toSide].y)
+        let controlPointDiffFromX = (pointDiffX / 2)
+        let controlPointDiffToX = (pointDiffX / 2)
+        let controlPointDiffFromY = (pointDiffY / 2)
+        let controlPointDiffToY = (pointDiffY / 2)
+        var calculateControlPoint = (side, point, controlPointDiffX, controlPointDiffY) => {
+          if (side == 'right') {
+            return {
+              x: point.x + controlPointDiffX,
+              y: point.y,
+            }
+          }
+          else if (side == 'left') {
+            return {
+              x: point.x - controlPointDiffX,
+              y: point.y,
+            }
+          }
+          else if (side == 'top') {
+            return {
+              x: point.x,
+              y: point.y - controlPointDiffY,
+            }
+          }
+          else if (side == 'bottom') {
+            return {
+              x: point.x,
+              y: point.y + controlPointDiffY,
+            }
+          }
+        }
+        let controlPointFrom = calculateControlPoint(ed.fromSide, fromElementMeasurements[ed.fromSide], controlPointDiffFromX, controlPointDiffFromY)
+        let controlPointTo = calculateControlPoint(ed.toSide, toElementMeasurements[ed.toSide], controlPointDiffToX, controlPointDiffToY)
+        ed.pathD = `M ${fromElementMeasurements[ed.fromSide].x}, ${fromElementMeasurements[ed.fromSide].y} C ${controlPointFrom.x}, ${controlPointFrom.y} ${controlPointTo.x}, ${controlPointTo.y} ${toElementMeasurements[ed.toSide].x}, ${toElementMeasurements[ed.toSide].y}`
+        edges.push(ed)
+      }
+      return edges
+    },
+    visibleEdges() {
+      var visibleElementIds = this.visibleElements.map(el => el.id)
+      return this.computedEdges.filter(ed => visibleElementIds.includes(ed.fromElement) || visibleElementIds.includes(ed.toElement))
+    },
+    edgeArrowModeIcon() {
+      return {none: 'Minus', bidirectional: 'MoveHorizontal', to: 'ArrowRight', from: 'ArrowLeft'}[this.edgeArrowMode]
+    },
   },
   watch: {
     canvasMatrix: {
@@ -1476,11 +1966,38 @@ export default {
       },
       deep: false,
     },
+    visibleElements: {
+      handler() {
+        if (this.mode == 'edge-create') {
+          this.calculatEdgeCreateHelpers()
+        }
+      },
+      deep: false,
+    },
+    activatedEdgeInitiators: {
+      handler(newValue, oldValue) {
+        if (newValue.length == 2) {
+          this.edges.push({
+            id: uuidv4(),
+            fromElement: newValue[0].elementId,
+            fromSide: newValue[0].side,
+            toElement: newValue[1].elementId,
+            toSide: newValue[1].side,
+            ...((this.edgeArrowMode == 'from' || this.edgeArrowMode == 'bidirectional') && {fromEnd: 'arrow'}),
+            ...((this.edgeArrowMode == 'to' || this.edgeArrowMode == 'bidirectional') && {toEnd: 'arrow'}),
+          })
+          this.activatedEdgeInitiators = []
+          this.calculatEdgeCreateHelpers()
+        }
+      },
+      deep: false,
+    },
   },
   mounted() {
     this.canvasObj = JSON.parse(this.note.content)
     this.canvasElements = this.canvasObj.elements
     this.savedViews = this.canvasObj.savedViews || []
+    this.edges = this.canvasObj.edges || []
     this.isMounted = true
     this.setCanvasMatrix({
       a: this.scale, c: 0, e: this.originX,
@@ -1535,9 +2052,52 @@ export default {
   outline: none;
 }
 .canvas {
+  .canvas-helper-element {
+    position: absolute;
+  }
   .selectRect {
     border: 1px dashed black;
     background: rgba(256, 256, 256, 0.15);
+    z-index: 100;
+  }
+  .edge-initiator {
+    height: 10px;
+    width: 10px;
+    background: #ff8181;
+    border: 1px solid #812f2f;
+    border-radius: 10px;
+    cursor: pointer;
+    top: -6px;
+    left: -6px;
+    z-index: 100;
+    &.activated {
+      background: yellow;
+    }
+  }
+  svg.canvas-edges {
+    position: absolute;
+    overflow: visible;
+    .canvas-edge {
+      .edge {
+        stroke-width: 3px;
+        stroke: black;
+        fill: none;
+      }
+      .edge-outline {
+        stroke-width: 15px;
+        fill: none;
+      }
+      &:not(.focused) {
+        .edge-outline {
+          stroke: transparent !important;
+        }
+      }
+      &.focused {
+        .edge-outline {
+          stroke: #0000001c;
+        }
+      }
+    }
   }
   .CodeMirror-cursors,
   .CodeMirror-measure:nth-child(2) + div{

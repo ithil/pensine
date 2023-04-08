@@ -705,6 +705,21 @@ export default {
       items = items.filter(i => i !== null)
       this.$store.commit('triggerCustomSelectList', {items})
     },
+    duplicateElements() {
+      let affectedElements = this.getElementsToBeAffected()
+      if (affectedElements.length == 0) return false
+      let newElementIds = []
+      for (let el of affectedElements) {
+        let newElement = {...el}
+        let newElementId = uuidv4()
+        newElement.id = newElementId
+        newElement.creationDate = new Date()
+        newElement.modificationDate = new Date()
+        this.canvasElements.push(newElement)
+        newElementIds.push(newElementId)
+      }
+      return newElementIds
+    },
     nextEdgeArrowMode() {
       let currentEdgeArrowMode = this.edgeArrowMode
       let edgeArrowModes = ['none', 'to', 'from', 'bidirectional']
@@ -1388,9 +1403,28 @@ export default {
               })
               this.fullKeybuffer = ''
             }
+            else if (this.keybuffer == "D")
             {
+              let newElementIds = this.duplicateElements()
+              if (newElementIds) {
+                this.selectedElementsIds = []
+                if (newElementIds.length == 1) {
+                  this.focusedElementId = newElementIds[0]
                 }
+                else {
+                  this.selectedElementsIds = newElementIds
                 }
+                // The following code should be put into a new 'enterMode' function of 'move' mode
+                let [x, y] = this.toWorldPos(this.mouseposx, this.mouseposy)
+                this.moveOrigins = {}
+                this.$set(this.moveOrigins, 'cursor', [x, y])
+                var focusedElement = this.canvasElements.find(e => e.id == this.focusedElementId)
+                let affectedElements = this.getElementsToBeAffected()
+                for (let el of affectedElements) {
+                  this.$set(this.moveOrigins, el.id, [el.x, el.y])
+                }
+                // End of code
+                this.setMode('move')
               }
               this.fullKeybuffer = ''
             }

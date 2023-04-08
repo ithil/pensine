@@ -493,9 +493,9 @@ export default {
     addNewMarkdownElement({
       x = 0,
       y = 0,
-      width = 100,
-      height = 100,
-      text = 'Write here',
+      width = 120,
+      height = 60,
+      text = 'Text',
     } = {}) {
       var newElement = {
         id: uuidv4(),
@@ -507,6 +507,11 @@ export default {
         height,
         creationDate: new Date(),
         modificationDate: new Date(),
+        cssClasses: ['centerEverything'],
+      }
+      this.canvasElements.push(newElement)
+      return newElement
+    },
     addNewElement(elementProps) {
       var newElement = {
         id: uuidv4(),
@@ -525,9 +530,9 @@ export default {
     addNewFittedMarkdownElement({
       x = 0,
       y = 0,
-      width = 200,
-      height = 100,
-      text = 'Write here',
+      width = 120,
+      height = 60,
+      text = 'Fitted text',
     } = {}) {
       var newElement = {
         id: uuidv4(),
@@ -542,6 +547,7 @@ export default {
         modificationDate: new Date(),
       }
       this.canvasElements.push(newElement)
+      return newElement
     },
     addNewLucideIcon({
       x = 0,
@@ -549,7 +555,7 @@ export default {
       width = 200,
       height = 200,
       lucideIcon = 'FileQuestion',
-    } = {}) {
+    } = {}, callback) {
       let ComponentClass = Vue.extend(Icon)
       let iconInstance = new ComponentClass()
       let listofAllIcons = iconInstance.getListOfAllIcons()
@@ -571,6 +577,7 @@ export default {
               modificationDate: new Date(),
             }
             this.canvasElements.push(newElement)
+            callback(newElement)
           }
         }
       })
@@ -579,10 +586,10 @@ export default {
     addNewFile({
       x = 0,
       y = 0,
-      width = 200,
-      height = 200,
+      width = 355,
+      height = 155,
       path = '',
-    } = {}) {
+    } = {}, callback) {
       this.$store.commit('triggerCustomTextPrompt', {
         message: 'Please enter path:',
         action: (path) => {
@@ -598,6 +605,7 @@ export default {
             modificationDate: new Date(),
           }
           this.canvasElements.push(newElement)
+          callback(newElement)
         }
       })
     },
@@ -606,7 +614,7 @@ export default {
       y = 0,
       width = 100,
       height = 100,
-    } = {}) {
+    } = {}, callback) {
       var $this = this
       this.$store.commit('triggerCustomTextPrompt', {
         message: 'Please enter image url:',
@@ -628,6 +636,7 @@ export default {
               modificationDate: new Date(),
             }
             $this.canvasElements.push(newElement)
+            callback(newElement)
           }
           img.src = url
         }
@@ -636,9 +645,9 @@ export default {
     addNewFrame({
       x = 0,
       y = 0,
-      width = 100,
-      height = 100,
-    } = {}) {
+      width = 560,
+      height = 320,
+    } = {}, callback) {
       this.$store.commit('triggerCustomTextPrompt', {
         message: 'Please enter frame url:',
         action: (url) => {
@@ -655,6 +664,7 @@ export default {
             modificationDate: new Date(),
           }
           this.canvasElements.push(newElement)
+          callback(newElement)
         }
       })
     },
@@ -663,7 +673,7 @@ export default {
       y = 0,
       width = 630,
       height = 300,
-    } = {}) {
+    } = {}, callback) {
       var $this = this
       var bag = this.$store.state.bag
       var items = bag.map(notePath => {
@@ -676,7 +686,7 @@ export default {
               var newElement = {
                 id: uuidv4(),
                 type: 'note',
-                path: note.relativePath,
+                path: note.noteLink,
                 x,
                 y,
                 width,
@@ -685,10 +695,14 @@ export default {
                 modificationDate: new Date(),
               }
               this.canvasElements.push(newElement)
+              this.note.addLink(note.relativePath, 'canvas-element')
+              callback(newElement)
             }
           }
         }
+        return null
       })
+      items = items.filter(i => i !== null)
       this.$store.commit('triggerCustomSelectList', {items})
     },
     nextEdgeArrowMode() {
@@ -700,6 +714,66 @@ export default {
         if (index >= edgeArrowModes.length) index = 0
         this.edgeArrowMode = edgeArrowModes[index]
       }
+    },
+    splitEdgeWithElement(edgeId, splitElement) {
+      let edgeToBeSplit = this.edges.find(ed => ed.id == edgeId)
+      let {toElement, fromElement, fromSide, toSide} = edgeToBeSplit
+      toElement = this.canvasElements.find(el => el.id == toElement)
+      fromElement = this.canvasElements.find(el => el.id == fromElement)
+      let splitElementMeasurements = {
+        top: {x: splitElement.x + (splitElement.width / 2), y: splitElement.y},
+        right: {x: splitElement.x + splitElement.width, y: splitElement.y + (splitElement.height / 2)},
+        bottom: {x: splitElement.x + (splitElement.width / 2 ), y: splitElement.y + splitElement.height},
+        left: {x: splitElement.x, y: splitElement.y + (splitElement.height / 2 )},
+      }
+      let toElementMeasurements = {
+        top: {x: toElement.x + (toElement.width / 2), y: toElement.y},
+        right: {x: toElement.x + toElement.width, y: toElement.y + (toElement.height / 2)},
+        bottom: {x: toElement.x + (toElement.width / 2 ), y: toElement.y + toElement.height},
+        left: {x: toElement.x, y: toElement.y + (toElement.height / 2 )},
+      }
+      let fromElementMeasurements = {
+        top: {x: fromElement.x + (fromElement.width / 2), y: fromElement.y},
+        right: {x: fromElement.x + fromElement.width, y: fromElement.y + (fromElement.height / 2)},
+        bottom: {x: fromElement.x + (fromElement.width / 2 ), y: fromElement.y + fromElement.height},
+        left: {x: fromElement.x, y: fromElement.y + (fromElement.height / 2 )},
+      }
+      let sideDistancesToElement = []
+      for (let fromSide of Object.keys(splitElementMeasurements)) {
+        sideDistancesToElement.push({
+          toSide,
+          fromSide,
+          distance: Math.sqrt((splitElementMeasurements[fromSide].x - toElementMeasurements[toSide].x)**2 + (splitElementMeasurements[fromSide].y - toElementMeasurements[toSide].y)**2),
+        })
+      }
+      let shortestDistanceToElement = sideDistancesToElement.reduce((prev, curr) => prev.distance < curr.distance ? prev : curr)
+      this.edges.push({
+        ...edgeToBeSplit,
+        id: uuidv4(),
+        fromElement: splitElement.id,
+        fromSide: shortestDistanceToElement.fromSide,
+        toElement: toElement.id,
+        toSide: toSide,
+      })
+      let sideDistancesFromElement = []
+      for (let toSide of Object.keys(splitElementMeasurements)) {
+        sideDistancesFromElement.push({
+          toSide,
+          fromSide,
+          distance: Math.sqrt((fromElementMeasurements[fromSide].x - splitElementMeasurements[toSide].x)**2 + (fromElementMeasurements[fromSide].y - splitElementMeasurements[toSide].y)**2),
+        })
+      }
+      let shortestDistanceFromElement = sideDistancesFromElement.reduce((prev, curr) => prev.distance < curr.distance ? prev : curr)
+      this.edges.push({
+        ...edgeToBeSplit,
+        id: uuidv4(),
+        toElement: splitElement.id,
+        toSide: shortestDistanceFromElement.toSide,
+        fromElement: fromElement.id,
+        fromSide: fromSide,
+      })
+      this.focusedEdgeId = null
+      this.edges = this.edges.filter(ed => ed.id != edgeToBeSplit.id)
     },
     saveCanvas() {
       var oldCanvas = this.canvasObj
@@ -762,67 +836,10 @@ export default {
             if (this.focusedEdgeId) {
               if (this.keybuffer == "d") {
                 // Create dot between for focused edge on mouse position
-                let focusedEdge = this.edges.find(ed => ed.id == this.focusedEdgeId)
-                let {toElement, fromElement, fromSide, toSide} = focusedEdge
-                toElement = this.canvasElements.find(el => el.id == toElement)
-                fromElement = this.canvasElements.find(el => el.id == fromElement)
                 let [x, y] = this.toWorldPos(this.mouseposx, this.mouseposy)
                 let newDot = this.addNewElement({x, y, width: 20, height: 20, type: 'dot'})
-                let dotElementMeasurements = {
-                  top: {x: newDot.x + (newDot.width / 2), y: newDot.y},
-                  right: {x: newDot.x + newDot.width, y: newDot.y + (newDot.height / 2)},
-                  bottom: {x: newDot.x + (newDot.width / 2 ), y: newDot.y + newDot.height},
-                  left: {x: newDot.x, y: newDot.y + (newDot.height / 2 )},
-                }
-                let toElementMeasurements = {
-                  top: {x: toElement.x + (toElement.width / 2), y: toElement.y},
-                  right: {x: toElement.x + toElement.width, y: toElement.y + (toElement.height / 2)},
-                  bottom: {x: toElement.x + (toElement.width / 2 ), y: toElement.y + toElement.height},
-                  left: {x: toElement.x, y: toElement.y + (toElement.height / 2 )},
-                }
-                let fromElementMeasurements = {
-                  top: {x: fromElement.x + (fromElement.width / 2), y: fromElement.y},
-                  right: {x: fromElement.x + fromElement.width, y: fromElement.y + (fromElement.height / 2)},
-                  bottom: {x: fromElement.x + (fromElement.width / 2 ), y: fromElement.y + fromElement.height},
-                  left: {x: fromElement.x, y: fromElement.y + (fromElement.height / 2 )},
-                }
-                let sideDistancesToElement = []
-                for (let fromSide of Object.keys(dotElementMeasurements)) {
-                  sideDistancesToElement.push({
-                    toSide,
-                    fromSide,
-                    distance: Math.sqrt((dotElementMeasurements[fromSide].x - toElementMeasurements[toSide].x)**2 + (dotElementMeasurements[fromSide].y - toElementMeasurements[toSide].y)**2),
-                  })
-                }
-                let shortestDistanceToElement = sideDistancesToElement.reduce((prev, curr) => prev.distance < curr.distance ? prev : curr)
-                this.edges.push({
-                  ...focusedEdge,
-                  id: uuidv4(),
-                  fromElement: newDot.id,
-                  fromSide: shortestDistanceToElement.fromSide,
-                  toElement: toElement.id,
-                  toSide: toSide,
-                })
-                let sideDistancesFromElement = []
-                for (let toSide of Object.keys(dotElementMeasurements)) {
-                  sideDistancesFromElement.push({
-                    toSide,
-                    fromSide,
-                    distance: Math.sqrt((fromElementMeasurements[fromSide].x - dotElementMeasurements[toSide].x)**2 + (fromElementMeasurements[fromSide].y - dotElementMeasurements[toSide].y)**2),
-                  })
-                }
-                let shortestDistanceFromElement = sideDistancesFromElement.reduce((prev, curr) => prev.distance < curr.distance ? prev : curr)
-                this.edges.push({
-                  ...focusedEdge,
-                  id: uuidv4(),
-                  toElement: newDot.id,
-                  toSide: shortestDistanceFromElement.toSide,
-                  fromElement: fromElement.id,
-                  fromSide: fromSide,
-                })
+                this.splitEdgeWithElement(this.focusedEdgeId, newDot)
                 this.focusedElementId = newDot.id
-                this.focusedEdgeId = null
-                this.edges = this.edges.filter(ed => ed.id != focusedEdge.id)
                 this.fullKeybuffer = ''
                 return
               }
@@ -1175,45 +1192,172 @@ export default {
               }
               this.fullKeybuffer = ''
             }
-            else if (this.keybuffer == "nt")
-            {
+            else if (this.keybuffer == "i") {
+              let focusedEdge = this.edges.find(ed => ed.id == this.focusedEdgeId)
               var [x, y] = this.toWorldPos(this.mouseposx, this.mouseposy)
-              this.addNewMarkdownElement({x, y})
+              var insertElement = (insertFunc) => {
+                let newElement = insertFunc(x, y)
+                if (newElement && focusedEdge) {
+                  this.splitEdgeWithElement(focusedEdge.id, newElement)
+                }
+                this.focusedElementId = newElement ? newElement.id : this.focusedElementId
+              }
+              var insertElementCallback = (newElement) => {
+                if (newElement && focusedEdge) {
+                  this.splitEdgeWithElement(focusedEdge.id, newElement)
+                }
+                this.focusedElementId = newElement ? newElement.id : this.focusedElementId
+              }
+              var items = [
+                {
+                  label: 'Markdown',
+                  lucideIcon: 'Type',
+                  key: 't',
+                  action: () => {
+                    insertElement((x, y) => {
+                      let width = 120
+                      let height = 60
+                      let newElement = this.addNewMarkdownElement({x: x - (width/2), y: y - (height/2), width, height})
+                      return newElement
+                    })
+                  },
+                },
+                {
+                  label: 'Note',
+                  lucideIcon: 'FileText',
+                  key: 'n',
+                  action: () => {
+                    this.addNewNote({x, y}, insertElementCallback)
+                  },
+                },
+                {
+                  label: 'Fitted Text',
+                  lucideIcon: 'Type',
+                  key: 'h',
+                  action: () => {
+                    insertElement((x, y) => {
+                      let width = 120
+                      let height = 60
+                      let newElement = this.addNewFittedMarkdownElement({x: x - (width/2), y: y - (height/2), width, height})
+                      return newElement
+                    })
+                  },
+                },
+                { role: 'separator' },
+                {
+                  label: 'Image',
+                  lucideIcon: 'Image',
+                  key: 'i',
+                  action: () => {
+                    this.addNewImage({x, y}, insertElementCallback)
+                  },
+                },
+                {
+                  label: 'File',
+                  lucideIcon: 'File',
+                  key: 'f',
+                  action: () => {
+                    this.addNewFile({x, y}, insertElementCallback)
+                  },
+                },
+                {
+                  label: 'Lucide Icon',
+                  lucideIcon: 'Boxes',
+                  key: 'l',
+                  action: () => {
+                    this.addNewLucideIcon({x, y}, insertElementCallback)
+                  },
+                },
+                {
+                  label: 'Iframe',
+                  lucideIcon: 'Globe2',
+                  key: 'w',
+                  action: () => {
+                    this.addNewFrame({x, y}, insertElementCallback)
+                  },
+                },
+                { role: 'separator' },
+                {
+                  label: 'Container',
+                  lucideIcon: 'Frame',
+                  key: 'c',
+                  action: () => {
+                    insertElement((x, y) => {
+                      let affectedElements = this.getElementsToBeAffected()
+                      if (affectedElements.length > 0) {
+                        let boundingRect = this.getBoundingRectCoveringGivenElements(affectedElements)
+                        var {x, y, width, height} = boundingRect
+                        let padding = 20
+                        x -= padding
+                        y -= padding
+                        width += padding * 2
+                        height += padding * 2
+                      }
+                      else {
+                        var width = 200
+                        var height = 200
+                      }
+                      return this.addNewElement({x, y, width, height, type: 'container'})
+                    })
+                  },
+                },
+                {
+                  label: 'Container (adopting edges)',
+                  lucideIcon: 'Frame',
+                  key: 'Shift+c',
+                  action: () => {
+                    insertElement((x, y) => {
+                      let affectedElements = this.getElementsToBeAffected()
+                      let affectedIds = this.getElementIdsToBeAffected()
+                      if (affectedElements.length > 0) {
+                        let boundingRect = this.getBoundingRectCoveringGivenElements(affectedElements)
+                        var {x, y, width, height} = boundingRect
+                        let padding = 20
+                        x -= padding
+                        y -= padding
+                        width += padding * 2
+                        height += padding * 2
+                      }
+                      else {
+                        var width = 200
+                        var height = 200
+                      }
+                      let newElement = this.addNewElement({x, y, width, height, type: 'container'})
+                      for (let ed of this.edges) {
+                        if (affectedIds.includes(ed.fromElement) && !affectedIds.includes(ed.toElement)) {
+                          ed.fromElement = newElement.id
+                        }
+                        else if (affectedIds.includes(ed.toElement) && !affectedIds.includes(ed.fromElement)) {
+                          ed.toElement = newElement.id
+                        }
+                      }
+                      return newElement
+                    })
+                  },
+                },
+                { role: 'separator' },
+                {
+                  label: 'Dot',
+                  lucideIcon: 'Circle',
+                  key: 'd',
+                  action: () => {
+                    insertElement((x, y) => {
+                      let newDot = this.addNewElement({x, y, width: 20, height: 20, type: 'dot'})
+                      return newDot
+                    })
+                  },
+                },
+              ]
+              this.$store.commit('triggerCustomPopoverList', {
+                message: `Insert element`,
+                items: items,
+                options: {hintMode: false},
+              })
               this.fullKeybuffer = ''
             }
-            else if (this.keybuffer == "nh")
+            else if (/o[hjkl]/.test(this.keybuffer))
             {
-              var [x, y] = this.toWorldPos(this.mouseposx, this.mouseposy)
-              this.addNewFittedMarkdownElement({x, y})
-              this.fullKeybuffer = ''
-            }
-            else if (this.keybuffer == "nl")
-            {
-              var [x, y] = this.toWorldPos(this.mouseposx, this.mouseposy)
-              this.addNewLucideIcon({x, y})
-              this.fullKeybuffer = ''
-            }
-            else if (this.keybuffer == "ni")
-            {
-              var [x, y] = this.toWorldPos(this.mouseposx, this.mouseposy)
-              this.addNewImage({x, y})
-              this.fullKeybuffer = ''
-            }
-            else if (this.keybuffer == "nf")
-            {
-              var [x, y] = this.toWorldPos(this.mouseposx, this.mouseposy)
-              this.addNewFrame({x, y})
-              this.fullKeybuffer = ''
-            }
-            else if (this.keybuffer == "nn")
-            {
-              var [x, y] = this.toWorldPos(this.mouseposx, this.mouseposy)
-              this.addNewNote({x, y})
-              this.fullKeybuffer = ''
-            }
-            else if (/ne[hjkl]/.test(this.keybuffer))
-            {
-              let side = {h: 'left', j: 'bottom', k: 'top', l: 'right'}[this.keybuffer.match(/ne([hjkl])/)[1]]
+              let side = {h: 'left', j: 'bottom', k: 'top', l: 'right'}[this.keybuffer.match(/o([hjkl])/)[1]]
               let focusedElement = this.canvasElements.find(e => e.id == this.focusedElementId)
               if (!focusedElement) return
               let {x, y} = focusedElement
@@ -1244,59 +1388,10 @@ export default {
               })
               this.fullKeybuffer = ''
             }
-            else if (this.keybuffer == "nc")
             {
-              let affectedElements = this.getElementsToBeAffected()
-              if (affectedElements.length > 0) {
-                let boundingRect = this.getBoundingRectCoveringGivenElements(affectedElements)
-                var {x, y, width, height} = boundingRect
-                let padding = 20
-                x -= padding
-                y -= padding
-                width += padding * 2
-                height += padding * 2
-              }
-              else {
-                var [x, y] = this.toWorldPos(this.mouseposx, this.mouseposy)
-                var width = 200
-                var height = 200
-              }
-              this.addNewElement({x, y, width, height, type: 'container'})
-              this.fullKeybuffer = ''
-            }
-            else if (this.keybuffer == "nC")
-            {
-              let affectedElements = this.getElementsToBeAffected()
-              let affectedIds = this.getElementIdsToBeAffected()
-              if (affectedElements.length > 0) {
-                let boundingRect = this.getBoundingRectCoveringGivenElements(affectedElements)
-                var {x, y, width, height} = boundingRect
-                let padding = 20
-                x -= padding
-                y -= padding
-                width += padding * 2
-                height += padding * 2
-              }
-              else {
-                var [x, y] = this.toWorldPos(this.mouseposx, this.mouseposy)
-                var width = 200
-                var height = 200
-              }
-              let newElement = this.addNewElement({x, y, width, height, type: 'container'})
-              for (let ed of this.edges) {
-                if (affectedIds.includes(ed.fromElement) && !affectedIds.includes(ed.toElement)) {
-                  ed.fromElement = newElement.id
                 }
-                else if (affectedIds.includes(ed.toElement) && !affectedIds.includes(ed.fromElement)) {
-                  ed.toElement = newElement.id
                 }
               }
-              this.fullKeybuffer = ''
-            }
-            else if (this.keybuffer == "nF")
-            {
-              var [x, y] = this.toWorldPos(this.mouseposx, this.mouseposy)
-              this.addNewFile({x, y})
               this.fullKeybuffer = ''
             }
             else if (this.keybuffer == "ct")

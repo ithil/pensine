@@ -965,28 +965,42 @@ export default {
             else if (this.keybuffer == "l")
             {
               let focusedElement = this.canvasElements.find(e => e.id == this.focusedElementId)
-              let range1 = [focusedElement.y, focusedElement.y + focusedElement.height]
               if (focusedElement) {
-                let leftmostX = focusedElement.x
-                let nextElX = null
-                let nextElY = null
-                let nextElId = null
-                for (let el of this.canvasElements) {
-                  let range2 = [el.y, el.y + el.height]
-                  if (!doRangesOverlap(range1, range2)) continue
-                  if (el.x > leftmostX && !nextElId) {
-                    nextElX = el.x
-                    nextElY = el.y
-                    nextElId = el.id
+                let rightEdgeElements = this.edges.filter(ed => (ed.fromElement == focusedElement.id && ed.fromSide == 'right') || (ed.toElement == focusedElement.id && ed.toSide == 'right')).map(ed => {
+                  if (ed.fromElement == focusedElement.id) {
+                    var elementId = ed.toElement
                   }
-                  else if (el.x > leftmostX && el.x < nextElX) {
-                    nextElX = el.x
-                    nextElY = el.y
-                    nextElId = el.id
+                  else {
+                    var elementId = ed.fromElement
                   }
+                  return this.canvasElements.find(el => el.id == elementId)
+                })
+                if (rightEdgeElements.length > 0) {
+                  this.focusedElementId = rightEdgeElements[0].id
                 }
-                if (nextElId) {
-                  this.focusedElementId = nextElId
+                else {
+                  let range1 = [focusedElement.y, focusedElement.y + focusedElement.height]
+                  let leftmostX = focusedElement.x
+                  let nextElX = null
+                  let nextElY = null
+                  let nextElId = null
+                  for (let el of this.canvasElements) {
+                    let range2 = [el.y, el.y + el.height]
+                    if (!doRangesOverlap(range1, range2)) continue
+                    if (el.x > leftmostX && !nextElId) {
+                      nextElX = el.x
+                      nextElY = el.y
+                      nextElId = el.id
+                    }
+                    else if (el.x > leftmostX && el.x < nextElX) {
+                      nextElX = el.x
+                      nextElY = el.y
+                      nextElId = el.id
+                    }
+                  }
+                  if (nextElId) {
+                    this.focusedElementId = nextElId
+                  }
                 }
               }
               this.fullKeybuffer = ''
@@ -994,29 +1008,43 @@ export default {
             else if (this.keybuffer == "h")
             {
               let focusedElement = this.canvasElements.find(e => e.id == this.focusedElementId)
-              let range1 = [focusedElement.y, focusedElement.y + focusedElement.height]
               if (focusedElement) {
-                let leftmostX = focusedElement.x
-                let rightmostX = focusedElement.x + focusedElement.width
-                let nextElX = null
-                let nextElY = null
-                let nextElId = null
-                for (let el of this.canvasElements) {
-                  let range2 = [el.y, el.y + el.height]
-                  if (!doRangesOverlap(range1, range2)) continue
-                  if ((el.x + el.width) < rightmostX && !nextElId) {
-                    nextElX = el.x + el.width
-                    nextElY = el.y
-                    nextElId = el.id
+                let leftEdgeElements = this.edges.filter(ed => (ed.fromElement == focusedElement.id && ed.fromSide == 'left') || (ed.toElement == focusedElement.id && ed.toSide == 'left')).map(ed => {
+                  if (ed.fromElement == focusedElement.id) {
+                    var elementId = ed.toElement
                   }
-                  else if ((el.x + el.width) < rightmostX && (el.x + el.width) > nextElX) {
-                    nextElX = el.x
-                    nextElY = el.y
-                    nextElId = el.id
+                  else {
+                    var elementId = ed.fromElement
                   }
+                  return this.canvasElements.find(el => el.id == elementId)
+                })
+                if (leftEdgeElements.length > 0) {
+                  this.focusedElementId = leftEdgeElements[0].id
                 }
-                if (nextElId) {
-                  this.focusedElementId = nextElId
+                else {
+                  let range1 = [focusedElement.y, focusedElement.y + focusedElement.height]
+                  let leftmostX = focusedElement.x
+                  let rightmostX = focusedElement.x + focusedElement.width
+                  let nextElX = null
+                  let nextElY = null
+                  let nextElId = null
+                  for (let el of this.canvasElements) {
+                    let range2 = [el.y, el.y + el.height]
+                    if (!doRangesOverlap(range1, range2)) continue
+                    if ((el.x + el.width) < rightmostX && !nextElId) {
+                      nextElX = el.x + el.width
+                      nextElY = el.y
+                      nextElId = el.id
+                    }
+                    else if ((el.x + el.width) < rightmostX && (el.x + el.width) > nextElX) {
+                      nextElX = el.x
+                      nextElY = el.y
+                      nextElId = el.id
+                    }
+                  }
+                  if (nextElId) {
+                    this.focusedElementId = nextElId
+                  }
                 }
               }
               this.fullKeybuffer = ''
@@ -1024,29 +1052,43 @@ export default {
             else if (this.keybuffer == "j")
             {
               let focusedElement = this.canvasElements.find(e => e.id == this.focusedElementId)
-              let range1 = [focusedElement.x, focusedElement.x + focusedElement.width]
               if (focusedElement) {
-                let bottommostY = focusedElement.y + focusedElement.height
-                let topmostY = focusedElement.y
-                let nextElX = null
-                let nextElY = null
-                let nextElId = null
-                for (let el of this.canvasElements) {
-                  let range2 = [el.x, el.x + el.width]
-                  if (!doRangesOverlap(range1, range2)) continue
-                  if (el.y > topmostY && !nextElId) {
-                    nextElX = el.x
-                    nextElY = el.y
-                    nextElId = el.id
+                let bottomEdgeElements = this.edges.filter(ed => (ed.fromElement == focusedElement.id && ed.fromSide == 'bottom') || (ed.toElement == focusedElement.id && ed.toSide == 'bottom')).map(ed => {
+                  if (ed.fromElement == focusedElement.id) {
+                    var elementId = ed.toElement
                   }
-                  else if (el.y > topmostY && el.y < nextElY) {
-                    nextElX = el.x
-                    nextElY = el.y
-                    nextElId = el.id
+                  else {
+                    var elementId = ed.fromElement
                   }
+                  return this.canvasElements.find(el => el.id == elementId)
+                })
+                if (bottomEdgeElements.length > 0) {
+                  this.focusedElementId = bottomEdgeElements[0].id
                 }
-                if (nextElId) {
-                  this.focusedElementId = nextElId
+                else {
+                  let range1 = [focusedElement.x, focusedElement.x + focusedElement.width]
+                  let bottommostY = focusedElement.y + focusedElement.height
+                  let topmostY = focusedElement.y
+                  let nextElX = null
+                  let nextElY = null
+                  let nextElId = null
+                  for (let el of this.canvasElements) {
+                    let range2 = [el.x, el.x + el.width]
+                    if (!doRangesOverlap(range1, range2)) continue
+                    if (el.y > topmostY && !nextElId) {
+                      nextElX = el.x
+                      nextElY = el.y
+                      nextElId = el.id
+                    }
+                    else if (el.y > topmostY && el.y < nextElY) {
+                      nextElX = el.x
+                      nextElY = el.y
+                      nextElId = el.id
+                    }
+                  }
+                  if (nextElId) {
+                    this.focusedElementId = nextElId
+                  }
                 }
               }
               this.fullKeybuffer = ''
@@ -1054,28 +1096,42 @@ export default {
             else if (this.keybuffer == "k")
             {
               let focusedElement = this.canvasElements.find(e => e.id == this.focusedElementId)
-              let range1 = [focusedElement.x, focusedElement.x + focusedElement.width]
               if (focusedElement) {
-                let bottommostY = focusedElement.y + focusedElement.height
-                let nextElX = null
-                let nextElY = null
-                let nextElId = null
-                for (let el of this.canvasElements) {
-                  let range2 = [el.x, el.x + el.width]
-                  if (!doRangesOverlap(range1, range2)) continue
-                  if ((el.y + el.height) < bottommostY && !nextElId) {
-                    nextElX = el.x
-                    nextElY = el.y + el.height
-                    nextElId = el.id
+                let topEdgeElements = this.edges.filter(ed => (ed.fromElement == focusedElement.id && ed.fromSide == 'top') || (ed.toElement == focusedElement.id && ed.toSide == 'top')).map(ed => {
+                  if (ed.fromElement == focusedElement.id) {
+                    var elementId = ed.toElement
                   }
-                  else if ((el.y + el.height) < bottommostY && (el.y + el.height) > nextElY) {
-                    nextElX = el.x
-                    nextElY = el.y
-                    nextElId = el.id
+                  else {
+                    var elementId = ed.fromElement
                   }
+                  return this.canvasElements.find(el => el.id == elementId)
+                })
+                if (topEdgeElements.length > 0) {
+                  this.focusedElementId = topEdgeElements[0].id
                 }
-                if (nextElId) {
-                  this.focusedElementId = nextElId
+                else {
+                  let range1 = [focusedElement.x, focusedElement.x + focusedElement.width]
+                  let bottommostY = focusedElement.y + focusedElement.height
+                  let nextElX = null
+                  let nextElY = null
+                  let nextElId = null
+                  for (let el of this.canvasElements) {
+                    let range2 = [el.x, el.x + el.width]
+                    if (!doRangesOverlap(range1, range2)) continue
+                    if ((el.y + el.height) < bottommostY && !nextElId) {
+                      nextElX = el.x
+                      nextElY = el.y + el.height
+                      nextElId = el.id
+                    }
+                    else if ((el.y + el.height) < bottommostY && (el.y + el.height) > nextElY) {
+                      nextElX = el.x
+                      nextElY = el.y
+                      nextElId = el.id
+                    }
+                  }
+                  if (nextElId) {
+                    this.focusedElementId = nextElId
+                  }
                 }
               }
               this.fullKeybuffer = ''

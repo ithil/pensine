@@ -83,6 +83,8 @@ const store = new Vuex.Store({
       hintMode: false,
     },
     bag: [],
+    monthPageGoToDate: null,
+    monthPageGoToDateAccessed: null,
   },
   mutations: {
     changeCurrentNoteCollection(state, nc) {
@@ -108,6 +110,13 @@ const store = new Vuex.Store({
     },
     emptyBag(state) {
       state.bag = []
+    },
+    setMonthPageGoToDate(state, date) {
+      state.monthPageGoToDate = date
+      state.monthPageGoToDateAccessed = false
+    },
+    setMonthPageGoToDateAsAccessed(state) {
+      state.monthPageGoToDateAccessed = true
     },
     resetTitle(state) {
       state.title = 'Pensine'

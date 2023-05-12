@@ -1588,6 +1588,16 @@ export default {
             this.$emit('sendNewNote', text, {scrollIntoView: true})
             this.fullKeybuffer = ''
           }
+          else if (this.keybuffer == "gd")
+          {
+            // Go to month page around this note's associated date note
+            let relatedDates = this.getFocusedNoteItem().noteObj.relatedDates
+            if (relatedDates.length > 0) {
+              this.$store.commit('setMonthPageGoToDate', relatedDates[0])
+              this.$router.push(`/calendar/month/`)
+            }
+            this.fullKeybuffer = ''
+          }
           else if (this.keybuffer == "gf")
           {
             // Reveal note in finder

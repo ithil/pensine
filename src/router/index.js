@@ -5,6 +5,7 @@ import Stack from '../views/Stack.vue'
 import NotePage from '../views/NotePage.vue'
 import CanvasPage from '../views/CanvasPage.vue'
 import NodeExplorer from '../views/NodeExplorer.vue'
+import CalendarMonthPage from '../views/CalendarMonthPage.vue'
 import Search from '../views/Search.vue'
 
 Vue.use(VueRouter)
@@ -101,6 +102,19 @@ const routes = [
       iconBackground: 'orange',
       key: 'path',
       tips: 'Node Explorer', // tab tooltip, optional. defaults to `meta.title`
+      closable: true // is tab closable, defaults to `true`
+    },
+  },
+  {
+    path: '/calendar/month/:date(.*)',
+    name: 'Calendar Month Page',
+    component: CalendarMonthPage,
+    meta: {
+      title: 'Calendar Month Page', // tab title
+      icon: 'CalendarDays',
+      iconColor: '#000',
+      key: 'path',
+      tips: 'Calendar Month Page', // tab tooltip, optional. defaults to `meta.title`
       closable: true // is tab closable, defaults to `true`
     },
   },

@@ -666,6 +666,22 @@ export default {
       },
     })
     this.$store.commit('registerCommand', {
+      name: 'calendar:month',
+      label: 'Calendar Month Page',
+      action: () => {
+          this.$router.push(`/calendar/month/`).catch(err => {
+            // Ignore the vuex err regarding  navigating to the page they are already on.
+            if (
+              err.name !== 'NavigationDuplicated' &&
+              !err.message.includes('Avoided redundant navigation to current location')
+            ) {
+              // But print any other errors to the console
+              console.error(err)
+            }
+          })
+      },
+    })
+    this.$store.commit('registerCommand', {
       name: 'collection:stacks',
       label: 'Show all stacks',
       action: () => {

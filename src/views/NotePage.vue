@@ -50,6 +50,7 @@ export default {
         this.$route.params.name.split('/').map(c => decodeURIComponent(c)).join('/')
       ),
       decodedPath: this.$route.params.name.split('/').map(c => decodeURIComponent(c)).join('/'),
+      routerPath: JSON.parse(JSON.stringify(this.$route.path)),
       lastUpdated: 0,
       sortOrder: 'inherit',
       filterTerm: '',
@@ -59,9 +60,15 @@ export default {
   methods: {
     updateNotes() {
       if ((new Date() - this.lastUpdated) > 1000 ) {
-        this.note = this.$store.state.currentNoteCollection.getNoteByPath(
+        var note = this.$store.state.currentNoteCollection.getNoteByPath(
           this.decodedPath
         )
+        if (!note) {
+          this.$tabs.close({path: this.routerPath})
+        }
+        else {
+          this.note = note
+        }
         this.lastUpdated = new Date()
       }
     },

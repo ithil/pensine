@@ -682,6 +682,34 @@ export default {
       },
     })
     this.$store.commit('registerCommand', {
+      name: 'template:create',
+      label: 'Create new template',
+      action: () => {
+        this.$store.commit('triggerCustomTextPrompt', {
+          message: 'Name for new template',
+          action: (name) => {
+            this.$store.state.currentNoteCollection.newTemplate(name)
+          }
+        })
+      },
+    })
+    this.$store.commit('registerCommand', {
+      name: 'templates:show',
+      label: 'Show all templates',
+      action: () => {
+        this.$router.push(`/templates/`).catch(err => {
+          // Ignore the vuex err regarding  navigating to the page they are already on.
+          if (
+            err.name !== 'NavigationDuplicated' &&
+            !err.message.includes('Avoided redundant navigation to current location')
+          ) {
+            // But print any other errors to the console
+            console.error(err)
+          }
+        })
+      },
+    })
+    this.$store.commit('registerCommand', {
       name: 'collection:stacks',
       label: 'Show all stacks',
       action: () => {

@@ -836,6 +836,22 @@ export default {
         else if (event.key == 's' && event.metaKey) {
           this.saveCanvas()
         }
+        else if (event.key == 'a' && event.ctrlKey) {
+          let affectedElements = this.getElementsToBeAffected()
+          let scaleAmount = 1.1
+          for (let el of affectedElements) {
+            let currentFontSizeTransform = el.fontSizeTransform || 1
+            this.$set(el, 'fontSizeTransform', (currentFontSizeTransform * scaleAmount).toFixed(2))
+          }
+        }
+        else if (event.key == 'x' && event.ctrlKey) {
+          let affectedElements = this.getElementsToBeAffected()
+          let scaleAmount = 1.1
+          for (let el of affectedElements) {
+            let currentFontSizeTransform = el.fontSizeTransform || 1
+            this.$set(el, 'fontSizeTransform', (currentFontSizeTransform / scaleAmount).toFixed(2))
+          }
+        }
         else if (event.key.length == 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
           this.fullKeybuffer += event.key
           var match = this.fullKeybuffer.match(/(\d+)?("([a-zA-Z0-9+]))?(.+)/)

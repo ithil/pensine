@@ -1,7 +1,7 @@
 <template>
   <div
   class="canvas-element"
-  :style="{width: `${canvasElementObj.width}px`, height: `${canvasElementObj.height}px`, transform: `translate(${canvasElementObj.x}px, ${canvasElementObj.y}px) rotate(${canvasElementObj.rotation || 0}deg)`, '--canvas-color': canvasElementObj.color, 'z-index': zIndex}"
+  :style="{width: `${canvasElementObj.width}px`, height: `${canvasElementObj.height}px`, transform: `translate(${canvasElementObj.x}px, ${canvasElementObj.y}px) rotate(${canvasElementObj.rotation || 0}deg)`, '--canvas-color-rgb': canvasElementObj.color, 'z-index': zIndex, 'font-size': fontSize}"
   @click="setFocusedElement(canvasElementObj.id)"
   :class="{focused: isFocused, selected: isSelected}"
   ref="canvasElement"
@@ -209,6 +209,17 @@
         else {
           return null
         }
+      },
+      fontSize() {
+        if (this.canvasElementObj.fontSizeTransform) {
+          return `${this.canvasElementObj.fontSizeTransform*100}%`
+        }
+        else {
+          return null
+        }
+      },
+      allowResizing() {
+        return !(this.canvasElementObj.type == 'dot')
       },
     },
   watch: {
@@ -923,12 +934,12 @@
       border-radius: 5px;
       color: white;
       font-family: 'Code New Roman', monospace;
-      font-size: 15px;
+      font-size: 0.9375em;
       &.prose {
         background: none;
         color: inherit;
         font-family: 'Georgia';
-        font-size: 16px;
+        font-size: 1em;
         code {
           font-family: 'Georgia';
         }
@@ -944,25 +955,25 @@
       }
     }
     h1 {
-      font-size: 24px;
+      font-size: 1.5em;
     }
     h2 {
-      font-size: 20px;
+      font-size: 1.25em;
     }
     h3 {
-      font-size: 17px;
+      font-size: 1.0625em;
     }
     h4 {
-      font-size: 15px;
+      font-size: 0.9375em;
     }
     h5 {
-      font-size: 13px;
+      font-size: 0.8125em;
     }
     h1, h2, h3, h4, h5 {
       font-family: 'Baskerville';
     }
     table {
-      font-size: 13px;
+      font-size: 0.8125em;
       border-collapse: collapse;
       td, th {
         border: 1px solid #e5e3da;
@@ -1141,7 +1152,7 @@
         width: max-content;
         display: inline-block;
         font-family: 'Code New Roman';
-        font-size: 13px;
+        font-size: 0.8125em;
         border-radius: 6px;
         padding: 5px;
         transition: visibility 0.2s linear,opacity 0.2s linear;
@@ -1170,7 +1181,7 @@
       color: white;
       white-space: nowrap;
       font-family: 'Code New Roman';
-      font-size: 13px;
+      font-size: 0.8125em;
       border-radius: 6px;
       border: 2px solid #c5c5c5;
       padding: 5px;

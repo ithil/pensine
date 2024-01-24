@@ -266,23 +266,27 @@
       this.focused = true
       this.$emit('focusNote', this.noteObj, event)
     },
-    saveElement(event) {
+    saveElement(event, content) {
+      content = content ?? this.editorContent
       var newCanvasElementObj = {...this.canvasElementObj}
       if (this.canvasElementObj.type == "markdown") {
-        newCanvasElementObj.text = this.editorContent
+        newCanvasElementObj.text = content
       }
       else if (this.canvasElementObj.type == "note") {
-        this.note.setContent(this.editorContent)
+        this.note.setContent(content)
         this.noteRefreshKey++
       }
       newCanvasElementObj.modificationDate = new Date()
-      this.editing = !this.editing
+      this.editing = false
+      this.editorContent = content
       this.$emit('setFocusedElement', this.canvasElementObj.id)
       this.$emit('replaceCanvasElementObj', newCanvasElementObj)
       this.$emit('focusCanvasWrapper')
       this.$emit('setMode', 'normal')
+      if (event) {
       event.preventDefault()
       event.stopPropagation()
+      }
       if (this.canvasElementObj.fitText) {
         var $this = this
         setTimeout(() => {
